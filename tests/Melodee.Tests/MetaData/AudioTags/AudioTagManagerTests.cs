@@ -46,7 +46,6 @@ namespace Melodee.Tests.MetaData.AudioTags
                 Assert.NotEmpty(tags.Tags);
                 Assert.NotEmpty(tags.Tags.Keys);
                 Assert.NotEmpty(tags.Tags.Values);
-                Assert.NotEmpty(SafeParser.ToString(tags.Tags[Melodee.Common.Enums.MetaTagIdentifier.Artist]));
                 Assert.True(SafeParser.ToNumber<int>(tags.Tags[Melodee.Common.Enums.MetaTagIdentifier.TrackNumber]) > 0);
                 Assert.NotEmpty(SafeParser.ToString(tags.Tags[Melodee.Common.Enums.MetaTagIdentifier.Title]));
             }

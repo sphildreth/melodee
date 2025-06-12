@@ -28,7 +28,7 @@ namespace Melodee.Tests.MetaData.AudioTags
         }
         
         [Fact]
-        public async Task Read_Media_Files_In_Test_Folder()
+        public async Task Read_Media_MP4_In_Test_Folder()
         {
             var testFolder = Path.Combine(Directory.GetCurrentDirectory(), "/melodee_test/tests/good");
             if (!Directory.Exists(testFolder))
@@ -48,6 +48,29 @@ namespace Melodee.Tests.MetaData.AudioTags
             Assert.NotEmpty(SafeParser.ToString(tags.Tags[Melodee.Common.Enums.MetaTagIdentifier.Artist]));
             Assert.True(SafeParser.ToNumber<int>(tags.Tags[Melodee.Common.Enums.MetaTagIdentifier.TrackNumber]) > 0);
             Assert.NotEmpty(SafeParser.ToString(tags.Tags[Melodee.Common.Enums.MetaTagIdentifier.Title]));
-        }            
+        }         
+        
+        [Fact]
+        public async Task Read_Media_M4A_In_Test_Folder()
+        {
+            var testFolder = Path.Combine(Directory.GetCurrentDirectory(), "/melodee_test/tests/good");
+            if (!Directory.Exists(testFolder))
+            {
+                return;
+            }
+            var tags = await AudioTagManager.ReadAllTagsAsync(Path.Combine(testFolder, "test.m4a"), CancellationToken.None);
+            Assert.NotEqual(AudioFormat.Unknown, tags.Format);
+            Assert.NotEqual(0, tags.FileMetadata.FileSize);
+            Assert.NotEqual(string.Empty, tags.FileMetadata.FilePath);
+            Assert.NotEqual(DateTimeOffset.MinValue, tags.FileMetadata.Created);
+            Assert.NotEqual(DateTimeOffset.MinValue, tags.FileMetadata.LastModified);
+            Assert.NotNull(tags.Tags);
+            Assert.NotEmpty(tags.Tags);
+            Assert.NotEmpty(tags.Tags.Keys);
+            Assert.NotEmpty(tags.Tags.Values);
+            Assert.NotEmpty(SafeParser.ToString(tags.Tags[Melodee.Common.Enums.MetaTagIdentifier.Artist]));
+            Assert.True(SafeParser.ToNumber<int>(tags.Tags[Melodee.Common.Enums.MetaTagIdentifier.TrackNumber]) > 0);
+            Assert.NotEmpty(SafeParser.ToString(tags.Tags[Melodee.Common.Enums.MetaTagIdentifier.Title]));
+        }          
     }
 }

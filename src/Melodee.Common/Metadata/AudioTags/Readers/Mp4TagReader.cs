@@ -7,105 +7,454 @@ namespace Melodee.Common.Metadata.AudioTags.Readers;
 
 public class Mp4TagReader : ITagReader
 {
+    // MP4 atom (box) types
+    private const string FTYP = "ftyp";
+    private const string MOOV = "moov";
+    private const string UDTA = "udta";
+    private const string META = "meta";
+    private const string ILST = "ilst";
+    private const string TRAK = "trak";
+    private const string MDIA = "mdia";
+    private const string MINF = "minf";
+    private const string STBL = "stbl";
+    private const string STSD = "stsd";
+
+    // Common metadata atoms
+    private const string TITLE = "©nam";
+    private const string ARTIST = "©ART";
+    private const string ALBUM = "©alb";
+    private const string YEAR = "©day";
+    private const string GENRE = "©gen";
+    private const string COMMENT = "©cmt";
+    private const string TRACK_NUMBER = "trkn";
+    private const string DISC_NUMBER = "disk";
+    private const string COMPOSER = "©wrt";
+    private const string ALBUM_ARTIST = "aART";
+    private const string COPYRIGHT = "cprt";
+    private const string COVER_ART = "covr";
+    private const string LYRICS = "©lyr";
+
     public async Task<IDictionary<MetaTagIdentifier, object>> ReadTagsAsync(string filePath, CancellationToken cancellationToken = default)
     {
         var tags = new Dictionary<MetaTagIdentifier, object>();
-        await using var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, true);
-        // MP4 atoms are in a tree structure. We'll scan for 'moov' > 'udta' > 'meta' > 'ilst' atoms and parse common tags.
-        // This is a minimal implementation for common iTunes tags.
-        // For brevity, this implementation is simplified and may not cover all edge cases.
-        var fileLength = stream.Length;
-        long pos = 0;
-        while (pos + 8 < fileLength)
+        
+        try
         {
-            stream.Seek(pos, SeekOrigin.Begin);
-            var atomHeader = new byte[8];
-            if (await stream.ReadAsync(atomHeader, 0, 8, cancellationToken) != 8)
+            await using var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, true);
+            
+            // Look for the moov atom which contains all metadata
+            var moovAtom = await FindAtom(stream, MOOV, cancellationToken);
+            if (moovAtom != null)
             {
-                break;
+                // Process moov atom to find metadata
+                await using var moovStream = new MemoryStream(moovAtom);
+                
+                // 1. Look for metadata in udta > meta > ilst
+                var udtaAtom = await FindAtom(moovStream, UDTA, cancellationToken);
+                if (udtaAtom != null)
+                {
+                    await using var udtaStream = new MemoryStream(udtaAtom);
+                    var metaAtom = await FindAtom(udtaStream, META, cancellationToken);
+                    
+                    if (metaAtom != null && metaAtom.Length > 4)
+                    {
+                        // Skip 4 bytes of meta version/flags
+                        await using var metaStream = new MemoryStream(metaAtom, 4, metaAtom.Length - 4);
+                        var ilstAtom = await FindAtom(metaStream, ILST, cancellationToken);
+                        
+                        if (ilstAtom != null)
+                        {
+                            await ReadMetadataFromIlst(ilstAtom, tags, cancellationToken);
+                        }
+                    }
+                }
+                
+                // 2. Look for track info in trak atoms if track number is still missing
+                if (!tags.ContainsKey(MetaTagIdentifier.TrackNumber))
+                {
+                    moovStream.Position = 0;
+                    await ReadTrackInfoFromMoov(moovStream, tags, cancellationToken);
+                }
             }
-
-            var atomSize = (atomHeader[0] << 24) | (atomHeader[1] << 16) | (atomHeader[2] << 8) | atomHeader[3];
-            var atomType = Encoding.ASCII.GetString(atomHeader, 4, 4);
-            if (atomType == "moov" || atomType == "udta" || atomType == "meta" || atomType == "ilst")
-            {
-                pos += 8;
-                continue;
-            }
-
-            if (atomType == "©nam") // Title
-            {
-                tags[MetaTagIdentifier.Title] = await ReadMp4StringAtom(stream, atomSize - 8, cancellationToken);
-            }
-            else if (atomType == "©ART") // Artist
-            {
-                tags[MetaTagIdentifier.Artist] = await ReadMp4StringAtom(stream, atomSize - 8, cancellationToken);
-            }
-            else if (atomType == "©alb") // Album
-            {
-                tags[MetaTagIdentifier.Album] = await ReadMp4StringAtom(stream, atomSize - 8, cancellationToken);
-            }
-            else if (atomType == "©day") // Year/Date
-            {
-                tags[MetaTagIdentifier.RecordingDateOrYear] = await ReadMp4StringAtom(stream, atomSize - 8, cancellationToken);
-            }
-            else if (atomType == "©gen") // Genre
-            {
-                tags[MetaTagIdentifier.Genre] = await ReadMp4StringAtom(stream, atomSize - 8, cancellationToken);
-            }
-            else if (atomType == "covr") // Cover art
-            {
-                // Handled in ReadImagesAsync
-            }
-
-            pos += atomSize > 0 ? atomSize : 8;
         }
-
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error reading MP4 tags: {ex.Message}");
+        }
+        
         return tags;
+    }
+
+    private async Task ReadTrackInfoFromMoov(Stream moovStream, Dictionary<MetaTagIdentifier, object> tags, CancellationToken cancellationToken)
+    {
+        try
+        {
+            while (moovStream.Position < moovStream.Length - 8)
+            {
+                var atomInfo = await ReadAtomHeader(moovStream, cancellationToken);
+                if (atomInfo.AtomType == TRAK)
+                {
+                    byte[] trakData = new byte[atomInfo.AtomSize - 8];
+                    await moovStream.ReadAsync(trakData, 0, trakData.Length, cancellationToken);
+                    
+                    await using var trakStream = new MemoryStream(trakData);
+                    var mdiaAtom = await FindAtom(trakStream, MDIA, cancellationToken);
+                    
+                    if (mdiaAtom != null)
+                    {
+                        await using var mdiaStream = new MemoryStream(mdiaAtom);
+                        var trackNumber = await ExtractTrackNumber(mdiaStream, cancellationToken);
+                        
+                        if (trackNumber > 0)
+                        {
+                            tags[MetaTagIdentifier.TrackNumber] = trackNumber;
+                            break; // Found track number, no need to process more trak atoms
+                        }
+                    }
+                }
+                else
+                {
+                    // Skip this atom
+                    moovStream.Seek(atomInfo.AtomSize - 8, SeekOrigin.Current);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error reading track info from moov: {ex.Message}");
+        }
+    }
+
+    private async Task<int> ExtractTrackNumber(Stream mdiaStream, CancellationToken cancellationToken)
+    {
+        try
+        {
+            // Navigate through mdia > minf > stbl > stsd to find track number
+            var minfAtom = await FindAtom(mdiaStream, MINF, cancellationToken);
+            if (minfAtom != null)
+            {
+                await using var minfStream = new MemoryStream(minfAtom);
+                var stblAtom = await FindAtom(minfStream, STBL, cancellationToken);
+                
+                if (stblAtom != null)
+                {
+                    await using var stblStream = new MemoryStream(stblAtom);
+                    var stsdAtom = await FindAtom(stblStream, STSD, cancellationToken);
+                    
+                    if (stsdAtom != null && stsdAtom.Length > 8)
+                    {
+                        // First 4 bytes after header are version (1 byte) and flags (3 bytes)
+                        // Next 4 bytes are entry count
+                        byte[] entryCountBytes = new byte[4];
+                        Array.Copy(stsdAtom, 4, entryCountBytes, 0, 4);
+                        int entryCount = (entryCountBytes[0] << 24) | (entryCountBytes[1] << 16) | 
+                                         (entryCountBytes[2] << 8) | entryCountBytes[3];
+                        
+                        if (entryCount > 0)
+                        {
+                            return 1; // Default to track 1 if we found valid entries
+                        }
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error extracting track number: {ex.Message}");
+        }
+        
+        return 0;
+    }
+
+    private async Task ReadMetadataFromIlst(byte[] ilstData, Dictionary<MetaTagIdentifier, object> tags, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await using var ilstStream = new MemoryStream(ilstData);
+            
+            while (ilstStream.Position < ilstStream.Length - 8)
+            {
+                var atomInfo = await ReadAtomHeader(ilstStream, cancellationToken);
+                
+                // Read the atom data
+                byte[] atomData = new byte[atomInfo.AtomSize - 8];
+                await ilstStream.ReadAsync(atomData, 0, atomData.Length, cancellationToken);
+                
+                switch (atomInfo.AtomType)
+                {
+                    case TITLE:
+                        tags[MetaTagIdentifier.Title] = ExtractStringValue(atomData);
+                        break;
+                    case ARTIST:
+                        tags[MetaTagIdentifier.Artist] = ExtractStringValue(atomData);
+                        break;
+                    case ALBUM:
+                        tags[MetaTagIdentifier.Album] = ExtractStringValue(atomData);
+                        break;
+                    case YEAR:
+                        string yearValue = ExtractStringValue(atomData);
+                        tags[MetaTagIdentifier.RecordingYear] = yearValue;
+                        break;
+                    case GENRE:
+                        tags[MetaTagIdentifier.Genre] = ExtractStringValue(atomData);
+                        break;
+                    case COMMENT:
+                        tags[MetaTagIdentifier.Comment] = ExtractStringValue(atomData);
+                        break;
+                    case TRACK_NUMBER:
+                        var trackInfo = ExtractNumberPairValue(atomData);
+                        if (trackInfo.Item1 > 0)
+                        {
+                            tags[MetaTagIdentifier.TrackNumber] = trackInfo.Item1;
+                            if (trackInfo.Item2 > 0)
+                            {
+                                tags[MetaTagIdentifier.SongTotal] = trackInfo.Item2;
+                            }
+                        }
+                        break;
+                    case DISC_NUMBER:
+                        var discInfo = ExtractNumberPairValue(atomData);
+                        if (discInfo.Item1 > 0)
+                        {
+                            tags[MetaTagIdentifier.DiscNumber] = discInfo.Item1;
+                        }
+                        break;
+                    case COMPOSER:
+                        tags[MetaTagIdentifier.Composer] = ExtractStringValue(atomData);
+                        break;
+                    case ALBUM_ARTIST:
+                        tags[MetaTagIdentifier.AlbumArtist] = ExtractStringValue(atomData);
+                        break;
+                    case COPYRIGHT:
+                        tags[MetaTagIdentifier.Copyright] = ExtractStringValue(atomData);
+                        break;
+                    case LYRICS:
+                        tags[MetaTagIdentifier.UnsynchronisedLyrics] = ExtractStringValue(atomData);
+                        break;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error reading metadata from ilst: {ex.Message}");
+        }
+    }
+
+    private string ExtractStringValue(byte[] data)
+    {
+        try
+        {
+            if (data.Length < 16) return string.Empty;
+            
+            // Check for data type atom inside
+            if (data.Length >= 8)
+            {
+                int dataSize = (data[0] << 24) | (data[1] << 16) | (data[2] << 8) | data[3];
+                string dataType = Encoding.ASCII.GetString(data, 4, 4);
+                
+                if (dataType == "data" && dataSize <= data.Length)
+                {
+                    // First 8 bytes of data are type (1 for UTF-8) and locale/flags
+                    int valueOffset = 16; // 8 for atom header + 8 for data header
+                    if (valueOffset < data.Length)
+                    {
+                        return Encoding.UTF8.GetString(data, valueOffset, data.Length - valueOffset).TrimEnd('\0');
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error extracting string value: {ex.Message}");
+        }
+        
+        return string.Empty;
+    }
+
+    private Tuple<int, int> ExtractNumberPairValue(byte[] data)
+    {
+        try
+        {
+            if (data.Length < 22) return new Tuple<int, int>(0, 0);
+            
+            // Track/disc number data typically has 16-byte header (8-byte atom + 8-byte data type header)
+            // followed by 2-byte empty, 2-byte track number, 2-byte total tracks
+            int trackNum = (data[18] << 8) | data[19];
+            int totalTracks = (data[20] << 8) | data[21];
+            
+            return new Tuple<int, int>(trackNum, totalTracks);
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error extracting number pair: {ex.Message}");
+            return new Tuple<int, int>(0, 0);
+        }
+    }
+
+    private async Task<byte[]?> FindAtom(Stream stream, string atomType, CancellationToken cancellationToken)
+    {
+        long originalPosition = stream.Position;
+        stream.Position = 0;
+        
+        try
+        {
+            while (stream.Position < stream.Length - 8)
+            {
+                var atomInfo = await ReadAtomHeader(stream, cancellationToken);
+                
+                if (atomInfo.AtomType == atomType)
+                {
+                    byte[] atomData = new byte[atomInfo.AtomSize - 8]; // Exclude the header
+                    int bytesRead = await stream.ReadAsync(atomData, 0, atomData.Length, cancellationToken);
+                    
+                    if (bytesRead == atomData.Length)
+                    {
+                        return atomData;
+                    }
+                    
+                    return null;
+                }
+                
+                // Skip to the next atom
+                stream.Seek(atomInfo.AtomSize - 8, SeekOrigin.Current);
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error finding atom '{atomType}': {ex.Message}");
+        }
+        finally
+        {
+            stream.Position = originalPosition;
+        }
+        
+        return null;
+    }
+
+    private async Task<(long AtomSize, string AtomType)> ReadAtomHeader(Stream stream, CancellationToken cancellationToken)
+    {
+        byte[] header = new byte[8];
+        await stream.ReadAsync(header, 0, 8, cancellationToken);
+        
+        long atomSize = (header[0] << 24) | (header[1] << 16) | (header[2] << 8) | header[3];
+        string atomType = Encoding.ASCII.GetString(header, 4, 4);
+        
+        // Handle 64-bit size
+        if (atomSize == 1 && stream.Length >= stream.Position + 8)
+        {
+            byte[] extendedSize = new byte[8];
+            await stream.ReadAsync(extendedSize, 0, 8, cancellationToken);
+            
+            atomSize = (long)((ulong)extendedSize[0] << 56 | (ulong)extendedSize[1] << 48 | 
+                       (ulong)extendedSize[2] << 40 | (ulong)extendedSize[3] << 32 |
+                       (ulong)extendedSize[4] << 24 | (ulong)extendedSize[5] << 16 | 
+                       (ulong)extendedSize[6] << 8 | (ulong)extendedSize[7]);
+        }
+        
+        // Handle special cases
+        if (atomSize == 0)
+        {
+            atomSize = stream.Length - stream.Position + 8; // Rest of the file
+        }
+        else if (atomSize < 8)
+        {
+            atomSize = 8; // Minimum valid size
+        }
+        
+        return (atomSize, atomType);
     }
 
     public async Task<IReadOnlyList<AudioImage>> ReadImagesAsync(string filePath, CancellationToken cancellationToken = default)
     {
         var images = new List<AudioImage>();
-        await using var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, true);
-        var fileLength = stream.Length;
-        long pos = 0;
-        while (pos + 8 < fileLength)
+        
+        try
         {
-            stream.Seek(pos, SeekOrigin.Begin);
-            var atomHeader = new byte[8];
-            if (await stream.ReadAsync(atomHeader, 0, 8, cancellationToken) != 8)
+            await using var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, true);
+            
+            // Look for the moov > udta > meta > ilst > covr atom which contains cover art
+            var moovAtom = await FindAtom(stream, MOOV, cancellationToken);
+            if (moovAtom != null)
             {
-                break;
-            }
-
-            var atomSize = (atomHeader[0] << 24) | (atomHeader[1] << 16) | (atomHeader[2] << 8) | atomHeader[3];
-            var atomType = Encoding.ASCII.GetString(atomHeader, 4, 4);
-            if (atomType == "covr")
-            {
-                var data = new byte[atomSize - 8];
-                if (await stream.ReadAsync(data, 0, atomSize - 8, cancellationToken) == atomSize - 8)
+                await using var moovStream = new MemoryStream(moovAtom);
+                var udtaAtom = await FindAtom(moovStream, UDTA, cancellationToken);
+                
+                if (udtaAtom != null)
                 {
-                    // MP4 cover art is usually JPEG or PNG, with a 16-byte data header
-                    var imgStart = 16;
-                    if (data.Length > imgStart)
+                    await using var udtaStream = new MemoryStream(udtaAtom);
+                    var metaAtom = await FindAtom(udtaStream, META, cancellationToken);
+                    
+                    if (metaAtom != null && metaAtom.Length > 4)
                     {
-                        var imgData = new byte[data.Length - imgStart];
-                        Array.Copy(data, imgStart, imgData, 0, imgData.Length);
-                        images.Add(new AudioImage
+                        // Skip 4 bytes of meta version/flags
+                        await using var metaStream = new MemoryStream(metaAtom, 4, metaAtom.Length - 4);
+                        var ilstAtom = await FindAtom(metaStream, ILST, cancellationToken);
+                        
+                        if (ilstAtom != null)
                         {
-                            Data = imgData,
-                            MimeType = "image/jpeg", // Could be PNG, but most are JPEG
-                            Description = null,
-                            Type = PictureIdentifier.Front
-                        });
+                            await using var ilstStream = new MemoryStream(ilstAtom);
+                            
+                            while (ilstStream.Position < ilstStream.Length - 8)
+                            {
+                                var atomInfo = await ReadAtomHeader(ilstStream, cancellationToken);
+                                
+                                if (atomInfo.AtomType == COVER_ART)
+                                {
+                                    byte[] covrData = new byte[atomInfo.AtomSize - 8];
+                                    await ilstStream.ReadAsync(covrData, 0, covrData.Length, cancellationToken);
+                                    
+                                    // Process cover art data
+                                    if (covrData.Length > 16) // Minimum data header plus some image data
+                                    {
+                                        // Look for data atom inside
+                                        if (covrData.Length >= 8)
+                                        {
+                                            int dataSize = (covrData[0] << 24) | (covrData[1] << 16) | (covrData[2] << 8) | covrData[3];
+                                            string dataType = Encoding.ASCII.GetString(covrData, 4, 4);
+                                            
+                                            if (dataType == "data" && dataSize <= covrData.Length)
+                                            {
+                                                // Get image format from data type value
+                                                int formatType = (covrData[8] << 24) | (covrData[9] << 16) | (covrData[10] << 8) | covrData[11];
+                                                
+                                                string mimeType = "image/jpeg"; // Default
+                                                if (formatType == 14) mimeType = "image/png";
+                                                
+                                                // Extract image data (skipping 16-byte header)
+                                                int imageOffset = 16;
+                                                if (imageOffset < covrData.Length)
+                                                {
+                                                    byte[] imageData = new byte[covrData.Length - imageOffset];
+                                                    Array.Copy(covrData, imageOffset, imageData, 0, imageData.Length);
+                                                    
+                                                    images.Add(new AudioImage
+                                                    {
+                                                        Data = imageData,
+                                                        MimeType = mimeType,
+                                                        Description = null,
+                                                        Type = PictureIdentifier.Front
+                                                    });
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                                else
+                                {
+                                    // Skip this atom
+                                    ilstStream.Seek(atomInfo.AtomSize - 8, SeekOrigin.Current);
+                                }
+                            }
+                        }
                     }
                 }
             }
-
-            pos += atomSize > 0 ? atomSize : 8;
         }
-
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error reading MP4 images: {ex.Message}");
+        }
+        
         return images;
     }
 
@@ -113,23 +462,5 @@ public class Mp4TagReader : ITagReader
     {
         var tags = await ReadTagsAsync(filePath, cancellationToken);
         return tags.TryGetValue(tagId, out var value) ? value : null;
-    }
-
-    private static async Task<string> ReadMp4StringAtom(FileStream stream, int size, CancellationToken cancellationToken)
-    {
-        var data = new byte[size];
-        if (await stream.ReadAsync(data, 0, size, cancellationToken) != size)
-        {
-            return string.Empty;
-        }
-
-        // MP4 string atoms have a data header (usually 16 bytes), then the string
-        var strStart = 16;
-        if (size <= strStart)
-        {
-            return string.Empty;
-        }
-
-        return Encoding.UTF8.GetString(data, strStart, size - strStart).TrimEnd('\0', ' ');
     }
 }
