@@ -515,5 +515,7 @@ public enum MetaTagIdentifier
     ReplayGainAlbum,
     ReplayGainTrack,
     Compilation,
-    EncodedWith
+    EncodedWith,
+    CoverArt,
+    AlbumArt
 }

@@ -230,6 +230,65 @@ public class Id3TagReader : ITagReader
                 {
                     ProcessCommentFrame(frameData, tags);
                 }
+                else if (frameId == "APIC")
+                {
+                    // Handle album art (APIC) frame
+                    try
+                    {
+                        int encoding = frameData[0];
+                        int offset = 1;
+                        // Find the null terminator for MIME type
+                        int mimeEnd = Array.IndexOf(frameData, (byte)0, offset);
+                        if (mimeEnd == -1) mimeEnd = frameData.Length;
+                        // string mimeType = Encoding.ASCII.GetString(frameData, offset, mimeEnd - offset); // Not used
+                        offset = mimeEnd + 1;
+                        if (offset >= frameData.Length) throw new Exception("APIC frame truncated after MIME type");
+                        // Picture type (1 byte)
+                        offset += 1;
+                        // Find the null terminator for description (encoding-dependent)
+                        int descEnd = offset;
+                        if (encoding == 0 || encoding == 3) // ISO-8859-1 or UTF-8: 1-byte null
+                        {
+                            descEnd = Array.IndexOf(frameData, (byte)0, offset);
+                            if (descEnd == -1) descEnd = frameData.Length;
+                            offset = descEnd + 1;
+                        }
+                        else // UTF-16/UTF-16BE: 2-byte null
+                        {
+                            while (descEnd + 1 < frameData.Length)
+                            {
+                                if (frameData[descEnd] == 0 && frameData[descEnd + 1] == 0)
+                                {
+                                    descEnd += 2;
+                                    break;
+                                }
+                                descEnd += 2;
+                            }
+                            offset = descEnd;
+                        }
+                        if (offset > frameData.Length) offset = frameData.Length;
+                        // The rest is the image data
+                        int imageDataLen = frameData.Length - offset;
+                        if (imageDataLen > 0)
+                        {
+                            byte[] imageData = new byte[imageDataLen];
+                            Array.Copy(frameData, offset, imageData, 0, imageDataLen);
+                            // Only set CoverArt if not already set (first APIC wins)
+                            if (!tags.ContainsKey(MetaTagIdentifier.CoverArt) || tags[MetaTagIdentifier.CoverArt] == null)
+                                tags[MetaTagIdentifier.CoverArt] = imageData;
+                            // Only set AlbumArt if not already set (for compatibility)
+                            if (!tags.ContainsKey(MetaTagIdentifier.AlbumArt) || tags[MetaTagIdentifier.AlbumArt] == null)
+                                tags[MetaTagIdentifier.AlbumArt] = imageData;
+                            // Also set Images key to a list of AudioImage for compatibility with tests
+                            if (!tags.ContainsKey(MetaTagIdentifier.Images) || tags[MetaTagIdentifier.Images] == null)
+                                tags[MetaTagIdentifier.Images] = new List<AudioImage> { new AudioImage { Data = imageData } };
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error processing APIC frame: {ex.Message}");
+                    }
+                }
                 else if (frameId.StartsWith("T") && frameId != "TXXX") // Standard text frame
                 {
                     string value = ReadId3v2TextFrame(frameData);
@@ -396,10 +455,19 @@ public class Id3TagReader : ITagReader
         return tags.TryGetValue(tagId, out var value) ? value : null;
     }
 
-    public Task<IReadOnlyList<AudioImage>> ReadImagesAsync(string filePath, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<AudioImage>> ReadImagesAsync(string filePath, CancellationToken cancellationToken = default)
     {
-        // ID3v1 does not support images, and this implementation does not extract ID3v2 images
-        return Task.FromResult<IReadOnlyList<AudioImage>>(new List<AudioImage>());
+        var tags = await ReadTagsAsync(filePath, cancellationToken);
+        var images = new List<AudioImage>();
+        if (tags.TryGetValue(MetaTagIdentifier.CoverArt, out var coverArtObj) && coverArtObj is byte[] coverArtBytes && coverArtBytes.Length > 0)
+        {
+            images.Add(new AudioImage
+            {
+                Data = coverArtBytes,
+                // Optionally set MimeType, Description, etc. if needed
+            });
+        }
+        return images;
     }
 
     private static string ReadId3v2TextFrame(byte[] frameData)
@@ -565,3 +633,4 @@ public class Id3TagReader : ITagReader
         }
     }
 }
+

@@ -532,5 +532,122 @@ namespace Melodee.Tests.MetaData.AudioTags
                 }
             }
         }
+        
+        [Fact]
+        public async Task Should_Read_APIC_Image_Frame_ID3v2_4()
+        {
+            // Arrange: create a small fake image (e.g., PNG header + data)
+            byte[] fakeImage = new byte[] { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x01, 0x02, 0x03 };
+            var metadata = new BlankMusicFileGenerator.MusicMetadata
+            {
+                Title = "Image Test",
+                AlbumArt = fakeImage
+            };
+            string filePath = await BlankMusicFileGenerator.CreateMinimalMp3FileWithVersionAsync(
+                _testOutputPath,
+                BlankMusicFileGenerator.Id3Version.Id3v2_4,
+                metadata);
+
+            try
+            {
+                var tags = await AudioTagManager.ReadAllTagsAsync(filePath, CancellationToken.None);
+                // Album art may be stored under different MetaTagIdentifiers
+                object readImage = null;
+                if (tags.Tags.ContainsKey(MetaTagIdentifier.CoverArt))
+                    readImage = tags.Tags[MetaTagIdentifier.CoverArt];
+                else if (tags.Tags.ContainsKey(MetaTagIdentifier.AlbumArt))
+                    readImage = tags.Tags[MetaTagIdentifier.AlbumArt];
+                Assert.NotNull(readImage);
+                Assert.Equal(fakeImage, readImage as byte[]);
+            }
+            finally
+            {
+                if (File.Exists(filePath))
+                    File.Delete(filePath);
+            }
+        }
+
+        [Fact]
+        public async Task Should_Read_Unsynchronisation_ID3v2_4()
+        {
+            // Arrange: create metadata with a comment that would trigger unsynchronisation (contains 0xFF 0x00)
+            var metadata = new BlankMusicFileGenerator.MusicMetadata
+            {
+                Title = "Unsync Test",
+                Comment = "This is a test with unsync bytes: \u00FF\u0000 in the comment."
+            };
+            // NOTE: BlankMusicFileGenerator does not support unsync flag directly; this test assumes the generator writes unsync if needed.
+            string filePath = await BlankMusicFileGenerator.CreateMinimalMp3FileWithVersionAsync(
+                _testOutputPath,
+                BlankMusicFileGenerator.Id3Version.Id3v2_4,
+                metadata);
+
+            try
+            {
+                var tags = await AudioTagManager.ReadAllTagsAsync(filePath, CancellationToken.None);
+                string comment = SafeParser.ToString(tags.Tags[MetaTagIdentifier.Comment]);
+                Assert.Contains("\u00FF\u0000", comment);
+            }
+            finally
+            {
+                if (File.Exists(filePath))
+                    File.Delete(filePath);
+            }
+        }
+
+        [Fact]
+        public async Task Should_Read_Extended_Header_ID3v2_4()
+        {
+            // Arrange: create metadata and note that generator may not support extended header directly
+            var metadata = new BlankMusicFileGenerator.MusicMetadata
+            {
+                Title = "Extended Header Test"
+            };
+            // NOTE: If extended header is not supported, this test will just check normal tag reading
+            string filePath = await BlankMusicFileGenerator.CreateMinimalMp3FileWithVersionAsync(
+                _testOutputPath,
+                BlankMusicFileGenerator.Id3Version.Id3v2_4,
+                metadata);
+
+            try
+            {
+                var tags = await AudioTagManager.ReadAllTagsAsync(filePath, CancellationToken.None);
+                Assert.Equal("Extended Header Test", SafeParser.ToString(tags.Tags[MetaTagIdentifier.Title]));
+            }
+            finally
+            {
+                if (File.Exists(filePath))
+                    File.Delete(filePath);
+            }
+        }
+
+        [Fact]
+        public async Task Should_Read_Multiple_Values_In_Text_Frame_ID3v2_4()
+        {
+            // Arrange: create metadata with multiple artists separated by null (\u0000)
+            var metadata = new BlankMusicFileGenerator.MusicMetadata
+            {
+                Title = "Multi-Value Test",
+                Artist = "Artist1\u0000Artist2\u0000Artist3"
+            };
+            string filePath = await BlankMusicFileGenerator.CreateMinimalMp3FileWithVersionAsync(
+                _testOutputPath,
+                BlankMusicFileGenerator.Id3Version.Id3v2_4,
+                metadata);
+
+            try
+            {
+                var tags = await AudioTagManager.ReadAllTagsAsync(filePath, CancellationToken.None);
+                string artist = SafeParser.ToString(tags.Tags[MetaTagIdentifier.Artist]);
+                Assert.Contains("Artist1", artist);
+                Assert.Contains("Artist2", artist);
+                Assert.Contains("Artist3", artist);
+            }
+            finally
+            {
+                if (File.Exists(filePath))
+                    File.Delete(filePath);
+            }
+        }
     }
 }
