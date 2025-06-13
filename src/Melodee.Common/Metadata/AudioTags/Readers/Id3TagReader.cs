@@ -235,53 +235,73 @@ public class Id3TagReader : ITagReader
                     // Handle album art (APIC) frame
                     try
                     {
+                        // First byte is text encoding
                         int encoding = frameData[0];
                         int offset = 1;
-                        // Find the null terminator for MIME type
+                        
+                        // Find the null terminator for MIME type (always ASCII regardless of encoding)
                         int mimeEnd = Array.IndexOf(frameData, (byte)0, offset);
-                        if (mimeEnd == -1) mimeEnd = frameData.Length;
-                        // string mimeType = Encoding.ASCII.GetString(frameData, offset, mimeEnd - offset); // Not used
+                        if (mimeEnd == -1) mimeEnd = frameData.Length - 1;
+                        
+                        // Skip past MIME type null terminator
                         offset = mimeEnd + 1;
                         if (offset >= frameData.Length) throw new Exception("APIC frame truncated after MIME type");
+                        
                         // Picture type (1 byte)
-                        offset += 1;
-                        // Find the null terminator for description (encoding-dependent)
-                        int descEnd = offset;
+                        byte pictureType = frameData[offset];
+                        offset++;
+                        if (offset >= frameData.Length) throw new Exception("APIC frame truncated after picture type");
+                        
+                        // Find the null terminator for the description (depends on encoding)
+                        int descEndOffset = offset;
                         if (encoding == 0 || encoding == 3) // ISO-8859-1 or UTF-8: 1-byte null
                         {
-                            descEnd = Array.IndexOf(frameData, (byte)0, offset);
-                            if (descEnd == -1) descEnd = frameData.Length;
-                            offset = descEnd + 1;
+                            // Find next null byte
+                            int nullPos = Array.IndexOf(frameData, (byte)0, offset);
+                            if (nullPos == -1) nullPos = frameData.Length;
+                            descEndOffset = nullPos + 1; // Skip past this null terminator
                         }
-                        else // UTF-16/UTF-16BE: 2-byte null
+                        else // UTF-16 (encoding == 1 or 2): 2-byte null terminator
                         {
-                            while (descEnd + 1 < frameData.Length)
+                            // Find the double-null terminator (both bytes are zero)
+                            bool foundTerminator = false;
+                            while (descEndOffset + 1 < frameData.Length && !foundTerminator)
                             {
-                                if (frameData[descEnd] == 0 && frameData[descEnd + 1] == 0)
+                                if (frameData[descEndOffset] == 0 && frameData[descEndOffset + 1] == 0)
                                 {
-                                    descEnd += 2;
-                                    break;
+                                    foundTerminator = true;
+                                    descEndOffset += 2; // Skip past the 2-byte terminator
                                 }
-                                descEnd += 2;
+                                else 
+                                {
+                                    descEndOffset += 2; // Skip current character (2 bytes)
+                                }
                             }
-                            offset = descEnd;
+                            
+                            if (!foundTerminator)
+                            {
+                                // If we didn't find a proper terminator, just use the rest of the data
+                                descEndOffset = frameData.Length;
+                            }
                         }
-                        if (offset > frameData.Length) offset = frameData.Length;
+                        
+                        // Ensure we don't go out of bounds
+                        if (descEndOffset > frameData.Length) 
+                            descEndOffset = frameData.Length;
+                        
                         // The rest is the image data
-                        int imageDataLen = frameData.Length - offset;
+                        int imageDataLen = frameData.Length - descEndOffset;
                         if (imageDataLen > 0)
                         {
                             byte[] imageData = new byte[imageDataLen];
-                            Array.Copy(frameData, offset, imageData, 0, imageDataLen);
-                            // Only set CoverArt if not already set (first APIC wins)
-                            if (!tags.ContainsKey(MetaTagIdentifier.CoverArt) || tags[MetaTagIdentifier.CoverArt] == null)
-                                tags[MetaTagIdentifier.CoverArt] = imageData;
-                            // Only set AlbumArt if not already set (for compatibility)
-                            if (!tags.ContainsKey(MetaTagIdentifier.AlbumArt) || tags[MetaTagIdentifier.AlbumArt] == null)
-                                tags[MetaTagIdentifier.AlbumArt] = imageData;
-                            // Also set Images key to a list of AudioImage for compatibility with tests
-                            if (!tags.ContainsKey(MetaTagIdentifier.Images) || tags[MetaTagIdentifier.Images] == null)
-                                tags[MetaTagIdentifier.Images] = new List<AudioImage> { new AudioImage { Data = imageData } };
+                            Array.Copy(frameData, descEndOffset, imageData, 0, imageDataLen);
+                            
+                            // Store the image data under both tag keys
+                            tags[MetaTagIdentifier.CoverArt] = imageData;
+                            tags[MetaTagIdentifier.AlbumArt] = imageData;
+                            
+                            // Also store as an AudioImage list
+                            tags[MetaTagIdentifier.Images] = new List<AudioImage> { new AudioImage { Data = imageData } };
                         }
                     }
                     catch (Exception ex)
@@ -633,4 +653,3 @@ public class Id3TagReader : ITagReader
         }
     }
 }
-

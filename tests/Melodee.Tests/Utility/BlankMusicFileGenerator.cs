@@ -399,6 +399,12 @@ namespace Melodee.Tests.Utility
             WriteId3v2TextFrame(writer, "TDRC", metadata.Year.ToString()); // v2.4 uses TDRC instead of TYER
             WriteId3v2TextFrame(writer, "TCON", metadata.Genre);
             WriteId3v2CommentFrame(writer, metadata.Comment);
+            
+            // Add album art if provided
+            if (metadata.AlbumArt != null && metadata.AlbumArt.Length > 0)
+            {
+                WriteApicFrame(writer, metadata.AlbumArt);
+            }
         }
         
         /// <summary>
@@ -568,6 +574,50 @@ namespace Melodee.Tests.Utility
             
             // The actual comment text
             writer.Write(textBytes);
+        }
+        
+        /// <summary>
+        /// Write an APIC (album art) frame for ID3v2.3/v2.4
+        /// </summary>
+        private static void WriteApicFrame(BinaryWriter writer, byte[] imageData)
+        {
+            // Frame ID (APIC)
+            writer.Write(Encoding.ASCII.GetBytes("APIC"));
+            
+            // Calculate total size of frame content
+            string mimeType = "image/png"; // Assuming PNG for simplicity
+            byte[] mimeTypeBytes = Encoding.ASCII.GetBytes(mimeType);
+            
+            // Total size = encoding byte (1) + mime type + null terminator (1) + 
+            // picture type (1) + description + null terminator (1) + image data
+            int size = 1 + mimeTypeBytes.Length + 1 + 1 + 1 + imageData.Length;
+            
+            // Frame size (excluding header, not syncsafe in ID3v2.3, but should be in ID3v2.4)
+            // For simplicity we'll use the same format for both
+            writer.Write((byte)((size >> 24) & 0xFF));
+            writer.Write((byte)((size >> 16) & 0xFF));
+            writer.Write((byte)((size >> 8) & 0xFF));
+            writer.Write((byte)(size & 0xFF));
+            
+            // Frame flags (both zero)
+            writer.Write((byte)0);
+            writer.Write((byte)0);
+            
+            // Text encoding (UTF-8 = 3)
+            writer.Write((byte)3);
+            
+            // MIME type string (e.g., "image/png") followed by null terminator
+            writer.Write(mimeTypeBytes);
+            writer.Write((byte)0);
+            
+            // Picture type (3 = Cover/front)
+            writer.Write((byte)3);
+            
+            // Description (empty string, UTF-8 encoded, null-terminated)
+            writer.Write((byte)0);
+            
+            // The image data
+            writer.Write(imageData);
         }
         
         private static byte[] ReverseBytes(byte[] bytes)
