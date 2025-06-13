@@ -55,7 +55,7 @@ namespace Melodee.Tests.MetaData.AudioTags
                 Title = "Test Title",
                 Artist = "Test Artist",
                 Album = "Test Album",
-                Year = 2025,
+                RecordingYear = 2025,
                 TrackNumber = 7,
                 Genre = "Rock",
                 Comment = "This is a test comment"
@@ -69,11 +69,11 @@ namespace Melodee.Tests.MetaData.AudioTags
                 var tags = await AudioTagManager.ReadAllTagsAsync(filePath, CancellationToken.None);
                 
                 // Assert - Verify the tags match what we set
-                Assert.Equal(AudioFormat.Mp3, tags.Format);
+                Assert.Equal(AudioFormat.MP3, tags.Format);
                 Assert.Equal(metadata.Title, SafeParser.ToString(tags.Tags[MetaTagIdentifier.Title]));
                 Assert.Equal(metadata.Artist, SafeParser.ToString(tags.Tags[MetaTagIdentifier.Artist]));
                 Assert.Equal(metadata.Album, SafeParser.ToString(tags.Tags[MetaTagIdentifier.Album]));
-                Assert.Equal(metadata.Year.ToString(), SafeParser.ToString(tags.Tags[MetaTagIdentifier.RecordingYear]));
+                Assert.Equal(metadata.RecordingYear.ToString(), SafeParser.ToString(tags.Tags[MetaTagIdentifier.RecordingYear]));
                 Assert.Equal(metadata.TrackNumber.ToString(), SafeParser.ToString(tags.Tags[MetaTagIdentifier.TrackNumber]));
                 Assert.Contains(metadata.Comment, SafeParser.ToString(tags.Tags[MetaTagIdentifier.Comment]));
             }
@@ -95,7 +95,7 @@ namespace Melodee.Tests.MetaData.AudioTags
                 Title = "Special Characters: áéíóú ñ",
                 Artist = "Testing & Symbols: !@#$%^&*()",
                 Album = "Quotes \"Double\" and 'Single'",
-                Year = 2025,
+                RecordingYear = 2025,
                 TrackNumber = 1,
                 Genre = "Test < > Genre",
                 Comment = "Unicode: 你好, こんにちは, مرحبا"
@@ -132,7 +132,7 @@ namespace Melodee.Tests.MetaData.AudioTags
                 Title = "",
                 Artist = "",
                 Album = "Test Album with Empty Fields",
-                Year = 0,
+                RecordingYear = 0,
                 TrackNumber = 0,
                 Genre = "",
                 Comment = ""
@@ -176,7 +176,7 @@ namespace Melodee.Tests.MetaData.AudioTags
                 Title = "Long Title " + longString,
                 Artist = "Test Artist",
                 Album = "Test Album",
-                Year = 2025,
+                RecordingYear = 2025,
                 TrackNumber = 1,
                 Genre = "Test",
                 Comment = "Long Comment " + longString
@@ -306,7 +306,7 @@ namespace Melodee.Tests.MetaData.AudioTags
                     Title = $"Test Song {i}",
                     Artist = $"Test Artist {i}",
                     Album = "Test Album",
-                    Year = 2020 + i,
+                    RecordingYear = 2020 + i,
                     TrackNumber = i,
                     Genre = "Test"
                 };
@@ -322,7 +322,7 @@ namespace Melodee.Tests.MetaData.AudioTags
                 {
                     var tags = await AudioTagManager.ReadAllTagsAsync(filePath, CancellationToken.None);
                     
-                    Assert.Equal(AudioFormat.Mp3, tags.Format);
+                    Assert.Equal(AudioFormat.MP3, tags.Format);
                     Assert.Equal(metadata.Title, SafeParser.ToString(tags.Tags[MetaTagIdentifier.Title]));
                     Assert.Equal(metadata.Artist, SafeParser.ToString(tags.Tags[MetaTagIdentifier.Artist]));
                     Assert.Equal(metadata.TrackNumber.ToString(), SafeParser.ToString(tags.Tags[MetaTagIdentifier.TrackNumber]));
@@ -374,7 +374,7 @@ namespace Melodee.Tests.MetaData.AudioTags
                 {
                     // If no exception, the format should still be correctly detected
                     var tags = await AudioTagManager.ReadAllTagsAsync(filePath, CancellationToken.None);
-                    Assert.Equal(AudioFormat.Mp3, tags.Format);
+                    Assert.Equal(AudioFormat.MP3, tags.Format);
                 }
                 else
                 {

@@ -30,7 +30,7 @@ namespace Melodee.Tests.MetaData.AudioTags
         [Fact]
         public async Task Read_Media_MP4_In_Test_Folder()
         {
-            var testFolder = Path.Combine(Directory.GetCurrentDirectory(), "/melodee_test/tests/good");
+            var testFolder = Path.Combine(Directory.GetCurrentDirectory(), "melodee_test", "tests", "good");
             if (!Directory.Exists(testFolder))
             {
                 return;
@@ -53,7 +53,7 @@ namespace Melodee.Tests.MetaData.AudioTags
         [Fact]
         public async Task Read_Media_M4A_In_Test_Folder()
         {
-            var testFolder = Path.Combine(Directory.GetCurrentDirectory(), "/melodee_test/tests/good");
+            var testFolder = Path.Combine(Directory.GetCurrentDirectory(), "melodee_test", "tests", "good");
             if (!Directory.Exists(testFolder))
             {
                 return;

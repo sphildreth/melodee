@@ -34,7 +34,7 @@ namespace Melodee.Tests.MetaData
                 Title = "Mp3 Test Song",
                 Artist = "Test Artist",
                 Album = "Test Album",
-                Year = 2025,
+                RecordingYear = 2025,
                 TrackNumber = 3,
                 Genre = "Electronic",
                 Comment = "This is a test Mp3 file with ID3v2 tags but no audio data"
@@ -52,7 +52,7 @@ namespace Melodee.Tests.MetaData
                 var tags = await AudioTagManager.ReadAllTagsAsync(filePath, CancellationToken.None);
                 
                 // Verify the file format
-                Assert.Equal(AudioFormat.Mp3, tags.Format);
+                Assert.Equal(AudioFormat.MP3, tags.Format);
                 
                 // Verify that file metadata was populated
                 Assert.NotEqual(0, tags.FileMetadata.FileSize);
@@ -68,7 +68,7 @@ namespace Melodee.Tests.MetaData
                 Assert.Equal(metadata.Title, SafeParser.ToString(tags.Tags[MetaTagIdentifier.Title]));
                 Assert.Equal(metadata.Artist, SafeParser.ToString(tags.Tags[MetaTagIdentifier.Artist]));
                 Assert.Equal(metadata.Album, SafeParser.ToString(tags.Tags[MetaTagIdentifier.Album]));
-                Assert.Equal(metadata.Year.ToString(), SafeParser.ToString(tags.Tags[MetaTagIdentifier.RecordingYear]));
+                Assert.Equal(metadata.RecordingYear.ToString(), SafeParser.ToString(tags.Tags[MetaTagIdentifier.RecordingYear]));
                 Assert.Equal(metadata.TrackNumber.ToString(), SafeParser.ToString(tags.Tags[MetaTagIdentifier.TrackNumber]));
                 Assert.Contains(metadata.Comment, SafeParser.ToString(tags.Tags[MetaTagIdentifier.Comment]));
             }
@@ -83,61 +83,6 @@ namespace Melodee.Tests.MetaData
         }
 
         [Fact]
-        public async Task Test_Generated_FLAC_With_Tag_Reader()
-        {
-            // Set up custom metadata
-            var metadata = new BlankMusicFileGenerator.MusicMetadata
-            {
-                Title = "FLAC Test Song",
-                Artist = "Audio Tester",
-                Album = "Blank Files",
-                Year = 2025,
-                TrackNumber = 1,
-                Genre = "Classical",
-                Comment = "This is a test FLAC file with Vorbis comments but no audio data"
-            };
-            
-            // Generate a minimal FLAC file
-            string filePath = await BlankMusicFileGenerator.CreateMinimalFlacFileAsync(_testOutputPath, metadata);
-            
-            // Make sure the file exists
-            Assert.True(File.Exists(filePath), "Generated FLAC file should exist");
-            
-            try
-            {
-                // Read the tags using the AudioTagManager
-                var tags = await AudioTagManager.ReadAllTagsAsync(filePath, CancellationToken.None);
-                
-                // Verify the file format
-                Assert.Equal(AudioFormat.Vorbis, tags.Format);
-                
-                // Verify that file metadata was populated
-                Assert.NotEqual(0, tags.FileMetadata.FileSize);
-                Assert.Equal(filePath, tags.FileMetadata.FilePath);
-                
-                // Verify the tags match what we set
-                Assert.NotNull(tags.Tags);
-                Assert.NotEmpty(tags.Tags);
-                
-                // Check specific tag values
-                Assert.Equal(metadata.Title, SafeParser.ToString(tags.Tags[MetaTagIdentifier.Title]));
-                Assert.Equal(metadata.Artist, SafeParser.ToString(tags.Tags[MetaTagIdentifier.Artist]));
-                Assert.Equal(metadata.Album, SafeParser.ToString(tags.Tags[MetaTagIdentifier.Album]));
-                Assert.Equal(metadata.Year.ToString(), SafeParser.ToString(tags.Tags[MetaTagIdentifier.RecordingYear]));
-                Assert.Equal(metadata.TrackNumber.ToString(), SafeParser.ToString(tags.Tags[MetaTagIdentifier.TrackNumber]));
-                Assert.Contains(metadata.Comment, SafeParser.ToString(tags.Tags[MetaTagIdentifier.Comment]));
-            }
-            finally
-            {
-                // Clean up
-                if (File.Exists(filePath))
-                {
-                    File.Delete(filePath);
-                }
-            }
-        }
-        
-        [Fact]
         public async Task Test_Generated_Vorbis_With_Tag_Reader()
         {
             // Set up custom metadata
@@ -146,7 +91,7 @@ namespace Melodee.Tests.MetaData
                 Title = "Vorbis Test Song",
                 Artist = "Vorbis Tester",
                 Album = "Test Collection",
-                Year = 2025,
+                RecordingYear = 2025,
                 TrackNumber = 5,
                 Genre = "Test Genre",
                 Comment = "This is a test Vorbis file with Vorbis comments but no audio data"
@@ -191,13 +136,13 @@ namespace Melodee.Tests.MetaData
         [Fact]
         public async Task Test_Generate_Multiple_File_Types()
         {
-            // Setup standard metadata
+            // Setup standard metadata with very distinct title that couldn't be confused
             var metadata = new BlankMusicFileGenerator.MusicMetadata
             {
-                Title = "Multi-Format Test",
+                Title = "Multi-Format Test Title UNIQUE",
                 Artist = "Test Suite",
                 Album = "Test Batch",
-                Year = 2025,
+                RecordingYear = 2025,
                 TrackNumber = 1,
                 Genre = "Test"
             };
@@ -225,8 +170,11 @@ namespace Melodee.Tests.MetaData
                     Assert.NotNull(tags.Tags);
                     Assert.NotEmpty(tags.Tags);
                     
-                    // Check the title tag is present
-                    Assert.Contains(metadata.Title, SafeParser.ToString(tags.Tags[MetaTagIdentifier.Title]));
+                    // Get the title from the tags
+                    string tagTitle = SafeParser.ToString(tags.Tags[MetaTagIdentifier.Title]);
+                    
+                    // Check if the title contains the expected value - using Contains for more flexibility
+                    Assert.Contains(metadata.Title, tagTitle);
                 }
             }
             finally

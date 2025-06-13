@@ -3,9 +3,9 @@ namespace Melodee.Common.Metadata.AudioTags;
 public enum AudioFormat
 {
     Unknown,
-    Mp3,
-    Ape,
-    Mp4,
-    Wma,
+    MP3,
+    APE,
+    MP4,
+    WMA,
     Vorbis
 }

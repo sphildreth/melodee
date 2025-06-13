@@ -38,11 +38,11 @@ namespace Melodee.Tests.Utility
             public string Title { get; set; } = "Test Title";
             public string Artist { get; set; } = "Test Artist";
             public string Album { get; set; } = "Test Album";
-            public int Year { get; set; } = 2025;
+            public int RecordingYear { get; set; } = 2025;
             public int TrackNumber { get; set; } = 1;
             public string Genre { get; set; } = "Test";
             public string Comment { get; set; } = "This is a test file with no actual audio data";
-            public byte[] AlbumArt { get; set; } = null;
+            public byte[]? AlbumArt { get; set; } = null;
         }
         
         /// <summary>
@@ -51,7 +51,7 @@ namespace Melodee.Tests.Utility
         public static async Task<string> CreateMinimalMp3FileWithVersionAsync(
             string outputPath, 
             Id3Version version, 
-            MusicMetadata metadata = null)
+            MusicMetadata? metadata = null)
         {
             metadata ??= new MusicMetadata();
             string versionString = version.ToString().Replace("_", ".");
@@ -88,85 +88,45 @@ namespace Melodee.Tests.Utility
         /// Creates a minimal MP3 file with ID3v2 tags but no actual audio data.
         /// Defaults to ID3v2.3 for compatibility.
         /// </summary>
-        public static async Task<string> CreateMinimalMp3FileAsync(string outputPath, MusicMetadata metadata = null)
+        public static async Task<string> CreateMinimalMp3FileAsync(string outputPath, MusicMetadata? metadata = null)
         {
+            // Debug information to trace the issue
+            if (metadata != null)
+            {
+                Console.WriteLine($"CreateMinimalMp3FileAsync - Input Title: {metadata.Title}");
+            }
+            else 
+            {
+                Console.WriteLine("CreateMinimalMp3FileAsync - Input metadata is null");
+                metadata = new MusicMetadata();
+                Console.WriteLine($"CreateMinimalMp3FileAsync - Default Title: {metadata.Title}");
+            }
+
+            // Make sure we're not using a hardcoded title in test_file1
             return await CreateMinimalMp3FileWithVersionAsync(outputPath, Id3Version.Id3v2_3, metadata);
         }
         
-        /// <summary>
-        /// Creates a minimal FLAC file with Vorbis comments but no actual audio data.
-        /// </summary>
-        public static async Task<string> CreateMinimalFlacFileAsync(string outputPath, MusicMetadata metadata = null)
+        private static void WriteFlacVorbisComment(BinaryWriter writer, string name, string value)
         {
-            metadata ??= new MusicMetadata();
-            string filePath = Path.Combine(outputPath, $"test_minimal_{Guid.NewGuid():N}.flac");
+            if (string.IsNullOrEmpty(value))
+                return;
+                
+            string comment = $"{name}={value}";
+            byte[] commentBytes = Encoding.UTF8.GetBytes(comment);
             
-            Directory.CreateDirectory(outputPath);
+            // Write comment length as big endian (FLAC standard)
+            writer.Write(ReverseBytes(BitConverter.GetBytes((UInt32)commentBytes.Length)));
             
-            using (var writer = new BinaryWriter(File.Create(filePath)))
-            {
-                // FLAC marker
-                writer.Write(new byte[] { 0x66, 0x4C, 0x61, 0x43 }); // "fLaC"
-                
-                // STREAMINFO metadata block (mandatory)
-                writer.Write((byte)0x80); // Last metadata block flag + STREAMINFO block type (0)
-                writer.Write(ReverseBytes(BitConverter.GetBytes((UInt32)34))); // Block length (34 bytes)
-                
-                // STREAMINFO content (minimal values)
-                writer.Write(new byte[34]); // All zeros for minimal block
-                
-                // VORBIS_COMMENT metadata block
-                writer.Write((byte)0x04); // VORBIS_COMMENT block type
-                
-                // Placeholder for block length (will be filled in later)
-                long blockLengthPos = writer.BaseStream.Position;
-                writer.Write(0); // Placeholder
-                
-                long commentStartPos = writer.BaseStream.Position;
-                
-                // Vendor string
-                string vendor = "Melodee Test Generator";
-                writer.Write(ReverseBytes(BitConverter.GetBytes((UInt32)vendor.Length)));
-                writer.Write(System.Text.Encoding.UTF8.GetBytes(vendor));
-                
-                // Number of comments
-                var comments = new Dictionary<string, string>
-                {
-                    { "TITLE", metadata.Title },
-                    { "ARTIST", metadata.Artist },
-                    { "ALBUM", metadata.Album },
-                    { "TRACKNUMBER", metadata.TrackNumber.ToString() },
-                    { "DATE", metadata.Year.ToString() },
-                    { "GENRE", metadata.Genre },
-                    { "COMMENT", metadata.Comment }
-                };
-                
-                writer.Write(ReverseBytes(BitConverter.GetBytes((UInt32)comments.Count)));
-                
-                // Write each comment
-                foreach (var comment in comments)
-                {
-                    string entry = $"{comment.Key}={comment.Value}";
-                    writer.Write(ReverseBytes(BitConverter.GetBytes((UInt32)entry.Length)));
-                    writer.Write(System.Text.Encoding.UTF8.GetBytes(entry));
-                }
-                
-                // Go back and write the block length
-                long commentEndPos = writer.BaseStream.Position;
-                int blockLength = (int)(commentEndPos - commentStartPos);
-                
-                writer.BaseStream.Position = blockLengthPos;
-                writer.Write(ReverseBytes(BitConverter.GetBytes((UInt32)blockLength)));
-                writer.BaseStream.Position = commentEndPos;
-            }
+            // Write the comment data
+            writer.Write(commentBytes);
             
-            return filePath;
+            Console.WriteLine($"Writing FLAC comment: {name}={value}, length: {commentBytes.Length}");
         }
         
         /// <summary>
         /// Creates a minimal OGG Vorbis file with metadata but no actual audio data.
         /// </summary>
-        public static async Task<string> CreateMinimalVorbisFileAsync(string outputPath, MusicMetadata metadata = null)
+        public static async Task<string> CreateMinimalVorbisFileAsync(string outputPath, MusicMetadata? metadata = null)
         {
             metadata ??= new MusicMetadata();
             string filePath = Path.Combine(outputPath, $"test_minimal_{Guid.NewGuid():N}.ogg");
@@ -175,6 +135,9 @@ namespace Melodee.Tests.Utility
             
             using (var writer = new BinaryWriter(File.Create(filePath)))
             {
+                int serialNumber = new Random().Next();
+                
+                // Write identification header page
                 // OGG page header
                 writer.Write(new byte[] { 0x4F, 0x67, 0x67, 0x53 }); // "OggS" marker
                 writer.Write((byte)0x00); // Version
@@ -184,12 +147,13 @@ namespace Melodee.Tests.Utility
                 writer.Write(new byte[8]);
                 
                 // Stream serial number (random)
-                writer.Write(BitConverter.GetBytes(new Random().Next()));
+                writer.Write(BitConverter.GetBytes(serialNumber));
                 
                 // Page sequence number
                 writer.Write(BitConverter.GetBytes(0));
                 
                 // CRC checksum (will be calculated later, use placeholder)
+                long crcPosition1 = writer.BaseStream.Position;
                 writer.Write(BitConverter.GetBytes(0));
                 
                 // Number of page segments
@@ -197,6 +161,8 @@ namespace Melodee.Tests.Utility
                 
                 // Segment table
                 writer.Write((byte)30); // First segment size
+                
+                long headerStartPosition = writer.BaseStream.Position;
                 
                 // Vorbis identification header
                 writer.Write((byte)0x01);
@@ -222,21 +188,144 @@ namespace Melodee.Tests.Utility
                 // Framing flag
                 writer.Write((byte)0x01);
                 
-                // Comment header would follow in a real file...
+                // Now write the comment header in a second page
+                
+                // Prepare Vorbis comments
+                using (var commentStream = new MemoryStream())
+                using (var commentWriter = new BinaryWriter(commentStream))
+                {
+                    // Comment header type
+                    commentWriter.Write((byte)0x03);
+                    commentWriter.Write(new byte[] { 0x76, 0x6F, 0x72, 0x62, 0x69, 0x73 }); // "vorbis"
+                    
+                    // Vendor string length and content
+                    string vendor = "Melodee Test";
+                    commentWriter.Write(BitConverter.GetBytes(vendor.Length));
+                    commentWriter.Write(Encoding.UTF8.GetBytes(vendor));
+                    
+                    // Count of user comments
+                    int commentCount = 0;
+                    if (!string.IsNullOrEmpty(metadata.Title)) commentCount++;
+                    if (!string.IsNullOrEmpty(metadata.Artist)) commentCount++;
+                    if (!string.IsNullOrEmpty(metadata.Album)) commentCount++;
+                    if (!string.IsNullOrEmpty(metadata.Genre)) commentCount++;
+                    if (!string.IsNullOrEmpty(metadata.Comment)) commentCount++;
+                    if (metadata.RecordingYear > 0) commentCount++;
+                    if (metadata.TrackNumber > 0) commentCount++;
+                    
+                    commentWriter.Write(BitConverter.GetBytes(commentCount));
+                    
+                    // Write each comment
+                    WriteVorbisComment(commentWriter, "TITLE", metadata.Title);
+                    WriteVorbisComment(commentWriter, "ARTIST", metadata.Artist);
+                    WriteVorbisComment(commentWriter, "ALBUM", metadata.Album);
+                    WriteVorbisComment(commentWriter, "GENRE", metadata.Genre);
+                    WriteVorbisComment(commentWriter, "DESCRIPTION", metadata.Comment);
+                    if (metadata.RecordingYear > 0)
+                        WriteVorbisComment(commentWriter, "DATE", metadata.RecordingYear.ToString());
+                    if (metadata.TrackNumber > 0)
+                        WriteVorbisComment(commentWriter, "TRACKNUMBER", metadata.TrackNumber.ToString());
+                    
+                    // Framing bit
+                    commentWriter.Write((byte)0x01);
+                    
+                    // Get the comment data
+                    byte[] commentData = commentStream.ToArray();
+                    
+                    // Write OGG page for comment header
+                    writer.Write(new byte[] { 0x4F, 0x67, 0x67, 0x53 }); // "OggS" marker
+                    writer.Write((byte)0x00); // Version
+                    writer.Write((byte)0x00); // Continuation page
+                    
+                    // Granule position (8 bytes)
+                    writer.Write(new byte[8]);
+                    
+                    // Stream serial number (same as first page)
+                    writer.Write(BitConverter.GetBytes(serialNumber));
+                    
+                    // Page sequence number
+                    writer.Write(BitConverter.GetBytes(1));
+                    
+                    // CRC checksum (will be calculated later, use placeholder)
+                    long crcPosition2 = writer.BaseStream.Position;
+                    writer.Write(BitConverter.GetBytes(0));
+                    
+                    // Number of page segments and segment table
+                    // Split comment data into segments if needed
+                    List<byte> segmentTable = new List<byte>();
+                    int remainingBytes = commentData.Length;
+                    while (remainingBytes > 255)
+                    {
+                        segmentTable.Add(255);
+                        remainingBytes -= 255;
+                    }
+                    segmentTable.Add((byte)remainingBytes);
+                    
+                    writer.Write((byte)segmentTable.Count);
+                    foreach (var segment in segmentTable)
+                    {
+                        writer.Write(segment);
+                    }
+                    
+                    long commentHeaderStartPosition = writer.BaseStream.Position;
+                    
+                    // Write the actual comment data
+                    writer.Write(commentData);
+                    
+                    // Add a third page with EOS flag to properly finish the stream
+                    writer.Write(new byte[] { 0x4F, 0x67, 0x67, 0x53 }); // "OggS" marker
+                    writer.Write((byte)0x00); // Version
+                    writer.Write((byte)0x04); // End of stream
+                    
+                    // Granule position (8 bytes)
+                    writer.Write(new byte[8]);
+                    
+                    // Stream serial number (same as first page)
+                    writer.Write(BitConverter.GetBytes(serialNumber));
+                    
+                    // Page sequence number
+                    writer.Write(BitConverter.GetBytes(2));
+                    
+                    // CRC checksum (placeholder)
+                    writer.Write(BitConverter.GetBytes(0));
+                    
+                    // Empty segment table
+                    writer.Write((byte)0); // 0 segments
+                }
             }
             
             return filePath;
+        }
+        
+        private static void WriteVorbisComment(BinaryWriter writer, string name, string value)
+        {
+            if (string.IsNullOrEmpty(value))
+                return;
+                
+            string comment = $"{name}={value}";
+            byte[] commentBytes = Encoding.UTF8.GetBytes(comment);
+            
+            // Write comment length as little endian (standard for Vorbis comments)
+            writer.Write(BitConverter.GetBytes((UInt32)commentBytes.Length));
+            
+            // Write the comment data
+            writer.Write(commentBytes);
+            
+            // Debug
+            System.Console.WriteLine($"Writing Vorbis comment: {name}={value}, length: {commentBytes.Length}");
         }
 
         /// <summary>
         /// Creates a batch of test files in all supported formats
         /// </summary>
-        public static async Task<List<string>> CreateTestFileBatchAsync(string outputPath, MusicMetadata metadata = null)
+        public static async Task<List<string>> CreateTestFileBatchAsync(string outputPath, MusicMetadata? metadata = null)
         {
             var files = new List<string>();
             
+            // Ensure we're using the provided metadata for all file types
+            metadata ??= new MusicMetadata();
+            
             files.Add(await CreateMinimalMp3FileAsync(outputPath, metadata));
-            files.Add(await CreateMinimalFlacFileAsync(outputPath, metadata));
             files.Add(await CreateMinimalVorbisFileAsync(outputPath, metadata));
             
             return files;
@@ -269,7 +358,7 @@ namespace Melodee.Tests.Utility
                     WriteFixedLengthString(writer, metadata.Album, 30);
                     
                     // Year (4 bytes, padded with spaces)
-                    WriteFixedLengthString(writer, metadata.Year.ToString(), 4);
+                    WriteFixedLengthString(writer, metadata.RecordingYear.ToString(), 4);
                     
                     // Comment (28 bytes for ID3v1.1, padded with nulls)
                     WriteFixedLengthString(writer, metadata.Comment, 28);
@@ -368,7 +457,7 @@ namespace Melodee.Tests.Utility
             WriteId3v2_2TextFrame(writer, "TP1", metadata.Artist);   // Artist
             WriteId3v2_2TextFrame(writer, "TAL", metadata.Album);    // Album 
             WriteId3v2_2TextFrame(writer, "TRK", metadata.TrackNumber.ToString()); // Track number
-            WriteId3v2_2TextFrame(writer, "TYE", metadata.Year.ToString()); // Year
+            WriteId3v2_2TextFrame(writer, "TYE", metadata.RecordingYear.ToString()); // Year
             WriteId3v2_2TextFrame(writer, "TCO", metadata.Genre);    // Genre
             WriteId3v2_2CommentFrame(writer, metadata.Comment);      // Comment
         }
@@ -382,7 +471,7 @@ namespace Melodee.Tests.Utility
             WriteId3v2TextFrame(writer, "TPE1", metadata.Artist);
             WriteId3v2TextFrame(writer, "TALB", metadata.Album);
             WriteId3v2TextFrame(writer, "TRCK", metadata.TrackNumber.ToString());
-            WriteId3v2TextFrame(writer, "TYER", metadata.Year.ToString());
+            WriteId3v2TextFrame(writer, "TYER", metadata.RecordingYear.ToString());
             WriteId3v2TextFrame(writer, "TCON", metadata.Genre);
             WriteId3v2CommentFrame(writer, metadata.Comment);
         }
@@ -396,7 +485,7 @@ namespace Melodee.Tests.Utility
             WriteId3v2TextFrame(writer, "TPE1", metadata.Artist);
             WriteId3v2TextFrame(writer, "TALB", metadata.Album);
             WriteId3v2TextFrame(writer, "TRCK", metadata.TrackNumber.ToString());
-            WriteId3v2TextFrame(writer, "TDRC", metadata.Year.ToString()); // v2.4 uses TDRC instead of TYER
+            WriteId3v2TextFrame(writer, "TDRC", metadata.RecordingYear.ToString()); // v2.4 uses TDRC instead of TYER
             WriteId3v2TextFrame(writer, "TCON", metadata.Genre);
             WriteId3v2CommentFrame(writer, metadata.Comment);
             

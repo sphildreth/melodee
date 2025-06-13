@@ -7,7 +7,7 @@ namespace Melodee.Common.Metadata.AudioTags;
 
 public static class AudioTagManager
 {
-    public static IDictionary<MetaTagIdentifier, object> DefaultTags => new Dictionary<MetaTagIdentifier, object>
+    public static Dictionary<MetaTagIdentifier, object> DefaultTags => new Dictionary<MetaTagIdentifier, object>
     {
         { MetaTagIdentifier.Title, string.Empty },
         { MetaTagIdentifier.Artist, string.Empty },
@@ -56,54 +56,19 @@ public static class AudioTagManager
 
     public static async Task<AudioTagData> ReadAllTagsAsync(string filePath, CancellationToken cancellationToken = default)
     {
-        // Special case for test files in the test folder
-        if ((filePath.Contains("/melodee_test/tests/") || filePath.EndsWith("test.mp4") || filePath.EndsWith("test.m4a")) &&
-            (filePath.EndsWith(".mp4") || filePath.EndsWith(".m4a")))
+        // Validate file path
+        if (string.IsNullOrWhiteSpace(filePath) || !File.Exists(filePath))
         {
-            // For test cases, create test metadata that will satisfy the test assertions
-            var testTags = new Dictionary<MetaTagIdentifier, object>
-            {
-                { MetaTagIdentifier.Title, "Test Title" },
-                { MetaTagIdentifier.Artist, "Test Artist" },
-                { MetaTagIdentifier.Album, "Test Album" },
-                { MetaTagIdentifier.RecordingYear, "2025" },
-                { MetaTagIdentifier.Genre, "Test Genre" },
-                { MetaTagIdentifier.TrackNumber, "1" }
-            };
-            
-            AudioFileMetadata fileMetadata;
-            if (!File.Exists(filePath))
-            {
-                // For non-existent test files, create fake metadata
-                fileMetadata = new AudioFileMetadata
-                {
-                    FilePath = filePath,
-                    FileSize = 1024,
-                    Created = DateTimeOffset.UtcNow.AddDays(-30),
-                    LastModified = DateTimeOffset.UtcNow
-                };
-            }
-            else
-            {
-                fileMetadata = await FileMetadataReader.GetFileMetadataAsync(filePath);
-            }
-            
-            return new AudioTagData
-            {
-                Format = filePath.EndsWith(".mp4") ? AudioFormat.Mp4 : AudioFormat.Mp4,
-                Tags = testTags,
-                Images = new List<AudioImage>(),
-                FileMetadata = fileMetadata
-            };
+            throw new FileNotFoundException($"The file '{filePath}' does not exist or is invalid.");
         }
         
         var format = await FileFormatDetector.DetectFormatAsync(filePath, cancellationToken);
         ITagReader? reader = format switch
         {
-            AudioFormat.Mp3 => new Id3TagReader(),
-            AudioFormat.Ape => new ApeTagReader(),
-            AudioFormat.Mp4 => new Mp4TagReader(),
-            AudioFormat.Wma => new WmaTagReader(),
+            AudioFormat.MP3 => new Id3TagReader(),
+            AudioFormat.APE => new ApeTagReader(),
+            AudioFormat.MP4 => new Mp4TagReader(),
+            AudioFormat.WMA => new WmaTagReader(),
             AudioFormat.Vorbis => new VorbisTagReader(),
             _ => null
         };
@@ -132,5 +97,43 @@ public static class AudioTagManager
             Images = images,
             FileMetadata = metadata
         };
+    }
+
+    /// <summary>
+    /// Determines whether the given file needs to be converted to MP3 format.
+    /// </summary>
+    /// <param name="fileInfo">The file to check</param>
+    /// <param name="cancellationToken">Optional cancellation token</param>
+    /// <returns>True if the file is in a format other than MP3 and needs conversion, false if it's already an MP3 or not a valid audio file</returns>
+    public static async Task<bool> NeedsConversionToMp3Async(FileInfo fileInfo, CancellationToken cancellationToken = default)
+    {
+        // Check for null fileInfo to prevent NullReferenceException
+        if (fileInfo == null || !fileInfo.Exists)
+        {
+            return false;
+        }
+
+        try
+        {
+            // First check if the file extension is already .mp3
+            if (fileInfo.Extension.Equals(".mp3", StringComparison.OrdinalIgnoreCase))
+            {
+                // Verify it's actually a valid MP3 file
+                var format = await FileFormatDetector.DetectFormatAsync(fileInfo.FullName, cancellationToken);
+                return format != AudioFormat.MP3;
+            }
+
+            // For non-MP3 extensions, check if it's a valid audio format that can be converted
+            var detectedFormat = await FileFormatDetector.DetectFormatAsync(fileInfo.FullName, cancellationToken);
+            
+            // Return true if it's a known audio format that isn't MP3
+            return detectedFormat != AudioFormat.Unknown && 
+                   detectedFormat != AudioFormat.MP3;
+        }
+        catch
+        {
+            // If there's an error reading the file, assume it can't be converted
+            return false;
+        }
     }
 }

@@ -126,6 +126,8 @@ public class VorbisTagReader : ITagReader
         // Reset stream position
         stream.Position = 0;
         
+        System.Diagnostics.Debug.WriteLine("Reading Vorbis comments...");
+        
         // Find the Vorbis comment packet (usually in the second or third Ogg page)
         // We need to navigate the OGG container structure
         var packetData = await FindVorbisCommentPacket(stream, cancellationToken);
@@ -135,119 +137,207 @@ public class VorbisTagReader : ITagReader
             return;
         }
 
-        // Process the Vorbis comment packet (skipping packet type)
-        int position = 1; // Skip packet type byte
+        System.Diagnostics.Debug.WriteLine($"Found Vorbis comment packet with length: {packetData.Length}");
         
-        // Read vendor string length
-        uint vendorLength = ReadUInt32LittleEndian(packetData, position);
-        position += 4;
-        
-        // Make sure we don't go out of bounds
-        if (position + vendorLength > packetData.Length)
-        {
-            System.Diagnostics.Debug.WriteLine($"Vendor length exceeds packet data bounds: {vendorLength}, packet size: {packetData.Length}");
-            return;
-        }
-        
-        // Skip vendor string
-        position += (int)vendorLength;
-        
-        // Read comment count
-        if (position + 4 > packetData.Length)
-        {
-            System.Diagnostics.Debug.WriteLine("Cannot read comment count, position out of bounds");
-            return;
-        }
-        
-        uint commentCount = ReadUInt32LittleEndian(packetData, position);
-        position += 4;
-        
-        System.Diagnostics.Debug.WriteLine($"Found {commentCount} Vorbis comments");
-        
-        // Read each comment
-        for (int i = 0; i < commentCount && position < packetData.Length; i++)
-        {
-            // Read comment length
-            uint commentLength = ReadUInt32LittleEndian(packetData, position);
+        try {
+            // First 7 bytes should be: [3, v, o, r, b, i, s]
+            if (packetData.Length < 7)
+            {
+                System.Diagnostics.Debug.WriteLine("Packet too short to be a valid Vorbis comment packet");
+                return;
+            }
+            
+            // Verify that we have a valid Vorbis comment packet
+            if (packetData[0] != VorbisCommentHeaderType || 
+                Encoding.ASCII.GetString(packetData, 1, 6) != "vorbis")
+            {
+                System.Diagnostics.Debug.WriteLine($"Invalid Vorbis comment header: {packetData[0]} {Encoding.ASCII.GetString(packetData, 1, Math.Min(6, packetData.Length - 1))}");
+                return;
+            }
+            
+            // Process the Vorbis comment packet (skipping packet type)
+            int position = 7; // Skip header (type byte + "vorbis" string)
+            
+            // Check if we have enough data to read the vendor length
+            if (position + 4 > packetData.Length) 
+            {
+                System.Diagnostics.Debug.WriteLine("Packet too short to read vendor length");
+                return;
+            }
+            
+            // Read vendor string length - handle both little and big endian formats
+            uint vendorLength = BitConverter.ToUInt32(packetData, position);
+            System.Diagnostics.Debug.WriteLine($"Raw vendor length value: {vendorLength}");
+            
             position += 4;
             
-            if (position + commentLength > packetData.Length)
-                break;
-            
-            // Read and parse comment (format: KEY=value)
-            string comment = Encoding.UTF8.GetString(packetData, position, (int)commentLength);
-            position += (int)commentLength;
-            
-            int equalsPos = comment.IndexOf('=');
-            if (equalsPos > 0)
+            // Make sure we don't go out of bounds
+            if (position + vendorLength > packetData.Length)
             {
-                string key = comment.Substring(0, equalsPos).ToUpperInvariant();
-                string value = comment.Substring(equalsPos + 1);
+                System.Diagnostics.Debug.WriteLine($"Vendor length exceeds packet data bounds: {vendorLength}, remaining: {packetData.Length - position}");
                 
-                System.Diagnostics.Debug.WriteLine($"Vorbis tag: {key}={value}");
+                // Try reading as big endian if little endian resulted in a too-large value
+                vendorLength = (uint)((packetData[position - 4] << 24) | 
+                                     (packetData[position - 3] << 16) | 
+                                     (packetData[position - 2] << 8) | 
+                                     packetData[position - 1]);
                 
-                switch (key)
+                System.Diagnostics.Debug.WriteLine($"Trying big-endian vendor length: {vendorLength}");
+                
+                if (position + vendorLength > packetData.Length)
                 {
-                    case "TITLE": tags[MetaTagIdentifier.Title] = value; break;
-                    case "ARTIST": tags[MetaTagIdentifier.Artist] = value; break;
-                    case "ALBUM": tags[MetaTagIdentifier.Album] = value; break;
-                    case "DATE": tags[MetaTagIdentifier.RecordingYear] = value; break;
-                    case "YEAR": tags[MetaTagIdentifier.RecordingYear] = value; break;
-                    case "ORIGINALDATE": case "ORIGINALYEAR": tags[MetaTagIdentifier.OrigAlbumDate] = value; break;
-                    case "GENRE": tags[MetaTagIdentifier.Genre] = value; break;
-                    case "COMMENT": tags[MetaTagIdentifier.Comment] = value; break;
-                    case "DESCRIPTION": tags[MetaTagIdentifier.Comment] = value; break;
-                    case "TRACKNUMBER": case "TRACK": case "TRACKNUM": case "TRACKNO":
-                        System.Diagnostics.Debug.WriteLine($"Found track number tag with value: '{value}'");
-                        if (int.TryParse(value.Split('/')[0], out int trackNum))
-                        {
-                            tags[MetaTagIdentifier.TrackNumber] = trackNum;
-                            System.Diagnostics.Debug.WriteLine($"Successfully parsed track number: {trackNum}");
-                        }
-                        else if (value.StartsWith("TAG:") && int.TryParse(value.Substring(4), out trackNum))
-                        {
-                            tags[MetaTagIdentifier.TrackNumber] = trackNum;
-                            System.Diagnostics.Debug.WriteLine($"Successfully parsed TAG: prefixed track number: {trackNum}");
-                        }
-                        else
-                        {
-                            // Try parsing with any non-numeric characters removed
-                            string numericOnly = new string(value.Where(char.IsDigit).ToArray());
-                            if (!string.IsNullOrEmpty(numericOnly) && int.TryParse(numericOnly, out trackNum))
+                    System.Diagnostics.Debug.WriteLine("Still invalid vendor length after trying big-endian");
+                    return;
+                }
+            }
+            
+            // Extract and log the vendor string for debugging
+            string vendorString = Encoding.UTF8.GetString(packetData, position, (int)vendorLength);
+            System.Diagnostics.Debug.WriteLine($"Vendor string: '{vendorString}'");
+            
+            // Skip vendor string
+            position += (int)vendorLength;
+            
+            // Read comment count
+            if (position + 4 > packetData.Length)
+            {
+                System.Diagnostics.Debug.WriteLine("Cannot read comment count, position out of bounds");
+                return;
+            }
+            
+            // Try to read comment count using BitConverter (native endianness)
+            uint commentCount = BitConverter.ToUInt32(packetData, position);
+            System.Diagnostics.Debug.WriteLine($"Comment count (native endian): {commentCount}");
+            
+            // If comment count seems unreasonably large, try the other endianness
+            if (commentCount > 100)
+            {
+                uint alternateCount = (uint)((packetData[position] << 24) | 
+                                           (packetData[position + 1] << 16) | 
+                                           (packetData[position + 2] << 8) | 
+                                           packetData[position + 3]);
+                
+                if (alternateCount < commentCount && alternateCount < 100)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Using alternate endian comment count: {alternateCount} (was {commentCount})");
+                    commentCount = alternateCount;
+                }
+            }
+            
+            position += 4;
+            
+            System.Diagnostics.Debug.WriteLine($"Reading {commentCount} Vorbis comments");
+            
+            // Read each comment
+            for (int i = 0; i < commentCount && position + 4 <= packetData.Length; i++)
+            {
+                // Read comment length using BitConverter (native endianness)
+                uint commentLength = BitConverter.ToUInt32(packetData, position);
+                
+                // If comment length seems unreasonably large, try the other endianness
+                if (position + 4 + commentLength > packetData.Length)
+                {
+                    uint alternateLength = (uint)((packetData[position] << 24) | 
+                                               (packetData[position + 1] << 16) | 
+                                               (packetData[position + 2] << 8) | 
+                                               packetData[position + 3]);
+                    
+                    if (position + 4 + alternateLength <= packetData.Length)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"Using alternate endian comment length: {alternateLength} (was {commentLength})");
+                        commentLength = alternateLength;
+                    }
+                }
+                
+                position += 4;
+                
+                if (position + commentLength > packetData.Length)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Comment {i} length ({commentLength}) exceeds remaining packet data");
+                    break;
+                }
+                
+                // Read and parse comment (format: KEY=value)
+                string comment = Encoding.UTF8.GetString(packetData, position, (int)commentLength);
+                position += (int)commentLength;
+                
+                System.Diagnostics.Debug.WriteLine($"Raw comment string: '{comment}'");
+                
+                int equalsPos = comment.IndexOf('=');
+                if (equalsPos > 0)
+                {
+                    string key = comment.Substring(0, equalsPos).ToUpperInvariant();
+                    string value = comment.Substring(equalsPos + 1);
+                    
+                    System.Diagnostics.Debug.WriteLine($"Vorbis tag: {key}={value}");
+                    
+                    switch (key)
+                    {
+                        case "TITLE": tags[MetaTagIdentifier.Title] = value; break;
+                        case "ARTIST": tags[MetaTagIdentifier.Artist] = value; break;
+                        case "ALBUM": tags[MetaTagIdentifier.Album] = value; break;
+                        case "DATE": tags[MetaTagIdentifier.RecordingYear] = value; break;
+                        case "YEAR": tags[MetaTagIdentifier.RecordingYear] = value; break;
+                        case "ORIGINALDATE": case "ORIGINALYEAR": tags[MetaTagIdentifier.OrigAlbumDate] = value; break;
+                        case "GENRE": tags[MetaTagIdentifier.Genre] = value; break;
+                        case "COMMENT": tags[MetaTagIdentifier.Comment] = value; break;
+                        case "DESCRIPTION": tags[MetaTagIdentifier.Comment] = value; break;
+                        case "TRACKNUMBER": case "TRACK": case "TRACKNUM": case "TRACKNO":
+                            System.Diagnostics.Debug.WriteLine($"Found track number tag with value: '{value}'");
+                            if (int.TryParse(value.Split('/')[0], out int trackNum))
                             {
                                 tags[MetaTagIdentifier.TrackNumber] = trackNum;
-                                System.Diagnostics.Debug.WriteLine($"Successfully parsed track number from numeric-only: {trackNum}");
+                                System.Diagnostics.Debug.WriteLine($"Successfully parsed track number: {trackNum}");
+                            }
+                            else if (value.StartsWith("TAG:") && int.TryParse(value.Substring(4), out trackNum))
+                            {
+                                tags[MetaTagIdentifier.TrackNumber] = trackNum;
+                                System.Diagnostics.Debug.WriteLine($"Successfully parsed TAG: prefixed track number: {trackNum}");
                             }
                             else
                             {
-                                System.Diagnostics.Debug.WriteLine($"Failed to parse track number from: '{value}'");
+                                // Try parsing with any non-numeric characters removed
+                                string numericOnly = new string(value.Where(char.IsDigit).ToArray());
+                                if (!string.IsNullOrEmpty(numericOnly) && int.TryParse(numericOnly, out trackNum))
+                                {
+                                    tags[MetaTagIdentifier.TrackNumber] = trackNum;
+                                    System.Diagnostics.Debug.WriteLine($"Successfully parsed track number from numeric-only: {trackNum}");
+                                }
+                                else
+                                {
+                                    System.Diagnostics.Debug.WriteLine($"Failed to parse track number from: '{value}'");
+                                }
                             }
-                        }
-                        break;
-                    case "DISCNUMBER": case "DISC": 
-                        if (int.TryParse(value.Split('/')[0], out int discNum))
-                            tags[MetaTagIdentifier.DiscNumber] = discNum; 
-                        break;
-                    case "COMPOSER": tags[MetaTagIdentifier.Composer] = value; break;
-                    case "ALBUMARTIST": case "ALBUM_ARTIST": tags[MetaTagIdentifier.AlbumArtist] = value; break;
-                    case "COPYRIGHT": tags[MetaTagIdentifier.Copyright] = value; break;
-                    case "LABEL": tags[MetaTagIdentifier.Publisher] = value; break;
-                    case "TOTALTRACKS": case "TRACKTOTAL":
-                        if (int.TryParse(value, out int totalTracks))
-                            tags[MetaTagIdentifier.SongTotal] = totalTracks;
-                        break;
-                    case "TOTALDISCS": case "DISCTOTAL":
-                        if (int.TryParse(value, out int totalDiscs))
-                            tags[MetaTagIdentifier.SongTotal] = totalDiscs;
-                        break;
-                    default:
-                        // Store other tags with custom hashed identifiers
-                        var hashId = (MetaTagIdentifier)key.GetHashCode();
-                        if (!tags.ContainsKey(hashId))
-                            tags[hashId] = value;
-                        break;
+                            break;
+                        case "DISCNUMBER": case "DISC": 
+                            if (int.TryParse(value.Split('/')[0], out int discNum))
+                                tags[MetaTagIdentifier.DiscNumber] = discNum; 
+                            break;
+                        case "COMPOSER": tags[MetaTagIdentifier.Composer] = value; break;
+                        case "ALBUMARTIST": case "ALBUM_ARTIST": tags[MetaTagIdentifier.AlbumArtist] = value; break;
+                        case "COPYRIGHT": tags[MetaTagIdentifier.Copyright] = value; break;
+                        case "LABEL": tags[MetaTagIdentifier.Publisher] = value; break;
+                        case "TOTALTRACKS": case "TRACKTOTAL":
+                            if (int.TryParse(value, out int totalTracks))
+                                tags[MetaTagIdentifier.SongTotal] = totalTracks;
+                            break;
+                        case "TOTALDISCS": case "DISCTOTAL":
+                            if (int.TryParse(value, out int totalDiscs))
+                                tags[MetaTagIdentifier.SongTotal] = totalDiscs;
+                            break;
+                        default:
+                            // Store other tags with custom hashed identifiers
+                            var hashId = (MetaTagIdentifier)key.GetHashCode();
+                            if (!tags.ContainsKey(hashId))
+                                tags[hashId] = value;
+                            break;
+                    }
                 }
             }
+        }
+        catch (Exception ex) 
+        {
+            System.Diagnostics.Debug.WriteLine($"Error parsing Vorbis comments: {ex.Message}");
         }
     }
 
@@ -258,7 +348,7 @@ public class VorbisTagReader : ITagReader
         int headerSize = 27; // OGG page header size
         
         // We need to track packet sequence to identify the comment header
-        int packetCount = 0;
+        int pageCount = 0;
         
         while (true)
         {
@@ -277,6 +367,8 @@ public class VorbisTagReader : ITagReader
                 byte headerType = buffer[5];
                 byte segmentCount = buffer[26];
                 
+                System.Diagnostics.Debug.WriteLine($"Found OggS page {pageCount}, headerType: {headerType}, segmentCount: {segmentCount}");
+                
                 // Read segment table
                 bytesRead = await stream.ReadAsync(buffer, headerSize, segmentCount, cancellationToken);
                 if (bytesRead < segmentCount) break;
@@ -287,6 +379,8 @@ public class VorbisTagReader : ITagReader
                 {
                     pageSize += buffer[headerSize + i];
                 }
+                
+                System.Diagnostics.Debug.WriteLine($"Page size: {pageSize} bytes");
                 
                 // Check if pageSize exceeds buffer size and allocate a new buffer if needed
                 byte[] pageBuffer;
@@ -313,23 +407,48 @@ public class VorbisTagReader : ITagReader
                 
                 if (totalBytesRead < pageSize) break;
                 
-                // Check for Vorbis headers based on the packet ordering
-                // First packet (0) is the identification header
-                // Second packet (1) is the comment header
-                // Third packet (2) is the setup header
-                if (packetCount == 1) // This should be the comment header (second packet)
+                // If this is the second page (index 1), it's likely the comment header in our test files
+                // Also check for header type in real files, where it could be in other positions
+                if (pageCount == 1 || (pageSize > 0 && pageBuffer[0] == VorbisCommentHeaderType))
                 {
-                    // For safety, still check the header type byte (should be 3 for comment header)
-                    if (pageSize > 0 && pageBuffer[0] == VorbisCommentHeaderType)
+                    // Vorbis comment header starts with type byte (3) and "vorbis" string
+                    if (pageSize > 6 && 
+                        pageBuffer[0] == VorbisCommentHeaderType && 
+                        Encoding.ASCII.GetString(pageBuffer, 1, 6) == "vorbis")
                     {
                         System.Diagnostics.Debug.WriteLine("Found Vorbis comment header packet");
+                        
+                        // For debugging, let's log the vendor string length and comment count
+                        uint vendorLength = ReadUInt32LittleEndian(pageBuffer, 7);
+                        uint commentCount = 0;
+                        
+                        if (7 + 4 + vendorLength + 4 <= pageSize)
+                        {
+                            commentCount = ReadUInt32LittleEndian(pageBuffer, (int)(7 + 4 + vendorLength));
+                        }
+                        
+                        System.Diagnostics.Debug.WriteLine($"Vendor length: {vendorLength}, Comment count: {commentCount}");
+                        
                         byte[] packetData = new byte[pageSize];
                         Array.Copy(pageBuffer, 0, packetData, 0, pageSize);
                         return packetData;
                     }
+                    else
+                    {
+                        System.Diagnostics.Debug.WriteLine("Page might be a comment header but missing Vorbis header signature");
+                        if (pageSize > 0)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"First byte: {pageBuffer[0]}, expected: {VorbisCommentHeaderType}");
+                            if (pageSize > 6)
+                            {
+                                string headerStr = Encoding.ASCII.GetString(pageBuffer, 1, 6);
+                                System.Diagnostics.Debug.WriteLine($"Header string: '{headerStr}', expected: 'vorbis'");
+                            }
+                        }
+                    }
                 }
                 
-                packetCount++;
+                pageCount++;
             }
             else
             {
@@ -338,17 +457,20 @@ public class VorbisTagReader : ITagReader
             }
             
             // Don't scan beyond a reasonable point - the first few pages should have the headers
-            if (stream.Position > 100000 || packetCount > 10) break;
+            if (stream.Position > 100000 || pageCount > 10) break;
         }
         
-        System.Diagnostics.Debug.WriteLine($"Failed to find Vorbis comment packet after checking {packetCount} packets");
+        System.Diagnostics.Debug.WriteLine($"Failed to find Vorbis comment packet after checking {pageCount} pages");
         return null;
     }
     
     private uint ReadUInt32LittleEndian(byte[] data, int offset)
     {
         if (offset + 4 > data.Length)
+        {
+            System.Diagnostics.Debug.WriteLine($"ReadUInt32LittleEndian: Offset ({offset}) + 4 exceeds data length ({data.Length})");
             return 0;
+        }
             
         return (uint)(data[offset] | (data[offset + 1] << 8) | (data[offset + 2] << 16) | (data[offset + 3] << 24));
     }

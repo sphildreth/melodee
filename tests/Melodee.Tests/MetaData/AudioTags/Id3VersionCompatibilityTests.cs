@@ -36,7 +36,7 @@ namespace Melodee.Tests.MetaData.AudioTags
                 Title = "ID3v1.1 Title Test",
                 Artist = "ID3v1.1 Artist",
                 Album = "ID3v1.1 Album",
-                Year = 1999,
+                RecordingYear = 1999,
                 TrackNumber = 12,
                 Genre = "Rock", // ID3v1.1 has limited genres, but we'll test anyway
                 Comment = "ID3v1.1 Comment Test"
@@ -54,7 +54,7 @@ namespace Melodee.Tests.MetaData.AudioTags
                 var tags = await AudioTagManager.ReadAllTagsAsync(filePath, CancellationToken.None);
                 
                 // Assert - Basic file properties 
-                Assert.Equal(AudioFormat.Mp3, tags.Format);
+                Assert.Equal(AudioFormat.MP3, tags.Format);
                 Assert.False(string.IsNullOrEmpty(tags.FileMetadata.FilePath));
                 Assert.True(tags.FileMetadata.FileSize > 0);
                 
@@ -63,7 +63,7 @@ namespace Melodee.Tests.MetaData.AudioTags
                 Assert.StartsWith(metadata.Title, SafeParser.ToString(tags.Tags[MetaTagIdentifier.Title]));
                 Assert.StartsWith(metadata.Artist, SafeParser.ToString(tags.Tags[MetaTagIdentifier.Artist]));
                 Assert.StartsWith(metadata.Album, SafeParser.ToString(tags.Tags[MetaTagIdentifier.Album]));
-                Assert.Equal(metadata.Year.ToString(), SafeParser.ToString(tags.Tags[MetaTagIdentifier.RecordingYear]));
+                Assert.Equal(metadata.RecordingYear.ToString(), SafeParser.ToString(tags.Tags[MetaTagIdentifier.RecordingYear]));
                 
                 // ID3v1.1 specifically added track number support
                 Assert.Equal(metadata.TrackNumber.ToString(), SafeParser.ToString(tags.Tags[MetaTagIdentifier.TrackNumber]));
@@ -90,7 +90,7 @@ namespace Melodee.Tests.MetaData.AudioTags
                 Title = "ID3v2.2 Title Test",
                 Artist = "ID3v2.2 Artist",
                 Album = "ID3v2.2 Album Test",
-                Year = 2002,
+                RecordingYear = 2002,
                 TrackNumber = 2,
                 Genre = "Classical",
                 Comment = "ID3v2.2 Comment Test with special chars: áéíóú"
@@ -108,13 +108,13 @@ namespace Melodee.Tests.MetaData.AudioTags
                 var tags = await AudioTagManager.ReadAllTagsAsync(filePath, CancellationToken.None);
                 
                 // Assert - Basic file properties
-                Assert.Equal(AudioFormat.Mp3, tags.Format);
+                Assert.Equal(AudioFormat.MP3, tags.Format);
                 
                 // Assert - ID3v2.2 tags should be read correctly even though they use different frame IDs
                 Assert.Equal(metadata.Title, SafeParser.ToString(tags.Tags[MetaTagIdentifier.Title]));
                 Assert.Equal(metadata.Artist, SafeParser.ToString(tags.Tags[MetaTagIdentifier.Artist]));
                 Assert.Equal(metadata.Album, SafeParser.ToString(tags.Tags[MetaTagIdentifier.Album]));
-                Assert.Equal(metadata.Year.ToString(), SafeParser.ToString(tags.Tags[MetaTagIdentifier.RecordingYear]));
+                Assert.Equal(metadata.RecordingYear.ToString(), SafeParser.ToString(tags.Tags[MetaTagIdentifier.RecordingYear]));
                 Assert.Equal(metadata.TrackNumber.ToString(), SafeParser.ToString(tags.Tags[MetaTagIdentifier.TrackNumber]));
                 
                 // v2.2 frames might handle special chars differently, so we check if part of the comment is there
@@ -138,7 +138,7 @@ namespace Melodee.Tests.MetaData.AudioTags
                 Title = "ID3v2.3 Title",
                 Artist = "ID3v2.3 Artist",
                 Album = "ID3v2.3 Album",
-                Year = 2003,
+                RecordingYear = 2003,
                 TrackNumber = 3,
                 Genre = "Jazz",
                 Comment = "ID3v2.3 UTF-8 Comment with symbols: ©®™"
@@ -156,13 +156,13 @@ namespace Melodee.Tests.MetaData.AudioTags
                 var tags = await AudioTagManager.ReadAllTagsAsync(filePath, CancellationToken.None);
                 
                 // Assert - Basic file properties
-                Assert.Equal(AudioFormat.Mp3, tags.Format);
+                Assert.Equal(AudioFormat.MP3, tags.Format);
                 
                 // Assert - ID3v2.3 tags should be read correctly
                 Assert.Equal(metadata.Title, SafeParser.ToString(tags.Tags[MetaTagIdentifier.Title]));
                 Assert.Equal(metadata.Artist, SafeParser.ToString(tags.Tags[MetaTagIdentifier.Artist]));
                 Assert.Equal(metadata.Album, SafeParser.ToString(tags.Tags[MetaTagIdentifier.Album]));
-                Assert.Equal(metadata.Year.ToString(), SafeParser.ToString(tags.Tags[MetaTagIdentifier.RecordingYear]));
+                Assert.Equal(metadata.RecordingYear.ToString(), SafeParser.ToString(tags.Tags[MetaTagIdentifier.RecordingYear]));
                 Assert.Equal(metadata.TrackNumber.ToString(), SafeParser.ToString(tags.Tags[MetaTagIdentifier.TrackNumber]));
                 
                 // Check for UTF-8 symbols in comment
@@ -186,7 +186,7 @@ namespace Melodee.Tests.MetaData.AudioTags
                 Title = "ID3v2.4 Title",
                 Artist = "ID3v2.4 Artist",
                 Album = "ID3v2.4 Album",
-                Year = 2004,
+                RecordingYear = 2004,
                 TrackNumber = 4,
                 Genre = "Electronic",
                 Comment = "ID3v2.4 Unicode Test: 你好, こんにちは, مرحبا"
@@ -204,14 +204,14 @@ namespace Melodee.Tests.MetaData.AudioTags
                 var tags = await AudioTagManager.ReadAllTagsAsync(filePath, CancellationToken.None);
                 
                 // Assert - Basic file properties
-                Assert.Equal(AudioFormat.Mp3, tags.Format);
+                Assert.Equal(AudioFormat.MP3, tags.Format);
                 
                 // Assert - ID3v2.4 tags should be read correctly
                 // Note: ID3v2.4 uses TDRC instead of TYER for recording year/date
                 Assert.Equal(metadata.Title, SafeParser.ToString(tags.Tags[MetaTagIdentifier.Title]));
                 Assert.Equal(metadata.Artist, SafeParser.ToString(tags.Tags[MetaTagIdentifier.Artist]));
                 Assert.Equal(metadata.Album, SafeParser.ToString(tags.Tags[MetaTagIdentifier.Album]));
-                Assert.Equal(metadata.Year.ToString(), SafeParser.ToString(tags.Tags[MetaTagIdentifier.RecordingYear]));
+                Assert.Equal(metadata.RecordingYear.ToString(), SafeParser.ToString(tags.Tags[MetaTagIdentifier.RecordingYear]));
                 Assert.Equal(metadata.TrackNumber.ToString(), SafeParser.ToString(tags.Tags[MetaTagIdentifier.TrackNumber]));
                 
                 // Check for Unicode characters in comment
@@ -236,7 +236,7 @@ namespace Melodee.Tests.MetaData.AudioTags
                 Title = "Dual Tag Title",
                 Artist = "Dual Tag Artist",
                 Album = "Dual Tag Album",
-                Year = 2025,
+                RecordingYear = 2025,
                 TrackNumber = 5,
                 Genre = "Rock",
                 Comment = "This file has both ID3v1 and ID3v2 tags"
@@ -248,7 +248,7 @@ namespace Melodee.Tests.MetaData.AudioTags
                 Title = "OUTDATED v1 Title", // This should NOT be used when v2 is present
                 Artist = "OUTDATED v1 Artist",
                 Album = "OUTDATED v1 Album",
-                Year = 1999,
+                RecordingYear = 1999,
                 TrackNumber = 99,
                 Genre = "Classical",
                 Comment = "This is the v1 comment that should not take precedence"
@@ -283,7 +283,7 @@ namespace Melodee.Tests.MetaData.AudioTags
                     writer.Write(albumBytes);
                     
                     // Year (4 bytes)
-                    byte[] yearBytes = Encoding.ASCII.GetBytes(v1Metadata.Year.ToString().PadRight(4).Substring(0, 4));
+                    byte[] yearBytes = Encoding.ASCII.GetBytes(v1Metadata.RecordingYear.ToString().PadRight(4).Substring(0, 4));
                     writer.Write(yearBytes);
                     
                     // Comment (28 bytes for ID3v1.1)
@@ -310,7 +310,7 @@ namespace Melodee.Tests.MetaData.AudioTags
                 Assert.Equal(metadata.Title, SafeParser.ToString(tags.Tags[MetaTagIdentifier.Title]));
                 Assert.Equal(metadata.Artist, SafeParser.ToString(tags.Tags[MetaTagIdentifier.Artist]));
                 Assert.Equal(metadata.Album, SafeParser.ToString(tags.Tags[MetaTagIdentifier.Album]));
-                Assert.Equal(metadata.Year.ToString(), SafeParser.ToString(tags.Tags[MetaTagIdentifier.RecordingYear]));
+                Assert.Equal(metadata.RecordingYear.ToString(), SafeParser.ToString(tags.Tags[MetaTagIdentifier.RecordingYear]));
                 Assert.Equal(metadata.TrackNumber.ToString(), SafeParser.ToString(tags.Tags[MetaTagIdentifier.TrackNumber]));
                 Assert.Contains("both ID3v1 and ID3v2", SafeParser.ToString(tags.Tags[MetaTagIdentifier.Comment]));
                 
@@ -335,7 +335,7 @@ namespace Melodee.Tests.MetaData.AudioTags
                 Title = "Genre Test",
                 Artist = "Genre Artist",
                 Album = "Genre Album",
-                Year = 2025,
+                RecordingYear = 2025,
                 TrackNumber = 1,
                 // Genre with ID in parentheses (17 = Rock)
                 Genre = "(17)Rock", 
@@ -377,7 +377,7 @@ namespace Melodee.Tests.MetaData.AudioTags
                 Title = "Partial Tags",
                 Artist = "", // Missing artist
                 Album = "Some Album",
-                Year = 0,   // Missing year
+                RecordingYear = 0,   // Missing year
                 TrackNumber = 0, // Missing track
                 Genre = "",  // Missing genre
                 Comment = "Some tags are intentionally missing"
@@ -437,7 +437,7 @@ namespace Melodee.Tests.MetaData.AudioTags
                     Title = "Long Title " + longText,
                     Artist = "Test Artist",
                     Album = "Test Album",
-                    Year = 2025,
+                    RecordingYear = 2025,
                     TrackNumber = 1,
                     Genre = "Test",
                     Comment = "Long Comment " + longText
@@ -492,7 +492,7 @@ namespace Melodee.Tests.MetaData.AudioTags
                         Title = $"Title {version}",
                         Artist = $"Artist {version}",
                         Album = $"Album {version}",
-                        Year = 2000 + (int)version,
+                        RecordingYear = 2000 + (int)version,
                         TrackNumber = (int)version + 1,
                         Genre = "Test",
                         Comment = $"Comment for version {version}"
