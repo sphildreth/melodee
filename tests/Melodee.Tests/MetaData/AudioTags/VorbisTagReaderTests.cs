@@ -30,7 +30,7 @@ namespace Melodee.Tests.MetaData.AudioTags
         [Fact]
         public async Task Read_Media_Files_In_Test_Folder()
         {
-            var testFolder = Path.Combine(Directory.GetCurrentDirectory(), "/melodee_test/tests/good");
+            var testFolder = "/melodee_test/tests/good";
             var testFile = "test.ogg";
             if (!Directory.Exists(testFolder))
             {

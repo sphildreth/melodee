@@ -15,12 +15,13 @@ namespace Melodee.Tests.MetaData.AudioTags
         [Fact]
         public async Task Read_Media_Files_In_Test_Folder()
         {
-            var testFolder = Path.Combine(Directory.GetCurrentDirectory(), "/melodee_test/tests/good");
+            var testFolder =  "/melodee_test/tests/good";
             if (!Directory.Exists(testFolder))
             {
                 return;
             }
             var tags = await AudioTagManager.ReadAllTagsAsync(Path.Combine(testFolder, "test_3_1.mp3"), CancellationToken.None);
+            
             Assert.NotEqual(AudioFormat.Unknown, tags.Format);
             Assert.NotEqual(0, tags.FileMetadata.FileSize);
             Assert.NotEqual(string.Empty, tags.FileMetadata.FilePath);

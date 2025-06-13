@@ -1,5 +1,6 @@
 using System.Threading.Tasks;
 using Xunit;
+using Xunit.Abstractions;
 using Melodee.Common.Metadata.AudioTags;
 using System.IO;
 using System.Threading;
@@ -9,6 +10,13 @@ namespace Melodee.Tests.MetaData.AudioTags
 {
     public class AudioTagManagerTests
     {
+        private readonly ITestOutputHelper _output;
+
+        public AudioTagManagerTests(ITestOutputHelper output)
+        {
+            _output = output;
+        }
+
         [Fact]
         public async Task Throws_On_Unknown_Format()
         {
@@ -36,6 +44,7 @@ namespace Melodee.Tests.MetaData.AudioTags
             }
             foreach (var file in await AudioTagManager.AllMediaFilesForDirectoryAsync(testFolder))
             {
+                _output.WriteLine($"Processing file: [{file.FullName}] ...");
                 var tags = await AudioTagManager.ReadAllTagsAsync(file.FullName, CancellationToken.None);
                 Assert.NotEqual(AudioFormat.Unknown, tags.Format);
                 Assert.NotEqual(0, tags.FileMetadata.FileSize);
@@ -48,6 +57,7 @@ namespace Melodee.Tests.MetaData.AudioTags
                 Assert.NotEmpty(tags.Tags.Values);
                 Assert.True(SafeParser.ToNumber<int>(tags.Tags[Melodee.Common.Enums.MetaTagIdentifier.TrackNumber]) > 0);
                 Assert.NotEmpty(SafeParser.ToString(tags.Tags[Melodee.Common.Enums.MetaTagIdentifier.Title]));
+                _output.WriteLine($"Successful");                
             }
 
         }

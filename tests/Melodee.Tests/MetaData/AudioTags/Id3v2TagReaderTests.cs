@@ -9,29 +9,36 @@ using Melodee.Common.Metadata.AudioTags;
 using Melodee.Common.Utility;
 using Melodee.Tests.Utility;
 using System.Collections.Generic;
+using Xunit.Abstractions;
 
 namespace Melodee.Tests.MetaData.AudioTags
 {
     public class Id3v2TagReaderTests
     {
+        private readonly ITestOutputHelper _output;
+        
         private readonly string _testOutputPath;
         
-        public Id3v2TagReaderTests()
+        public Id3v2TagReaderTests(ITestOutputHelper output)
         {
             // Create a test directory in the current directory
             _testOutputPath = Path.Combine(Directory.GetCurrentDirectory(), "Id3v2TestFiles");
             Directory.CreateDirectory(_testOutputPath);
+            
+            _output = output;
         }
         
         [Fact]
         public async Task Read_Media_Files_In_Test_Folder()
         {
-            var testFolder = Path.Combine(Directory.GetCurrentDirectory(), "/melodee_test/tests/good");
+            var testFolder = "/melodee_test/tests/good";
             if (!Directory.Exists(testFolder))
             {
                 return;
             }
-            var tags = await AudioTagManager.ReadAllTagsAsync(Path.Combine(testFolder, "test_3_2.mp3"), CancellationToken.None);
+            var file = new FileInfo(Path.Combine(testFolder, "test_3_2.mp3"));
+            var tags = await AudioTagManager.ReadAllTagsAsync(file.FullName, CancellationToken.None);
+            _output.WriteLine($"Processing file: [{file.FullName}] ...");            
             Assert.NotEqual(AudioFormat.Unknown, tags.Format);
             Assert.NotEqual(0, tags.FileMetadata.FileSize);
             Assert.NotEqual(string.Empty, tags.FileMetadata.FilePath);
@@ -44,6 +51,7 @@ namespace Melodee.Tests.MetaData.AudioTags
             Assert.NotEmpty(SafeParser.ToString(tags.Tags[Melodee.Common.Enums.MetaTagIdentifier.Artist]));
             Assert.True(SafeParser.ToNumber<int>(tags.Tags[Melodee.Common.Enums.MetaTagIdentifier.TrackNumber]) > 0);
             Assert.NotEmpty(SafeParser.ToString(tags.Tags[Melodee.Common.Enums.MetaTagIdentifier.Title]));
+            _output.WriteLine($"Successful");
         }          
         
         [Fact]
