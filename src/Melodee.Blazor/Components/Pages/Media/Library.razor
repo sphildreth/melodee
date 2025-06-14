@@ -331,7 +331,14 @@
 
     private async Task ProcessButtonClick()
     {
-        var confirm = await DialogService.Confirm("<p>Scanning a library updates the library with media found. This could delete artists, albums and songs.</p><p>This action starts a background job.</p><p>There is no undo</p>", "Scan confirmation", new ConfirmOptions { OkButtonText = "Start scan", CancelButtonText = "Cancel" });
+        var confirm = await DialogService.ConfirmHtml(
+            @"
+            <p>Scanning a library updates the library with media found. This could delete artists, albums and songs.</p>
+            <p>This action starts a background job.</p>
+            <p>⚠️ There is no undo</p>
+            ", "Scan confirmation",
+            new ConfirmOptions { OkButtonText = "Start scan", CancelButtonText = "Cancel"});
+
         if (confirm ?? false)
         {
             MainLayoutProxyService.ToggleSpinnerVisible();
@@ -377,7 +384,7 @@
 
     private async Task DeleteNotOkSelectedButtonClick()
     {
-        var confirm = await DialogService.Confirm("<p>Deleting all not Ok albums can potentially delete many albums</p><p>There is no undo</p>", "Deleting not Ok", new ConfirmOptions { OkButtonText = "Delete", CancelButtonText = "Cancel" });
+        var confirm = await DialogService.ConfirmHtml("<p>Deleting all not Ok albums can potentially delete many albums</p><p>⚠️ There is no undo</p>", "Deleting not Ok", new ConfirmOptions { OkButtonText = "Delete", CancelButtonText = "Cancel" });
         if (confirm ?? false)
         {
             var didDelete = await AlbumDiscoveryService.DeleteAlbumsAsync(_library.ToFileSystemDirectoryInfo(), album => album.Status != AlbumStatus.Ok);

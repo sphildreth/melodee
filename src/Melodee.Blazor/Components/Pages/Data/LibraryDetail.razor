@@ -470,7 +470,13 @@
 
     private async Task ProcessButtonClick()
     {
-        var confirm = await DialogService.Confirm("<p>Processing a library creates Melodee data files with media found. This could overwrite Melodee data files, images and songs.</p><p>There is no undo</p>", "Scan confirmation", new ConfirmOptions { OkButtonText = "Start scan", CancelButtonText = "Cancel" });
+        var confirm = await DialogService.ConfirmHtml(
+            @"
+            <p>Processing a library creates Melodee data files with media found. This could overwrite Melodee data files, images and songs.</p>
+            <p>This action starts a background job.</p>
+            <p>⚠️ There is no undo</p>
+            ", "Scan confirmation",
+            new ConfirmOptions { OkButtonText = "Start scan", CancelButtonText = "Cancel" });
         if (confirm ?? false)
         {
             MainLayoutProxyService.ToggleSpinnerVisible();
