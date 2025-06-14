@@ -2,7 +2,6 @@
 @using System.ComponentModel.DataAnnotations
 @using Melodee.Common.Data.Models.Extensions
 @inherits MelodeeComponentBase
-@inject NavigationManager NavigationManager
 @inject NotificationService NotificationService
 @inject DialogService DialogService
 @inject UserService UserService
@@ -64,7 +63,7 @@
                                       Icon="save"
                                       ButtonStyle="ButtonStyle.Primary"
                                       ButtonType="ButtonType.Submit"
-                                      IsBusy="@isSaving"
+                                      IsBusy="@_isSaving"
                                       BusyText="Saving..."/>
                     </RadzenStack>
                 </RadzenTemplateForm>
@@ -75,14 +74,14 @@
 
 @code {
     private UserProfileModel UserProfile { get; set; } = new();
-    private bool isSaving;
-    private string? errorMessage;
+    private bool _isSaving;
+    private string? _errorMessage;
     private ImageSearchResult? _newSelectedProfileImage;
 
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
-        var user = await UserService.GetAsync(CurrentUser.UserId());
+        var user = await UserService.GetAsync(CurrentUser!.UserId());
         UserProfile = new UserProfileModel
         {
             Username = user.Data!.UserName,
@@ -111,9 +110,9 @@
     {
         try
         {
-            isSaving = true;
+            _isSaving = true;
 
-            var user = await UserService.GetAsync(CurrentUser.UserId());
+            var user = await UserService.GetAsync(CurrentUser!.UserId());
 
             user.Data!.UserName = UserProfile.Username;
             user.Data!.Email = UserProfile.Email;
@@ -126,7 +125,7 @@
                 await UserService.SaveProfileImageAsync(user.Data.Id, _newSelectedProfileImage.ImageBytes);
             }
 
-            isSaving = false;
+            _isSaving = false;
 
             // Show success notification
             NotificationService.Notify(new NotificationMessage
@@ -139,14 +138,14 @@
         }
         catch (Exception ex)
         {
-            errorMessage = $"Error saving profile: {ex.Message}";
-            isSaving = false;
+            _errorMessage = $"Error saving profile: {ex.Message}";
+            _isSaving = false;
 
             NotificationService.Notify(new NotificationMessage
             {
                 Severity = NotificationSeverity.Error,
                 Summary = "Update Failed",
-                Detail = errorMessage,
+                Detail = _errorMessage,
                 Duration = 5000
             });
         }
@@ -166,7 +165,7 @@
         [StringLength(500, ErrorMessage = "Bio cannot exceed 500 characters")]
         public string Bio { get; set; } = string.Empty;
 
-        public string? ProfilePicturePath { get; set; }
+        public string? ProfilePicturePath { get; init; }
     }
 
 

@@ -21,10 +21,8 @@ using Melodee.Common.Models.OpenSubsonic.Responses;
 using Melodee.Common.Models.OpenSubsonic.Searching;
 using Melodee.Common.Plugins.Conversion.Image;
 using Melodee.Common.Plugins.MetaData.Song;
-using Melodee.Common.Serialization;
 using Melodee.Common.Services.Extensions;
 using Melodee.Common.Services.Interfaces;
-using Melodee.Common.Services.Scanning;
 using Melodee.Common.Services.SearchEngines;
 using Melodee.Common.Utility;
 using Microsoft.AspNetCore.Http;
@@ -60,14 +58,12 @@ public class OpenSubsonicApiService(
     ArtistService artistService,
     AlbumService albumService,
     SongService songService,
-    AlbumDiscoveryService albumDiscoveryService,
     IScheduler schedule,
     ScrobbleService scrobbleService,
     LibraryService libraryService,
     ArtistSearchEngineService artistSearchEngineService,
     PlaylistService playlistService,
     ShareService shareService,
-    ISerializer serializer,
     IBus bus,
     ILyricPlugin lyricPlugin
 )
@@ -177,7 +173,7 @@ public class OpenSubsonicApiService(
             {
                 case ShareType.Song:
                     var song = await songService.GetAsync(dbShare.ShareId, cancellationToken).ConfigureAwait(false);
-                    var userSong = await userService.UserSongAsync(authResponse.UserInfo.Id, song.Data.ApiKey,
+                    var userSong = await userService.UserSongAsync(authResponse.UserInfo.Id, song.Data!.ApiKey,
                         cancellationToken);
                     if (userSong != null)
                     {
@@ -187,13 +183,11 @@ public class OpenSubsonicApiService(
                     break;
                 case ShareType.Album:
                     var album = await albumService.GetAsync(dbShare.ShareId, cancellationToken).ConfigureAwait(false);
-                    var userSongsForAlbum = await userService.UserSongsForAlbumAsync(authResponse.UserInfo.Id,
-                        album.Data.ApiKey, cancellationToken);
+                    var userSongsForAlbum = await userService.UserSongsForAlbumAsync(authResponse.UserInfo.Id, album.Data!.ApiKey, cancellationToken);
                     if (userSongsForAlbum != null)
                     {
-                        shareEntries = album.Data.Songs.Select(song =>
-                                song.ToApiChild(song.Album,
-                                    userSongsForAlbum?.FirstOrDefault(x => x.SongId == song.Id)))
+                        shareEntries = album.Data.Songs.Select(ss =>
+                                ss.ToApiChild(ss.Album, userSongsForAlbum.FirstOrDefault(x => x.SongId == ss.Id)))
                             .ToArray();
                     }
 
@@ -202,11 +196,11 @@ public class OpenSubsonicApiService(
                     var playlist = await playlistService.GetAsync(dbShare.ShareId, cancellationToken)
                         .ConfigureAwait(false);
                     var userSongsForPlaylist = await userService.UserSongsForPlaylistAsync(authResponse.UserInfo.Id,
-                        playlist.Data.ApiKey, cancellationToken);
+                        playlist.Data!.ApiKey, cancellationToken);
                     if (userSongsForPlaylist != null)
                     {
                         shareEntries = playlist.Data.Songs.Select(pls => pls.Song.ToApiChild(pls.Song.Album,
-                            userSongsForPlaylist?.FirstOrDefault(x => x.SongId == pls.Song.Id))).ToArray();
+                            userSongsForPlaylist.FirstOrDefault(x => x.SongId == pls.Song.Id))).ToArray();
                     }
 
                     break;
@@ -347,7 +341,7 @@ public class OpenSubsonicApiService(
 
         dbShare.Description = description;
         dbShare.ExpiresAt = expires != null ? Instant.FromUnixTimeMilliseconds(expires.Value) : null;
-        var addResult = await shareService.AddAsync(dbShare!, cancellationToken).ConfigureAwait(false);
+        var addResult = await shareService.AddAsync(dbShare, cancellationToken).ConfigureAwait(false);
         var data = addResult.IsSuccess
             ? addResult.Data!.ToApiShare(addResult.Data!.ToUrl(await Configuration.Value), resultEntries)
             : null;
@@ -771,7 +765,7 @@ public class OpenSubsonicApiService(
                            """;
                 var songDataInfosForDp = (await dbConn
                     .QueryAsync<SongDataInfo>(sql)
-                    .ConfigureAwait(false) ?? []).ToArray();
+                    .ConfigureAwait(false)).ToArray();
 
                 var songs = await scopedContext
                     .Songs
@@ -2114,7 +2108,6 @@ public class OpenSubsonicApiService(
             foreach (var idAndIndex in ids.Select((id, index) => new { id, index }))
             {
                 var id = ApiKeyFromId(idAndIndex.id) ?? Guid.Empty;
-                double? time = times?.Length > idAndIndex.index ? times[idAndIndex.index] : null;
                 var uniqueId = SafeParser.Hash(authResponse.UserInfo.ApiKey.ToString(), id.ToString());
                 var nowPlayingInfo =
                     (await scrobbleService.GetNowPlaying(cancellationToken).ConfigureAwait(false)).Data
@@ -3615,7 +3608,7 @@ public class OpenSubsonicApiService(
         }
 
         Error? notAuthorizedError = null;
-        var result = false;
+        bool result;
         await using (var scopedContext =
                      await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {

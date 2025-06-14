@@ -4,6 +4,16 @@
     <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <Deterministic>false</Deterministic>
+    <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+    <NoWarn>$(NoWarn);NU1507</NoWarn>
+
+    <!-- Auto-incrementing version -->
+    <VersionPrefix>1.0.0</VersionPrefix>
+    <VersionSuffix>build$([System.DateTime]::UtcNow.ToString("yyyyMMddHHmmss"))</VersionSuffix>
+    <AssemblyVersion>$(VersionPrefix).0</AssemblyVersion>
+    <FileVersion>$(VersionPrefix).0</FileVersion>
+    <InformationalVersion>$(VersionPrefix)+$(VersionSuffix)</InformationalVersion>
   </PropertyGroup>
 
   <ItemGroup>
@@ -59,10 +69,6 @@
     <PackageReference Include="System.IO.Hashing"/>
     <PackageReference Include="System.Linq.Dynamic.Core"/>
     <PackageReference Include="z440.atl.core"/>
-    <PackageReference Include="MimeTypes">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
   </ItemGroup>
 
   <ItemGroup>

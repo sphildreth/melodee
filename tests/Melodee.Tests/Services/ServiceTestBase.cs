@@ -229,19 +229,12 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
             GetArtistService(),
             GetAlbumService(),
             GetSongService(),
-            new AlbumDiscoveryService(
-                Logger,
-                CacheManager,
-                MockFactory(),
-                MockConfigurationFactory(),
-                Serializer),
             new Mock<IScheduler>().Object,
             GetScrobbleService(),
             GetLibraryService(),
             GetArtistSearchEngineService(),
             GetPlaylistService(),
             GetShareService(),
-            Serializer,
             MockBus(),
             GetLyricPlugin());
     }

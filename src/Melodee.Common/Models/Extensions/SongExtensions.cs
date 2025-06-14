@@ -11,6 +11,7 @@ using Melodee.Common.Extensions;
 using Melodee.Common.Services;
 using Melodee.Common.Utility;
 using NodaTime;
+using ServiceStack;
 
 namespace Melodee.Common.Models.Extensions;
 

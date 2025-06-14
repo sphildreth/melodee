@@ -7,8 +7,17 @@
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
     <AssemblyName>server</AssemblyName>
     <Deterministic>false</Deterministic>
-    <AssemblyVersion>1.0.0.*</AssemblyVersion>
+    <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+    <IncludeSourceRevisionInInformationalVersion>true</IncludeSourceRevisionInInformationalVersion>
     <RuntimeIdentifiers>win-x64;osx-x64;linux-x64</RuntimeIdentifiers>
+    <NoWarn>$(NoWarn);NU1507</NoWarn>
+
+    <!-- Auto-incrementing version -->
+    <VersionPrefix>1.0.0</VersionPrefix>
+    <VersionSuffix>build$([System.DateTime]::UtcNow.ToString("yyyyMMddHHmmss"))</VersionSuffix>
+    <AssemblyVersion>$(VersionPrefix).0</AssemblyVersion>
+    <FileVersion>$(VersionPrefix).0</FileVersion>
+    <InformationalVersion>$(VersionPrefix)+$(VersionSuffix)</InformationalVersion>
   </PropertyGroup>
 
   <ItemGroup>

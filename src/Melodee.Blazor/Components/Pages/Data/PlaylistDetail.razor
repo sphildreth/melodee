@@ -202,10 +202,10 @@
 
     protected override async Task OnParametersSetAsync()
     {
-        var playlistResult = await PlaylistService.GetByApiKeyAsync(UserInfo.FromClaimsPrincipal(CurrentUser), ApiKey);
+        var playlistResult = await PlaylistService.GetByApiKeyAsync(UserInfo.FromClaimsPrincipal(CurrentUser!), ApiKey);
         if (playlistResult.IsSuccess)
         {
-            _playlist = playlistResult.Data;
+            _playlist = playlistResult.Data!;
 
             await LoadSongs();
 
@@ -253,17 +253,7 @@
         await PlayAction(_playlist.Name, songListResult.Data.ToList());
     }
 
-    private void OnShowItemChange(TreeEventArgs arg)
-    {
-        switch (arg.Text)
-        {
-            default:
-                _showItem = ShowItem.Overview;
-                break;
-        }
-    }
-
-    private async Task SetPlaylistImageButtonClick()
+    private Task SetPlaylistImageButtonClick()
     {
         @* await DialogService.OpenAsync("Image Search", ds => *@
         @*     @<ImageSearchUpload *@
@@ -273,7 +263,7 @@
         throw new NotImplementedException();
     }
 
-    private async Task UnlockButtonClick()
+    private Task UnlockButtonClick()
     {
         // var result = await playlistService.LockUnlockplaylistAsync(_playlist.Id, false);
         // NotificationService.Notify(NotificationMessageForResult(result, "unlocking playlist", ToastTime));
@@ -281,7 +271,7 @@
         throw new NotImplementedException();
     }
 
-    private async Task LockButtonClick()
+    private Task LockButtonClick()
     {
         // var result = await playlistService.LockUnlockplaylistAsync(_playlist.Id, true);
         // NotificationService.Notify(NotificationMessageForResult(result, "locking playlist", ToastTime));
