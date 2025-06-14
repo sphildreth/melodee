@@ -2,7 +2,6 @@ using Melodee.Common.Configuration;
 using Melodee.Common.Data;
 using Melodee.Common.Metadata;
 using Melodee.Common.Models.SearchEngines.ArtistSearchEngineServiceData;
-using Melodee.Common.Plugins.MetaData.Song;
 using Melodee.Common.Plugins.Scrobbling;
 using Melodee.Common.Plugins.SearchEngine.MusicBrainz.Data;
 using Melodee.Common.Plugins.SearchEngine.Spotify;
@@ -12,7 +11,6 @@ using Melodee.Common.Services.Caching;
 using Melodee.Common.Services.Interfaces;
 using Melodee.Common.Services.Scanning;
 using Melodee.Common.Services.SearchEngines;
-using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -73,7 +71,7 @@ public abstract class CommandBase<T> : AsyncCommand<T> where T : Spectre.Console
                 .Transport(t => t.UseInMemoryTransport(new InMemNetwork(), "melodee_bus"));
         });
         services.AddSingleton(SpotifyClientConfig.CreateDefault());
-        services.AddSingleton<INowPlayingRepository, NowPlayingInMemoryRepository>();        
+        services.AddSingleton<INowPlayingRepository, NowPlayingInMemoryRepository>();
         services.AddScoped<ISpotifyClientBuilder, SpotifyClientBuilder>();
         services.AddScoped<AlbumDiscoveryService>();
         services.AddScoped<AlbumImageSearchEngineService>();
@@ -88,7 +86,7 @@ public abstract class CommandBase<T> : AsyncCommand<T> where T : Spectre.Console
         services.AddScoped<SongService>();
         services.AddScoped<PlaylistService>();
         services.AddScoped<UserService>();
-        
+
         return services.BuildServiceProvider();
     }
 }

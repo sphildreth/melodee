@@ -13,7 +13,8 @@
 
 @if (AppSettingsConfiguration.GetValue<bool>(AppSettingsKeys.QuartzDisabled))
 {
-    <p>Jobs are disabled in the appsettings.json file. Set the setting "@AppSettingsKeys.QuartzDisabled" to "false" (or remove entirely) enable.</p>
+    <p>Jobs are disabled in the appsettings.json file. Set the setting "@AppSettingsKeys.QuartzDisabled" to "false" (or
+        remove entirely) enable.</p>
 }
 else if (_jobs.Count == 0)
 {

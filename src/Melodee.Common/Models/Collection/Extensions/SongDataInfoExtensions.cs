@@ -12,7 +12,7 @@ public static class SongDataInfoExtensions
     {
         return song.Duration / 1000;
     }
-    
+
     public static string AlbumDetailUrl(this SongDataInfo songDataInfo)
     {
         return $"/data/album/{songDataInfo.AlbumApiKey}";
@@ -37,8 +37,8 @@ public static class SongDataInfoExtensions
         }
 
         return $"{baseUrl}/rest/stream?id={song.ToApiKey()}";
-    }    
-    
+    }
+
     public static PlaylistSong ToPlaylistSong(this SongDataInfo songDataInfo, int playlistOrder, Data.Models.Song song)
     {
         return new PlaylistSong

@@ -34,14 +34,14 @@ public class MediaConvertorTests
 
             var convertedFileInfo = new FileInfo(convertorResult.Data.FullName(dirInfo));
             Assert.True(convertedFileInfo.Exists);
-            
+
             var atlFromMp3 = new Track(convertedFileInfo.FullName);
-            
+
             Assert.Equal(atlFromFlac.Duration, atlFromMp3.Duration);
             Assert.Equal(atlFromFlac.Artist, atlFromMp3.Artist);
             Assert.Equal(atlFromFlac.Album, atlFromMp3.Album);
             Assert.Equal(atlFromFlac.TrackNumber, atlFromMp3.TrackNumber);
-            
+
             File.Delete(convertedFileInfo.FullName);
         }
     }

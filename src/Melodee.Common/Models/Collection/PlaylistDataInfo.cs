@@ -2,8 +2,7 @@ using NodaTime;
 
 namespace Melodee.Common.Models.Collection;
 
-public record PlaylistDataInfo
-(
+public record PlaylistDataInfo(
     int Id,
     Guid ApiKey,
     bool IsLocked,

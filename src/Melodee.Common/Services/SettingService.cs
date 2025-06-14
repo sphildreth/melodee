@@ -206,13 +206,14 @@ public class SettingService : ServiceBase
                     Type = MelodeeModels.OperationResponseType.Error
                 };
             }
+
             scopedContext.Settings.Add(setting);
             await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         }
 
         return await GetAsync(setting.Key, cancellationToken);
-    }    
-    
+    }
+
     public async Task<MelodeeModels.OperationResult<bool>> UpdateAsync(Setting detailToUpdate,
         CancellationToken cancellationToken = default)
     {

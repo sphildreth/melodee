@@ -1,7 +1,3 @@
-using System.Collections.Concurrent;
-using Melodee.Common.Extensions;
-using Melodee.Common.Utility;
-
 namespace Melodee.Tests.Plugins.SearchEngine;
 
 public class MusicBrainzTests : TestsBase

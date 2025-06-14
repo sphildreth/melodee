@@ -2,7 +2,6 @@
 @page "/media/artist/{ArtistId:int}/edit"
 
 @inherits MelodeeComponentBase
-
 @using Melodee.Common.Services.SearchEngines
 @using Artist = Melodee.Common.Models.SearchEngines.ArtistSearchEngineServiceData.Artist
 
@@ -19,7 +18,7 @@
 
 <RadzenBreadCrumb Class="rz-pb-5">
     <RadzenBreadCrumbItem Path="/" Text="Dashboard"/>
-    <RadzenBreadCrumbItem Path="@($"/admin/mediaartists")" Icon="folder" Text="Media Artists"/>
+    <RadzenBreadCrumbItem Path="@("/admin/mediaartists")" Icon="folder" Text="Media Artists"/>
     <RadzenBreadCrumbItem Icon="artist" Text="@_artist.Name"/>
 </RadzenBreadCrumb>
 
@@ -34,7 +33,8 @@
                                 <RadzenLabel Text="Locked" Component="IsLocked"/>
                             </RadzenColumn>
                             <RadzenColumn Size="12" SizeMD="10">
-                                <RadzenSwitch @bind-Value="@_artist.IsLockedValue" Name="@nameof(Artist.IsLockedValue)"/>
+                                <RadzenSwitch @bind-Value="@_artist.IsLockedValue"
+                                              Name="@nameof(Artist.IsLockedValue)"/>
                             </RadzenColumn>
                         </RadzenRow>
                         <RadzenRow AlignItems="AlignItems.Center" RowGap="0.25rem">
@@ -134,9 +134,9 @@
                             </RadzenColumn>
                             <RadzenColumn Size="12" SizeMD="8">
                                 <RadzenTextBox style="display: block"
-                                            Name="MusicBrainzId"
-                                            @bind-Value="@_artist.MusicBrainzIdValue"
-                                            class="rz-w-100"/>
+                                               Name="MusicBrainzId"
+                                               @bind-Value="@_artist.MusicBrainzIdValue"
+                                               class="rz-w-100"/>
                                 <RadzenDataAnnotationValidator Component="MusicBrainzId"
                                                                Popup="false"
                                                                Style="position: absolute"/>
@@ -216,6 +216,7 @@
                 _alternateNames = artistResult.Data.AlternateNames?.ToTags()?.ToList() ?? [];
                 _artist.MusicBrainzIdValue = _artist.MusicBrainzId?.ToString();
             }
+
             _isLoading = false;
         }
     }

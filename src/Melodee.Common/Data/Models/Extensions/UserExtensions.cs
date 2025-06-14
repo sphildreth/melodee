@@ -89,9 +89,10 @@ public static class UserExtensions
         {
             roles.Add(RoleNameRegistry.Editor);
         }
+
         return roles.ToArray();
     }
-    
+
     public static UserInfo ToUserInfo(this User user)
     {
         return new UserInfo(user.Id, user.ApiKey, user.UserName, user.Email, user.PublicKey, user.PasswordEncrypted)

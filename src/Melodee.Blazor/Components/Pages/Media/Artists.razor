@@ -1,10 +1,6 @@
 @page "/admin/mediaartists"
 @inherits MelodeeComponentBase
-
-@using System.Web
 @using Melodee.Common.Filtering
-@using Melodee.Common.Models.Collection
-@using Melodee.Common.Models.Collection.Extensions
 @using Melodee.Common.Services.SearchEngines
 @using Artist = Melodee.Common.Models.SearchEngines.ArtistSearchEngineServiceData.Artist;
 @using FilterOperator = Melodee.Common.Filtering.FilterOperator
@@ -115,7 +111,8 @@
                         <RadzenText Text="@data.NameNormalized"/>
                     </Template>
                 </RadzenDataGridColumn>
-                <RadzenDataGridColumn Property="@nameof(Artist.AlbumCount)" Title="AlbumCount" Width="90px" Filterable="false">
+                <RadzenDataGridColumn Property="@nameof(Artist.AlbumCount)" Title="AlbumCount" Width="90px"
+                                      Filterable="false">
                     <Template Context="data">
                         <RadzenText Text="@CurrentUser?.FormatNumber(data.AlbumCount)"/>
                     </Template>
@@ -151,6 +148,7 @@
         ToBeMerged,
         ToMergeInto
     }
+
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
@@ -180,7 +178,7 @@
             {
                 filters =
                 [
-                    new FilterOperatorInfo(nameof(Artist.NameNormalized), FilterOperator.Contains, _debounceInputValue.ToNormalizedString() ?? _debounceInputValue),
+                    new FilterOperatorInfo(nameof(Artist.NameNormalized), FilterOperator.Contains, _debounceInputValue.ToNormalizedString() ?? _debounceInputValue)
                 ];
             }
             else if (args.Filters.Any())
@@ -215,7 +213,7 @@
 
     private void AddButtonClick()
     {
-        NavigationManager.NavigateTo($"/media/artist/0/edit");
+        NavigationManager.NavigateTo("/media/artist/0/edit");
     }
 
     private async Task DeleteSelectedButtonClick()
@@ -223,13 +221,14 @@
         var confirm = await DialogService.Confirm("Are you sure?", "Delete confirmation", new ConfirmOptions { OkButtonText = "Yes", CancelButtonText = "No" });
         if (confirm ?? false)
         {
-             var deleteResult = await ArtistSearchEngineService.DeleteArtistsAsync(_selectedArtists.Select(x => x.Id).ToArray());
-             if (deleteResult.IsSuccess)
-             {
-                 NotificationService.Notify(NotificationMessageForResult(deleteResult, "Deleting Artists", ToastTime));
-                 await _grid.RefreshDataAsync();
-                 return;
-             }
+            var deleteResult = await ArtistSearchEngineService.DeleteArtistsAsync(_selectedArtists.Select(x => x.Id).ToArray());
+            if (deleteResult.IsSuccess)
+            {
+                NotificationService.Notify(NotificationMessageForResult(deleteResult, "Deleting Artists", ToastTime));
+                await _grid.RefreshDataAsync();
+                return;
+            }
+
             NotificationService.Notify(NotificationMessageForResult(deleteResult, "Deleting Artists", ToastTime));
         }
     }

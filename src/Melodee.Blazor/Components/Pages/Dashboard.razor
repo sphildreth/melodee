@@ -1,8 +1,8 @@
 ﻿@page "/"
+
 @using Melodee.Common.Data.Models
 @using Melodee.Common.Enums
 @using Melodee.Common.Models.Collection
-
 @using TextStyle = Radzen.Blazor.TextStyle
 @inherits MelodeeComponentBase
 
@@ -169,4 +169,5 @@
             _userPins = userResult.Data.Pins.ToArray();
         }
     }
+
 }

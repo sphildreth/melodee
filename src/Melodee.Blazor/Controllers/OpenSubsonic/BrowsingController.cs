@@ -56,7 +56,7 @@ public class BrowsingController(ISerializer serializer, EtagRepository etagRepos
     {
         return MakeResult(openSubsonicApiService.GetArtistInfoAsync(id, count, false, ApiRequest, cancellationToken));
     }
-    
+
     /// <summary>
     ///     Returns artist info.
     /// </summary>
@@ -70,7 +70,7 @@ public class BrowsingController(ISerializer serializer, EtagRepository etagRepos
     public Task<IActionResult> GetArtistInfo2(string id, int? count, CancellationToken cancellationToken = default)
     {
         return MakeResult(openSubsonicApiService.GetArtistInfoAsync(id, count, true, ApiRequest, cancellationToken));
-    }    
+    }
 
     /// <summary>
     ///     Returns top songs for the given artist.

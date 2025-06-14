@@ -12,7 +12,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace Melodee.Blazor.Controllers.Melodee;
 
 /// <summary>
-/// This controller is used to get meta-information about the API.
+///     This controller is used to get meta-information about the API.
 /// </summary>
 [ApiController]
 [ApiVersion(1)]
@@ -41,6 +41,7 @@ public sealed class SystemController(
         {
             return BadRequest(new { error = "Invalid version format" });
         }
+
         var majorVersion = SafeParser.ToNumber<int?>(versionParts[0]) ?? 0;
         var minorVersion = SafeParser.ToNumber<int?>(versionParts[1]) ?? 0;
         var patchVersion = SafeParser.ToNumber<int?>(versionParts[2]) ?? 0;
@@ -53,7 +54,7 @@ public sealed class SystemController(
     }
 
     /// <summary>
-    /// Return some statistics about the system.
+    ///     Return some statistics about the system.
     /// </summary>
     [HttpGet]
     [Route("stats")]
@@ -74,9 +75,9 @@ public sealed class SystemController(
         {
             return Forbid("User is locked");
         }
-       
+
         var statsResult = await statisticsService.GetStatisticsAsync(cancellationToken).ConfigureAwait(false);
 
         return Ok(statsResult.Data.Where(x => x.IncludeInApiResult ?? false).Select(x => x.ToStatisticModel()).ToArray());
-    } 
+    }
 }

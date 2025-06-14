@@ -9,7 +9,7 @@ namespace Melodee.Blazor.Controllers;
 
 public abstract class CommonBase : Controller
 {
-    protected ApiRequest ApiRequest { get; set; } = new ApiRequest([
+    protected ApiRequest ApiRequest { get; set; } = new([
         ],
         false,
         null,
@@ -29,7 +29,7 @@ public abstract class CommonBase : Controller
         var configuredDomain = configuration.GetValue<string>(SettingRegistry.SystemBaseUrl);
         return (configuredDomain.Nullify() ?? baseUrl).TrimEnd('/');
     }
-    
+
     protected static string GetRequestIp(HttpContext? context, bool tryUseXForwardHeader = true)
     {
         string? ip = null;
@@ -54,8 +54,8 @@ public abstract class CommonBase : Controller
         }
 
         return ip;
-    }    
-    
+    }
+
     protected static T? GetHeaderValueAs<T>(HttpContext? context, string headerName)
     {
         if (context?.Request.Headers.TryGetValue(headerName, out var values) ?? false)

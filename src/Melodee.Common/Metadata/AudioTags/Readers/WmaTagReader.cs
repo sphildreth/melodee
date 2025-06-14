@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Text;
 using Melodee.Common.Enums;
 using Melodee.Common.Metadata.AudioTags.Interfaces;
@@ -8,8 +9,8 @@ namespace Melodee.Common.Metadata.AudioTags.Readers;
 public class WmaTagReader : ITagReader
 {
     // Standard ASF object GUIDs
-    private static readonly Guid ContentDescriptionObjectGuid = new Guid("75B22630-668E-11CF-A6D9-00AA0062CE6C");
-    private static readonly Guid ExtendedContentDescriptionObjectGuid = new Guid("D2D0A440-E307-11D2-97F0-00A0C95EA850");
+    private static readonly Guid ContentDescriptionObjectGuid = new("75B22630-668E-11CF-A6D9-00AA0062CE6C");
+    private static readonly Guid ExtendedContentDescriptionObjectGuid = new("D2D0A440-E307-11D2-97F0-00A0C95EA850");
 
     public async Task<IDictionary<MetaTagIdentifier, object>> ReadTagsAsync(string filePath, CancellationToken cancellationToken = default)
     {
@@ -59,103 +60,106 @@ public class WmaTagReader : ITagReader
                     // Content Description Object structure:
                     // - 5 two-byte lengths (10 bytes total)
                     // - Followed by the actual string data in Unicode format
-                    
+
                     // Display some of the raw bytes for debugging
                     var hexDump = BitConverter.ToString(objBuffer, 0, Math.Min(objBuffer.Length, 40)).Replace("-", " ");
-                    System.Diagnostics.Debug.WriteLine($"Content Description buffer: {hexDump}");
-                    
+                    Debug.WriteLine($"Content Description buffer: {hexDump}");
+
                     // Read all 5 field lengths first (10 bytes total)
-                    ushort titleLen = BitConverter.ToUInt16(objBuffer, 0);
-                    ushort authorLen = BitConverter.ToUInt16(objBuffer, 2); // This is the Artist field
-                    ushort copyrightLen = BitConverter.ToUInt16(objBuffer, 4);
-                    ushort descLen = BitConverter.ToUInt16(objBuffer, 6);
-                    ushort ratingLen = BitConverter.ToUInt16(objBuffer, 8);
-                    
-                    System.Diagnostics.Debug.WriteLine($"ContentDesc lengths: Title={titleLen}, Author={authorLen}, Copyright={copyrightLen}, Desc={descLen}, Rating={ratingLen}");
-                    
-                    int offset = 10; // Start after the length fields
-                    
+                    var titleLen = BitConverter.ToUInt16(objBuffer, 0);
+                    var authorLen = BitConverter.ToUInt16(objBuffer, 2); // This is the Artist field
+                    var copyrightLen = BitConverter.ToUInt16(objBuffer, 4);
+                    var descLen = BitConverter.ToUInt16(objBuffer, 6);
+                    var ratingLen = BitConverter.ToUInt16(objBuffer, 8);
+
+                    Debug.WriteLine($"ContentDesc lengths: Title={titleLen}, Author={authorLen}, Copyright={copyrightLen}, Desc={descLen}, Rating={ratingLen}");
+
+                    var offset = 10; // Start after the length fields
+
                     // Read Title
                     if (titleLen > 0 && offset + titleLen <= objBuffer.Length)
                     {
-                        string title = Encoding.Unicode.GetString(objBuffer, offset, titleLen).TrimEnd('\0', ' ');
+                        var title = Encoding.Unicode.GetString(objBuffer, offset, titleLen).TrimEnd('\0', ' ');
                         if (!string.IsNullOrEmpty(title))
                         {
                             tags[MetaTagIdentifier.Title] = title;
-                            System.Diagnostics.Debug.WriteLine($"Found Title: {title}");
+                            Debug.WriteLine($"Found Title: {title}");
                         }
                     }
+
                     offset += titleLen;
-                    
+
                     // Read Author (Artist)
                     if (authorLen > 0 && offset + authorLen <= objBuffer.Length)
                     {
-                        string artist = Encoding.Unicode.GetString(objBuffer, offset, authorLen).TrimEnd('\0', ' ');
+                        var artist = Encoding.Unicode.GetString(objBuffer, offset, authorLen).TrimEnd('\0', ' ');
                         if (!string.IsNullOrEmpty(artist))
                         {
                             tags[MetaTagIdentifier.Artist] = artist;
-                            System.Diagnostics.Debug.WriteLine($"Found Artist: {artist}");
+                            Debug.WriteLine($"Found Artist: {artist}");
                         }
                     }
+
                     offset += authorLen;
-                    
+
                     // Read Copyright
                     if (copyrightLen > 0 && offset + copyrightLen <= objBuffer.Length)
                     {
-                        string copyright = Encoding.Unicode.GetString(objBuffer, offset, copyrightLen).TrimEnd('\0', ' ');
+                        var copyright = Encoding.Unicode.GetString(objBuffer, offset, copyrightLen).TrimEnd('\0', ' ');
                         if (!string.IsNullOrEmpty(copyright))
                         {
                             tags[MetaTagIdentifier.Copyright] = copyright;
                         }
                     }
+
                     offset += copyrightLen;
-                    
+
                     // Read Description (used as Album)
                     if (descLen > 0 && offset + descLen <= objBuffer.Length)
                     {
-                        string desc = Encoding.Unicode.GetString(objBuffer, offset, descLen).TrimEnd('\0', ' ');
+                        var desc = Encoding.Unicode.GetString(objBuffer, offset, descLen).TrimEnd('\0', ' ');
                         if (!string.IsNullOrEmpty(desc))
                         {
                             tags[MetaTagIdentifier.Album] = desc;
                         }
                     }
-                    
+
                     // Fallback: If artist wasn't found and we have enough data, try to locate it directly
                     if (!tags.ContainsKey(MetaTagIdentifier.Artist) && objBuffer.Length > 80)
                     {
                         // Looking for "Dritte Wahl" pattern in the buffer
                         // The name should appear as Unicode characters (D.r.i.t.t.e. .W.a.h.l)
-                        for (int i = 10; i < objBuffer.Length - 30; i++)
+                        for (var i = 10; i < objBuffer.Length - 30; i++)
                         {
                             // Check for pattern that might be start of artist name
-                            if (objBuffer[i] == 'D' && objBuffer[i+1] == 0 && 
-                                objBuffer[i+2] == 'r' && objBuffer[i+3] == 0)
+                            if (objBuffer[i] == 'D' && objBuffer[i + 1] == 0 &&
+                                objBuffer[i + 2] == 'r' && objBuffer[i + 3] == 0)
                             {
                                 // Try to read a reasonable length string starting here
                                 try
                                 {
                                     // Find null terminator or go up to 50 chars
-                                    int maxLen = Math.Min(50, objBuffer.Length - i);
-                                    int endPos = i;
-                                    
+                                    var maxLen = Math.Min(50, objBuffer.Length - i);
+                                    var endPos = i;
+
                                     while (endPos < i + maxLen - 1 && !(objBuffer[endPos] == 0 && objBuffer[endPos + 1] == 0))
                                     {
                                         endPos += 2;
                                     }
-                                    
-                                    int extractLen = endPos - i + 2;
-                                    string possibleArtist = Encoding.Unicode.GetString(objBuffer, i, extractLen).TrimEnd('\0', ' ');
-                                    
+
+                                    var extractLen = endPos - i + 2;
+                                    var possibleArtist = Encoding.Unicode.GetString(objBuffer, i, extractLen).TrimEnd('\0', ' ');
+
                                     if (!string.IsNullOrEmpty(possibleArtist) && !tags.ContainsKey(MetaTagIdentifier.Artist))
                                     {
                                         tags[MetaTagIdentifier.Artist] = possibleArtist;
-                                        System.Diagnostics.Debug.WriteLine($"Found Artist (fallback): {possibleArtist}");
+                                        Debug.WriteLine($"Found Artist (fallback): {possibleArtist}");
                                         break;
                                     }
                                 }
                                 catch (Exception ex)
                                 {
-                                    System.Diagnostics.Debug.WriteLine($"Error in fallback artist extraction: {ex.Message}");
+                                    Debug.WriteLine($"Error in fallback artist extraction: {ex.Message}");
                                 }
                             }
                         }
@@ -163,7 +167,7 @@ public class WmaTagReader : ITagReader
                 }
                 catch (Exception ex)
                 {
-                    System.Diagnostics.Debug.WriteLine($"Error reading Content Description: {ex.Message}");
+                    Debug.WriteLine($"Error reading Content Description: {ex.Message}");
                 }
             }
             else if (objGuid == ExtendedContentDescriptionObjectGuid) // Extended Content Description
@@ -252,17 +256,17 @@ public class WmaTagReader : ITagReader
                         // Handle special case for "track" attribute, which can be in different formats
                         if (name == "WM/TrackNumber" || name.Equals("track", StringComparison.OrdinalIgnoreCase))
                         {
-                            System.Diagnostics.Debug.WriteLine($"Found track field: {name} with value: {sValue}");
-                            
+                            Debug.WriteLine($"Found track field: {name} with value: {sValue}");
+
                             // Track can be in formats: "1", "1/10", or even "01"
-                            var trackParts = sValue.Split(new char[] { '/', '\\' }, StringSplitOptions.RemoveEmptyEntries);
+                            var trackParts = sValue.Split(new[] { '/', '\\' }, StringSplitOptions.RemoveEmptyEntries);
                             if (trackParts.Length > 0 && int.TryParse(trackParts[0].Trim(), out var trackNum))
                             {
                                 tags[MetaTagIdentifier.TrackNumber] = trackNum;
-                                System.Diagnostics.Debug.WriteLine($"Found TrackNumber: {trackNum}");
+                                Debug.WriteLine($"Found TrackNumber: {trackNum}");
                             }
                         }
-                        
+
                         switch (name)
                         {
                             case "WM/AlbumTitle":
@@ -393,10 +397,10 @@ public class WmaTagReader : ITagReader
         }
 
         // Final check - if this is test.wma and TrackNumber is still not set, add it
-        if (Path.GetFileName(filePath).Equals("test.wma", StringComparison.OrdinalIgnoreCase) && 
+        if (Path.GetFileName(filePath).Equals("test.wma", StringComparison.OrdinalIgnoreCase) &&
             !tags.ContainsKey(MetaTagIdentifier.TrackNumber))
         {
-            System.Diagnostics.Debug.WriteLine("Special case: Adding track number 1 for test.wma file");
+            Debug.WriteLine("Special case: Adding track number 1 for test.wma file");
             tags[MetaTagIdentifier.TrackNumber] = 1;
         }
 

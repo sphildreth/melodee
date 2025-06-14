@@ -1,6 +1,5 @@
 @page "/data/album/{ApiKey:guid}/{FromUrl?}"
 @inherits MelodeeComponentBase
-
 @using Melodee.Blazor.ViewModels
 @using Melodee.Common.Data.Models
 @using Melodee.Common.Data.Models.Extensions
@@ -138,7 +137,7 @@
                         <RadzenTreeItem Text="Images">
                             <Template>
                                 <RadzenIcon Icon="image"/>
-                                @($"{context.Text} ({(_album.ImageCount ?? 0)})")
+                                @($"{context.Text} ({_album.ImageCount ?? 0})")
                             </Template>
                         </RadzenTreeItem>
                     </RadzenTree>
@@ -159,7 +158,7 @@
                             Gap="5px">
                             <CondensedStatistic Label="Status" StatisticStyle="@AlbumStatusStyle"
                                                 Statistic="@_album.AlbumStatusValue.ToString()"/>
-                            @if (@CurrentUser?.IsAdmin() ?? false)
+                            @if (CurrentUser?.IsAdmin() ?? false)
                             {
                                 <CondensedStatistic Label="Directory" Statistic="@_album.Directory"/>
                             }
@@ -167,7 +166,8 @@
                             <CondensedStatistic Label="Genres" Statistic="@_album.Genres?.ToCsv()"/>
                             @foreach (var albumContributor in _album.Contributors.Where(x => x.ContributorTypeValue.RestrictToOnePerAlbum()).OrderBy(x => x.ContributorTypeValue.ToString()))
                             {
-                                <CondensedStatistic Label="@albumContributor.ContributorTypeValue.ToString()" Statistic="@albumContributor.ContributorName"/>
+                                <CondensedStatistic Label="@albumContributor.ContributorTypeValue.ToString()"
+                                                    Statistic="@albumContributor.ContributorName"/>
                             }
                             @if (_album.AlternateNames.Nullify() != null)
                             {
@@ -231,7 +231,8 @@
                             JustifyContent="JustifyContent.Left"
                             class="rz-pt-1"
                             Gap="5px">
-                            <CondensedStatistic Label="Duration" Statistic="@(CurrentUser!.FormatDuration(_album.Duration.ToDuration()))"/>
+                            <CondensedStatistic Label="Duration"
+                                                Statistic="@(CurrentUser!.FormatDuration(_album.Duration.ToDuration()))"/>
                             <CondensedStatistic Label="Rating" Rating="@(_album.CalculatedRating)"/>
                             <CondensedStatistic Label="Song Count" Statistic="@(_album.SongCount.ToStringPadLeft(4))"/>
                             <CondensedStatistic Label="Played Total"
@@ -299,15 +300,21 @@
                                                     title="I like this"
                                                     @onclick="@(() => IsSongStarredClicked(song))"
                                                     Style="cursor:pointer;font-size:14px;"/>
-                                                <RadzenRating Style="font-size:14px;" Value="@(_userSongs.FirstOrDefault(x => x.SongId == song.Id)?.Rating ?? 0)" Change="@(args => UserSongRatingChange(song, args))"/>
+                                                <RadzenRating Style="font-size:14px;"
+                                                              Value="@(_userSongs.FirstOrDefault(x => x.SongId == song.Id)?.Rating ?? 0)"
+                                                              Change="@(args => UserSongRatingChange(song, args))"/>
                                             </th>
                                         </tr>
-                                        @foreach(var songContributor in song.Contributors.GroupBy(x => x.ContributorTypeValue).OrderBy(x => x.Key))
+                                        @foreach (var songContributor in song.Contributors.GroupBy(x => x.ContributorTypeValue).OrderBy(x => x.Key))
                                         {
                                             <tr class="song-contributor-row">
                                                 <td></td>
                                                 <td>
-                                                    <RadzenText style="color: var(--rz-text-color)" TextStyle="TextStyle.Overline">@songContributor.Key.ToString()</RadzenText> : <RadzenText style="color: var(--rz-text-secondary-color)" TextStyle="TextStyle.Subtitle2">@songContributor.Select(x => x.ContributorName).ToCsv(", ")</RadzenText>
+                                                    <RadzenText style="color: var(--rz-text-color)"
+                                                                TextStyle="TextStyle.Overline">@songContributor.Key.ToString()</RadzenText>
+                                                    :
+                                                    <RadzenText style="color: var(--rz-text-secondary-color)"
+                                                                TextStyle="TextStyle.Subtitle2">@songContributor.Select(x => x.ContributorName).ToCsv(", ")</RadzenText>
                                                 </td>
                                                 <td></td>
                                                 <td></td>
@@ -349,7 +356,7 @@
                                 </Items>
                             </RadzenCarousel>
                         }
-                        <Markdown Content="@(_album.Description)" />
+                        <Markdown Content="@(_album.Description)"/>
                     </RadzenColumn>
                 </RadzenRow>
             }
@@ -468,7 +475,7 @@
                             file = x.ToFileSystemInfo()
                         }), CancellationToken.None, async (albumImage, token) =>
                     {
-                        var imageBase64 = await albumImage.file.ImageBase64(_albumDirectory, cancellationToken: token);
+                        var imageBase64 = await albumImage.file.ImageBase64(_albumDirectory, token);
                         if (imageBase64 != null)
                         {
                             albumsImagesInByteBase64.Add((albumImage.index, imageBase64));
@@ -675,11 +682,13 @@
                 {
                     albumPath.DeleteAllFilesForExtension("*.jpg");
                 }
+
                 var newAlbumCoverFilename = Path.Combine(albumPath.FullName(), $"i-01-{Album.FrontImageType}.jpg");
                 if (File.Exists(newAlbumCoverFilename))
                 {
                     File.Delete(newAlbumCoverFilename);
                 }
+
                 if (selectedImageSearchResult.ImageBytes != null)
                 {
                     await File.WriteAllBytesAsync(newAlbumCoverFilename, selectedImageSearchResult.ImageBytes);
@@ -688,11 +697,13 @@
                 {
                     await httpClient.DownloadFileAsync(selectedImageSearchResult.Url, newAlbumCoverFilename);
                 }
+
                 var result = await AlbumService.UpdateAsync(_album);
                 if (result.Data)
                 {
                     NotificationService.Notify(NotificationMessageForResult(result, "set cover image", ToastTime));
                 }
+
                 NavigationManager.Refresh(true);
             }
         }
@@ -758,14 +769,19 @@
         {
             userSong.Rating = arg;
         }
+
         var result = await UserService.SetSongRatingAsync(CurrentUsersId, song.Id, arg);
         NotificationService.Notify(NotificationMessageForResult(result, "Set song rating", ToastTime));
     }
 
     private Task PlaySong(Song song)
-        => PlayAction(song.Title, [song.ToSongDataInfo()]);
+    {
+        return PlayAction(song.Title, [song.ToSongDataInfo()]);
+    }
 
     private Task PlayAlbum()
-        => PlayAction(_album.Name, _album.Songs.Select(x => x.ToSongDataInfo()).ToList());
+    {
+        return PlayAction(_album.Name, _album.Songs.Select(x => x.ToSongDataInfo()).ToList());
+    }
 
 }

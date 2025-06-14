@@ -24,7 +24,7 @@ public class ConfigurationSetCommand : CommandBase<ConfigurationSetSetting>
                 AnsiConsole.MarkupLine(
                     ":cross_mark: Configuration key [bold red]{0}[/] not found. Creating new entry.",
                     settings.Key);
-                
+
                 var addResult = await settingService.AddAsync(new Setting
                 {
                     Key = settings.Key,
@@ -36,12 +36,9 @@ public class ConfigurationSetCommand : CommandBase<ConfigurationSetSetting>
                     AnsiConsole.MarkupLine(":party_popper: Configuration created.");
                     return 0;
                 }
-                else
-                {
-                    AnsiConsole.MarkupLine(":cross_mark: Failed to create configuration: {0}", addResult.Messages?.FirstOrDefault() ?? string.Empty);
-                    return 1;
-                }
-                
+
+                AnsiConsole.MarkupLine(":cross_mark: Failed to create configuration: {0}", addResult.Messages?.FirstOrDefault() ?? string.Empty);
+                return 1;
             }
 
             if (settings.Remove)

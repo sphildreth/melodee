@@ -1,13 +1,12 @@
 @page "/data/artists"
 @inherits MelodeeComponentBase
+
 @using System.Security.Claims
 @using System.Web
 @using Melodee.Common.Enums
-
 @using Melodee.Common.Filtering
 @using Melodee.Common.Models.Collection
 @using Melodee.Common.Models.Collection.Extensions
-
 @using Artist = Melodee.Common.Data.Models.Artist
 @using FilterOperator = Melodee.Common.Filtering.FilterOperator
 
@@ -155,7 +154,8 @@
                                       Icon="edit" ButtonStyle="ButtonStyle.Secondary"/>
                         <RadzenImage Path=@($"/images/{data.ToApiKey()}/35") Style="margin-right: 5px;"
                                      AlternateText="@data.Name"/>
-                        <RadzenLink Text="@data.Name" Path="@($"/data/artist/{data.ApiKey}/{HttpUtility.UrlEncode($"/data/artists")}")"/>
+                        <RadzenLink Text="@data.Name"
+                                    Path="@($"/data/artist/{data.ApiKey}/{HttpUtility.UrlEncode("/data/artists")}")"/>
                     </Template>
                 </RadzenDataGridColumn>
                 <RadzenDataGridColumn Property="@nameof(ArtistDataInfo.AlternateNames)" Title="Alternate Names"

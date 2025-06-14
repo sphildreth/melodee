@@ -27,7 +27,7 @@ public static class Program
             {
                 add.AddCommand<ImportUserFavoriteCommand>("user-favorite-songs")
                     .WithDescription("Import user favorite songs from a given CSV file.");
-            });            
+            });
             config.AddBranch<JobSettings>("job", add =>
             {
                 add.AddCommand<JobRunArtistSearchEngineDatabaseHousekeepingJobCommand>("artistsearchengine-refresh")

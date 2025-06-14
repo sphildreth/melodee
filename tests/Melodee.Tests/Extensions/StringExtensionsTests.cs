@@ -1,7 +1,6 @@
 ﻿using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Utility;
-using Melodee.Tests.Services;
 
 namespace Melodee.Tests.Extensions;
 
@@ -30,8 +29,11 @@ public class StringExtensionsTests
     [InlineData("?", "__x3f")]
     [InlineData("$$$", "__x24f__x24f__x24f")]
     [InlineData("Inhaler - Open Wide (2025) Mp3 320kbps [PMEDIA] \\u2B50\\uFE0F", "Inhaler Open Wide 2025 Mp3 320kbps Pmedia U2b50ufe0f")]
-    public void ValidateToFileNameFriendly(string? input, string? shouldBe) => Assert.Equal(shouldBe, input?.ToAlphanumericName(false, false).ToTitleCase(false).Nullify()?.ToFileNameFriendly());
-    
+    public void ValidateToFileNameFriendly(string? input, string? shouldBe)
+    {
+        Assert.Equal(shouldBe, input?.ToAlphanumericName(false, false).ToTitleCase(false).Nullify()?.ToFileNameFriendly());
+    }
+
     [Theory]
     [InlineData("Bob", "Bob")]
     [InlineData("Bob    ", "Bob")]
@@ -49,7 +51,7 @@ public class StringExtensionsTests
     [InlineData("Penguin Café", "Penguin Café")]
     [InlineData("Bob Sinclar\u0000\uFEFF", "Bob Sinclar")]
     [InlineData("Bob Sinclar\uFEFF", "Bob Sinclar")]
-    [InlineData("Abcdefghijklmnopqrstuvwxyz0123456789-.!?", "Abcdefghijklmnopqrstuvwxyz0123456789-.!?")] 
+    [InlineData("Abcdefghijklmnopqrstuvwxyz0123456789-.!?", "Abcdefghijklmnopqrstuvwxyz0123456789-.!?")]
     public void CleanString(string input, string shouldBe)
     {
         Assert.Equal(shouldBe, input.CleanString());
@@ -186,7 +188,10 @@ public class StringExtensionsTests
     [InlineData("123batman", "123")]
     [InlineData("1batman2", "12")]
     [InlineData(".1 2 3 4 5 !", "12345")]
-    public void ValidateParsingNumberFromFileName(string input, string? shouldBe) => Assert.Equal(shouldBe, input.ToNumberOnly());
+    public void ValidateParsingNumberFromFileName(string input, string? shouldBe)
+    {
+        Assert.Equal(shouldBe, input.ToNumberOnly());
+    }
 
     [Theory]
     [InlineData(null, null)]
@@ -210,20 +215,20 @@ public class StringExtensionsTests
         Assert.Equal(2, p2.Length);
         Assert.Contains("Bob Jones", p2);
         Assert.Contains("Nancy Jones", p2);
-        
+
         people = "Bob Jones";
         p2 = people.PeopleFromValueWithSeparator();
         Assert.NotNull(p2);
         Assert.NotEmpty(p2);
         Assert.Single(p2);
         Assert.Contains("Bob Jones", p2);
-        
+
         people = "Bob Jones/Nancy Jones";
         p2 = people.PeopleFromValueWithSeparator();
         Assert.NotNull(p2);
         Assert.NotEmpty(p2);
         Assert.Contains("Bob Jones", p2);
-        Assert.Contains("Nancy Jones", p2);        
+        Assert.Contains("Nancy Jones", p2);
     }
 
 
@@ -301,7 +306,6 @@ public class StringExtensionsTests
         testNormalized = test.ToNormalizedString();
         Assert.NotNull(testNormalized);
         Assert.NotEqual(test, testNormalized);
-       
     }
 
     [Fact]
@@ -413,6 +417,8 @@ public class StringExtensionsTests
     [InlineData("BATMAN", "BATMAN", true)]
     [InlineData("Batman", "batman", true)]
     [InlineData("Batman", "Batma", true)]
-    public void ValidateIsSimilar(string? one, string? two, bool shouldBe) => Assert.Equal(shouldBe, one.IsSimilar(two));
-
+    public void ValidateIsSimilar(string? one, string? two, bool shouldBe)
+    {
+        Assert.Equal(shouldBe, one.IsSimilar(two));
+    }
 }

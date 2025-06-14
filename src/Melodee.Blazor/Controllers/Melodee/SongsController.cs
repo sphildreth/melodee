@@ -32,16 +32,15 @@ public class SongsController(
     configuration,
     configurationFactory)
 {
-    
     [HttpGet]
     [Route("{id:guid}")]
     public Task<IActionResult> SongById(Guid id, CancellationToken cancellationToken = default)
     {
         throw new NotImplementedException();
-    }     
-    
+    }
+
     [HttpGet]
-    public async Task<IActionResult> ListAsync(short page, short pageSize,string? orderBy, string? orderDirection, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> ListAsync(short page, short pageSize, string? orderBy, string? orderDirection, CancellationToken cancellationToken = default)
     {
         if (!ApiRequest.IsAuthorized)
         {
@@ -52,23 +51,23 @@ public class SongsController(
         if (!userResult.IsSuccess || userResult.Data == null)
         {
             return Unauthorized(new { error = "Authorization token is invalid" });
-        }        
-        
+        }
+
         if (userResult.Data.IsLocked)
         {
             return Forbid("User is locked");
         }
-        
+
         var orderByValue = orderBy ?? nameof(AlbumDataInfo.CreatedAt);
         var orderDirectionValue = orderDirection ?? PagedRequest.OrderDescDirection;
-        
+
         var listResult = await songService.ListAsync(new PagedRequest
         {
             Page = page,
             PageSize = pageSize,
-            OrderBy = new Dictionary<string, string>{{ orderByValue, orderDirectionValue}}
+            OrderBy = new Dictionary<string, string> { { orderByValue, orderDirectionValue } }
         }, userResult.Data.Id, cancellationToken).ConfigureAwait(false);
-        
+
         var baseUrl = GetBaseUrl(await ConfigurationFactory.GetConfigurationAsync(cancellationToken).ConfigureAwait(false));
 
         return Ok(new
@@ -80,9 +79,9 @@ public class SongsController(
                 listResult.TotalPages
             ),
             data = listResult.Data.Select(x => x.ToSongModel(baseUrl, userResult.Data.ToUserModel(baseUrl), userResult.Data.PublicKey)).ToArray()
-        }); 
-    }      
-    
+        });
+    }
+
     [HttpGet]
     [Route("recent")]
     public async Task<IActionResult> RecentlyAddedAsync(short limit, CancellationToken cancellationToken = default)
@@ -96,22 +95,22 @@ public class SongsController(
         if (!userResult.IsSuccess || userResult.Data == null)
         {
             return Unauthorized(new { error = "Authorization token is invalid" });
-        }        
-        
+        }
+
         if (userResult.Data.IsLocked)
         {
             return Forbid("User is locked");
         }
-        
+
         var songRecentResult = await songService.ListAsync(new PagedRequest
         {
             Page = 1,
             PageSize = limit,
-            OrderBy = new Dictionary<string, string>{{ nameof(AlbumDataInfo.CreatedAt), PagedRequest.OrderDescDirection}}
+            OrderBy = new Dictionary<string, string> { { nameof(AlbumDataInfo.CreatedAt), PagedRequest.OrderDescDirection } }
         }, userResult.Data.Id, cancellationToken).ConfigureAwait(false);
-        
+
         var baseUrl = GetBaseUrl(await ConfigurationFactory.GetConfigurationAsync(cancellationToken).ConfigureAwait(false));
-        
+
         return Ok(new
         {
             meta = new PaginationMetadata(
@@ -122,8 +121,8 @@ public class SongsController(
             ),
             data = songRecentResult.Data.Select(x => x.ToSongModel(baseUrl, userResult.Data.ToUserModel(baseUrl), userResult.Data.PublicKey)).ToArray()
         });
-    }    
-    
+    }
+
     [HttpPost]
     [Route("starred/{apiKey:guid}/{isStarred:bool}")]
     public async Task<IActionResult>? ToggleSongStarred(Guid apiKey, bool isStarred, CancellationToken cancellationToken = default)
@@ -143,8 +142,8 @@ public class SongsController(
         {
             return Forbid("User is locked");
         }
-        
-        if (await blacklistService.IsEmailBlacklistedAsync(userResult.Data.Email).ConfigureAwait(false) || 
+
+        if (await blacklistService.IsEmailBlacklistedAsync(userResult.Data.Email).ConfigureAwait(false) ||
             await blacklistService.IsIpBlacklistedAsync(GetRequestIp(HttpContext)).ConfigureAwait(false))
         {
             return StatusCode(StatusCodes.Status403Forbidden, new { error = "User is blacklisted" });
@@ -155,10 +154,10 @@ public class SongsController(
         {
             return Ok();
         }
-        return BadRequest($"Unable to toggle star for song for user.");
 
+        return BadRequest("Unable to toggle star for song for user.");
     }
-    
+
     [HttpGet]
     [Route("/song/stream/{apiKey:guid}/{userApiKey:guid}/{authToken}")]
     public async Task<IActionResult> StreamSong(Guid apiKey, Guid userApiKey, string authToken, CancellationToken cancellationToken = default)
@@ -174,12 +173,12 @@ public class SongsController(
             return Forbid("User is locked");
         }
 
-        if (await blacklistService.IsEmailBlacklistedAsync(userResult.Data.Email).ConfigureAwait(false) || 
+        if (await blacklistService.IsEmailBlacklistedAsync(userResult.Data.Email).ConfigureAwait(false) ||
             await blacklistService.IsIpBlacklistedAsync(GetRequestIp(HttpContext)).ConfigureAwait(false))
         {
             return StatusCode(StatusCodes.Status403Forbidden, new { error = "User is blacklisted" });
-        }        
-        
+        }
+
         var hmacService = new HmacTokenService(userResult.Data.PublicKey);
         var authTokenValidation = hmacService.ValidateTimedToken(authToken.FromBase64());
 
@@ -195,7 +194,7 @@ public class SongsController(
         }
 
         Response.Headers.Clear();
-        
+
         foreach (var responseHeader in streamResult.Data.ResponseHeaders)
         {
             Response.Headers[responseHeader.Key] = responseHeader.Value;

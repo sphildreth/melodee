@@ -1,9 +1,7 @@
 @page "/share/{ShareUniqueId}"
+@using AuralizeBlazor
 @using Melodee.Common.Data.Models.Extensions
 @using Melodee.Common.Enums
-@using AuralizeBlazor.Features
-@using AuralizeBlazor.Options
-@using AuralizeBlazor
 
 @inject IMelodeeConfigurationFactory ConfigurationFactory
 @inject ShareService ShareService
@@ -40,7 +38,7 @@
         var shareResult = await ShareService.GetByUniqueIdAsync(ShareUniqueId);
         if (shareResult is { IsSuccess: true, Data: not null })
         {
-            Melodee.Common.Data.Models.Share share = shareResult.Data;
+            var share = shareResult.Data;
             switch (share.ShareTypeValue)
             {
                 case ShareType.Song:
@@ -54,6 +52,7 @@
                                 $"/images/{songResult.Data.ToCoverArtId()}/1024")
                         ];
                     }
+
                     break;
                 case ShareType.Album:
                     var albumResult = await AlbumService.GetAsync(share.ShareId);
@@ -65,25 +64,25 @@
                                 $"/images/{albumResult.Data.ToCoverArtId()}/1024")
                         ).ToArray();
                     }
+
                     break;
                 case ShareType.Playlist:
                     var playlistResult = await PlaylistService.GetAsync(share.ShareId);
                     if (playlistResult is { IsSuccess: true, Data: not null })
                     {
                         _songInfos = playlistResult.Data.Songs.Select(x =>
-                                new AuralizerTrack(x.Song.ToApiStreamUrl(configuration),
-                                    $"{x.Song.Album.Name} - {x.Song.Title}",
-                                    $"/images/{x.Song.ToCoverArtId()}/1024")
-                            ).ToArray();
-
+                            new AuralizerTrack(x.Song.ToApiStreamUrl(configuration),
+                                $"{x.Song.Album.Name} - {x.Song.Title}",
+                                $"/images/{x.Song.ToCoverArtId()}/1024")
+                        ).ToArray();
                     }
+
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();
             }
         }
     }
-
 
 
 }

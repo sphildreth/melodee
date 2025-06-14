@@ -6,6 +6,10 @@ namespace Melodee.Blazor.ViewModels;
 
 public sealed class AlbumEdit
 {
+    public List<string> AlternateNames = [];
+
+    public List<string> Tags = [];
+
     [Required(ErrorMessage = "Artist is required.")]
     public required ArtistSearchResult ArtistSearchResult { get; set; }
 
@@ -14,7 +18,7 @@ public sealed class AlbumEdit
     public required string Title { get; set; }
 
     public string? Genre { get; set; }
-    
+
     public string? MusicBrainzId { get; set; }
 
     [RequiredGreaterThanZero(ErrorMessage = "Album release year is required.")]
@@ -23,16 +27,11 @@ public sealed class AlbumEdit
     public required SongEdit[] Songs { get; set; }
 
     public required FileEdit[] AlbumDirectoryFiles { get; set; }
-    
+
     public string? AmgId { get; set; }
     public string? SortName { get; set; }
-    
+
     public int SortOrder { get; set; }
-    
+
     public string? SpotifyId { get; set; }
-
-    public List<string> AlternateNames = [];
-
-    public List<string> Tags = [];    
-    
 }

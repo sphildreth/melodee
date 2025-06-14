@@ -1,10 +1,9 @@
-using Melodee.Common.Enums;
 using Melodee.Common.Models;
 using Melodee.Common.Models.Extensions;
 
 namespace Melodee.Tests.Extensions;
 
-public class ArtistExtensionTests 
+public class ArtistExtensionTests
 {
     [Theory]
     [InlineData("Bob Jones", false)]
@@ -32,7 +31,4 @@ public class ArtistExtensionTests
     {
         Assert.Equal(shouldBe, Artist.NewArtistFromName(input).IsCastRecording());
     }
-    
-
-    
 }

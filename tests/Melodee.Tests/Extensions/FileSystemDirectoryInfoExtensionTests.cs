@@ -1,5 +1,5 @@
-using Melodee.Common.Models;
 using Melodee.Common.Extensions;
+using Melodee.Common.Models;
 using Melodee.Common.Models.Extensions;
 using Artist = Melodee.Common.Data.Models.Artist;
 
@@ -18,7 +18,7 @@ public class FileSystemDirectoryInfoExtensionTests
         Assert.Equal(testPath, fileDirectory.Path);
         Assert.Equal("image_number_tests", fileDirectory.Name);
     }
-    
+
     [Fact]
     public void ValidateFileNameForFileDirectory()
     {
@@ -43,7 +43,7 @@ public class FileSystemDirectoryInfoExtensionTests
         Assert.Equal(testPath, fileDirectory.Path);
         Assert.Equal("(2020) J.de - Premi.re fois", fileDirectory.Name);
     }
-    
+
     [Fact]
     public void ValidateDirectoryNameForToDirectoryFromString()
     {
@@ -51,9 +51,9 @@ public class FileSystemDirectoryInfoExtensionTests
         var fileDirectory = testPath.ToFileSystemDirectoryInfo();
         Assert.Equal(testPath, fileDirectory.Path);
         Assert.Equal("(2020) J.de - Premi.re fois", fileDirectory.Name);
-    }       
-     
-    
+    }
+
+
     [Theory]
     [InlineData("Bobs Discography", true)]
     [InlineData("Bobs Discography (1940-1999)", true)]
@@ -200,7 +200,7 @@ public class FileSystemDirectoryInfoExtensionTests
             Assert.False(Directory.Exists(nd.FullName()));
         }
     }
-   
+
 
     [Fact]
     public void NextImageNumberInDirectory()

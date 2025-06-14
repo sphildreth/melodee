@@ -9,8 +9,8 @@ public class LibraryRebuildSettings : LibrarySettings
     [CommandOption("--only-missing")]
     [DefaultValue(true)]
     public bool CreateOnlyMissing { get; init; }
-    
+
     [Description("Rebuild only this library path.")]
-    [CommandArgument(1,"[only-path]")]
+    [CommandArgument(1, "[only-path]")]
     public string? OnlyPath { get; init; }
 }

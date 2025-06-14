@@ -1,6 +1,4 @@
-@using Melodee.Blazor.ViewModels
 @using Melodee.Common.Data.Models
-@using Melodee.Common.Data.Models.Extensions
 <RadzenCard Variant="Variant.Filled"
             class="@($"rz-mx-auto rz-my-1 rz-p-1 {CssClass}")"
             Style="@(Style ?? "max-width: 300px")">
@@ -8,7 +6,7 @@
         <RadzenImage Path="@UserPin.ImageUrl" Style="width: 60px; height: 60px; margin-right: 5px;"/>
         <RadzenStack Gap="0">
             <RadzenText TextStyle="TextStyle.Body1">
-                <RadzenIcon Icon="@UserPin.Icon" />
+                <RadzenIcon Icon="@UserPin.Icon"/>
                 <RadzenLink text="@UserPin.Text" class="rz-text-wrap" Path="@UserPin.LinkUrl"/>
             </RadzenText>
         </RadzenStack>

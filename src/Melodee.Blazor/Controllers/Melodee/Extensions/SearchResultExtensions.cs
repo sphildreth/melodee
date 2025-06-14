@@ -4,7 +4,7 @@ namespace Melodee.Blazor.Controllers.Melodee.Extensions;
 
 public static class SearchResultExtensions
 {
-    public static SearchResult ToSearchResultModel(this global::Melodee.Common.Models.Search.SearchResult searchResult, string baseUrl, User currentUser, string userSecret)
+    public static SearchResult ToSearchResultModel(this Common.Models.Search.SearchResult searchResult, string baseUrl, User currentUser, string userSecret)
     {
         return new SearchResult(
             searchResult.TotalCount,
@@ -15,7 +15,7 @@ public static class SearchResultExtensions
             searchResult.Songs.Select(x => x.ToSongModel(baseUrl, currentUser, userSecret)).ToArray(),
             searchResult.TotalSongs,
             searchResult.Playlists.Select(x => x.ToPlaylistModel(baseUrl, currentUser)).ToArray(),
-            searchResult.TotalPlaylists           
-            );
+            searchResult.TotalPlaylists
+        );
     }
 }

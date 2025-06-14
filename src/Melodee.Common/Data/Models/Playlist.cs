@@ -41,7 +41,6 @@ public class Playlist : DataModelBase
     public string? AllowedUserIds { get; set; }
 
     public ICollection<PlaylistSong> Songs { get; set; } = new List<PlaylistSong>();
-    
-    [NotMapped]
-    public bool IsDynamic { get; set; }
+
+    [NotMapped] public bool IsDynamic { get; set; }
 }

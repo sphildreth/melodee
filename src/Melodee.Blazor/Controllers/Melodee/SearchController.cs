@@ -4,7 +4,6 @@ using Melodee.Blazor.Controllers.Melodee.Models;
 using Melodee.Blazor.Filters;
 using Melodee.Blazor.Services;
 using Melodee.Common.Configuration;
-using Melodee.Common.Models.Collection;
 using Melodee.Common.Models.Search;
 using Melodee.Common.Serialization;
 using Melodee.Common.Services;
@@ -29,9 +28,8 @@ public class SearchController(
     configuration,
     configurationFactory)
 {
-
     [HttpPost]
-    public async Task<IActionResult> SearchAsync([FromBody]SearchRequest searchRequest, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> SearchAsync([FromBody] SearchRequest searchRequest, CancellationToken cancellationToken = default)
     {
         if (!ApiRequest.IsAuthorized)
         {
@@ -48,13 +46,13 @@ public class SearchController(
         {
             return Forbid("User is locked");
         }
-        
-        if (await blacklistService.IsEmailBlacklistedAsync(userResult.Data.Email).ConfigureAwait(false) || 
+
+        if (await blacklistService.IsEmailBlacklistedAsync(userResult.Data.Email).ConfigureAwait(false) ||
             await blacklistService.IsIpBlacklistedAsync(GetRequestIp(HttpContext)).ConfigureAwait(false))
         {
             return StatusCode(StatusCodes.Status403Forbidden, new { error = "User is blacklisted" });
-        }        
-        
+        }
+
         var pageSizeValue = searchRequest.PageSize ?? 50;
 
         var includedTyped = SearchInclude.Data;
@@ -113,16 +111,16 @@ public class SearchController(
         {
             return Forbid("User is locked");
         }
-        
-        if (await blacklistService.IsEmailBlacklistedAsync(userResult.Data.Email).ConfigureAwait(false) || 
+
+        if (await blacklistService.IsEmailBlacklistedAsync(userResult.Data.Email).ConfigureAwait(false) ||
             await blacklistService.IsIpBlacklistedAsync(GetRequestIp(HttpContext)).ConfigureAwait(false))
         {
             return StatusCode(StatusCodes.Status403Forbidden, new { error = "User is blacklisted" });
-        }        
-        
+        }
+
         var pageValue = page ?? 1;
         var pageSizeValue = pageSize ?? 50;
-        
+
 
         var searchResult = await searchService.DoSearchAsync(userResult.Data.ApiKey,
                 ApiRequest.ApiRequestPlayer.UserAgent,

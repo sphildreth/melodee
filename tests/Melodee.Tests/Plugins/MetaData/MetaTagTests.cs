@@ -79,8 +79,8 @@ public class MetaTagTests : TestsBase
             var metaTag = new IdSharpMetaTag(new MetaTagsProcessor(NewPluginsConfiguration(), Serializer), NewPluginsConfiguration());
             var dirInfo = new FileSystemDirectoryInfo
             {
-               Path = @"/melodee_test/tests/",
-               Name = "tests"
+                Path = @"/melodee_test/tests/",
+                Name = "tests"
             };
             var tagResult = await metaTag.ProcessFileAsync(dirInfo, fileInfo.ToFileSystemInfo());
             Assert.NotNull(tagResult);

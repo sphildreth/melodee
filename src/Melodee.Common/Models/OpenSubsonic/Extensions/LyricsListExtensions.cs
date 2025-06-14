@@ -11,10 +11,11 @@ public static class LyricsListExtensions
         {
             stringBuilder.Append($"{line.Value}\n");
         }
+
         return new Lyrics
         {
             Artist = lyricsList.DisplayArtist ?? throw new Exception("Artist is required"),
-            Title = lyricsList.DisplayTitle  ?? throw new Exception("Title is required"),
+            Title = lyricsList.DisplayTitle ?? throw new Exception("Title is required"),
             Value = stringBuilder.ToString()
         };
     }

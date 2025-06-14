@@ -1,76 +1,73 @@
-using System.IO;
-using System.Threading.Tasks;
-using Xunit;
-using Melodee.Common.Metadata.AudioTags.Readers;
 using Melodee.Common.Enums;
-using System.Threading;
 using Melodee.Common.Metadata.AudioTags;
+using Melodee.Common.Metadata.AudioTags.Readers;
 using Melodee.Common.Utility;
 
-namespace Melodee.Tests.MetaData.AudioTags
+namespace Melodee.Tests.MetaData.AudioTags;
+
+public class Mp4TagReaderTests
 {
-    public class Mp4TagReaderTests
+    [Fact]
+    public async Task Returns_Empty_On_NonTagged_File()
     {
-        [Fact]
-        public async Task Returns_Empty_On_NonTagged_File()
+        var tempFile = Path.GetTempFileName();
+        try
         {
-            var tempFile = Path.GetTempFileName();
-            try
-            {
-                var reader = new Mp4TagReader();
-                var tags = await reader.ReadTagsAsync(tempFile, CancellationToken.None);
-                Assert.Empty(tags);
-            }
-            finally
-            {
-                File.Delete(tempFile);
-            }
+            var reader = new Mp4TagReader();
+            var tags = await reader.ReadTagsAsync(tempFile, CancellationToken.None);
+            Assert.Empty(tags);
         }
-        
-        [Fact]
-        public async Task Read_Media_MP4_In_Test_Folder()
+        finally
         {
-            var testFolder = Path.Combine(Directory.GetCurrentDirectory(), "melodee_test", "tests", "good");
-            if (!Directory.Exists(testFolder))
-            {
-                return;
-            }
-            var tags = await AudioTagManager.ReadAllTagsAsync(Path.Combine(testFolder, "test.mp4"), CancellationToken.None);
-            Assert.NotEqual(AudioFormat.Unknown, tags.Format);
-            Assert.NotEqual(0, tags.FileMetadata.FileSize);
-            Assert.NotEqual(string.Empty, tags.FileMetadata.FilePath);
-            Assert.NotEqual(DateTimeOffset.MinValue, tags.FileMetadata.Created);
-            Assert.NotEqual(DateTimeOffset.MinValue, tags.FileMetadata.LastModified);
-            Assert.NotNull(tags.Tags);
-            Assert.NotEmpty(tags.Tags);
-            Assert.NotEmpty(tags.Tags.Keys);
-            Assert.NotEmpty(tags.Tags.Values);
-            Assert.NotEmpty(SafeParser.ToString(tags.Tags[Melodee.Common.Enums.MetaTagIdentifier.Artist]));
-            Assert.True(SafeParser.ToNumber<int>(tags.Tags[Melodee.Common.Enums.MetaTagIdentifier.TrackNumber]) > 0);
-            Assert.NotEmpty(SafeParser.ToString(tags.Tags[Melodee.Common.Enums.MetaTagIdentifier.Title]));
-        }         
-        
-        [Fact]
-        public async Task Read_Media_M4A_In_Test_Folder()
+            File.Delete(tempFile);
+        }
+    }
+
+    [Fact]
+    public async Task Read_Media_MP4_In_Test_Folder()
+    {
+        var testFolder = Path.Combine(Directory.GetCurrentDirectory(), "melodee_test", "tests", "good");
+        if (!Directory.Exists(testFolder))
         {
-            var testFolder = Path.Combine(Directory.GetCurrentDirectory(), "melodee_test", "tests", "good");
-            if (!Directory.Exists(testFolder))
-            {
-                return;
-            }
-            var tags = await AudioTagManager.ReadAllTagsAsync(Path.Combine(testFolder, "test.m4a"), CancellationToken.None);
-            Assert.NotEqual(AudioFormat.Unknown, tags.Format);
-            Assert.NotEqual(0, tags.FileMetadata.FileSize);
-            Assert.NotEqual(string.Empty, tags.FileMetadata.FilePath);
-            Assert.NotEqual(DateTimeOffset.MinValue, tags.FileMetadata.Created);
-            Assert.NotEqual(DateTimeOffset.MinValue, tags.FileMetadata.LastModified);
-            Assert.NotNull(tags.Tags);
-            Assert.NotEmpty(tags.Tags);
-            Assert.NotEmpty(tags.Tags.Keys);
-            Assert.NotEmpty(tags.Tags.Values);
-            Assert.NotEmpty(SafeParser.ToString(tags.Tags[Melodee.Common.Enums.MetaTagIdentifier.Artist]));
-            Assert.True(SafeParser.ToNumber<int>(tags.Tags[Melodee.Common.Enums.MetaTagIdentifier.TrackNumber]) > 0);
-            Assert.NotEmpty(SafeParser.ToString(tags.Tags[Melodee.Common.Enums.MetaTagIdentifier.Title]));
-        }          
+            return;
+        }
+
+        var tags = await AudioTagManager.ReadAllTagsAsync(Path.Combine(testFolder, "test.mp4"), CancellationToken.None);
+        Assert.NotEqual(AudioFormat.Unknown, tags.Format);
+        Assert.NotEqual(0, tags.FileMetadata.FileSize);
+        Assert.NotEqual(string.Empty, tags.FileMetadata.FilePath);
+        Assert.NotEqual(DateTimeOffset.MinValue, tags.FileMetadata.Created);
+        Assert.NotEqual(DateTimeOffset.MinValue, tags.FileMetadata.LastModified);
+        Assert.NotNull(tags.Tags);
+        Assert.NotEmpty(tags.Tags);
+        Assert.NotEmpty(tags.Tags.Keys);
+        Assert.NotEmpty(tags.Tags.Values);
+        Assert.NotEmpty(SafeParser.ToString(tags.Tags[MetaTagIdentifier.Artist]));
+        Assert.True(SafeParser.ToNumber<int>(tags.Tags[MetaTagIdentifier.TrackNumber]) > 0);
+        Assert.NotEmpty(SafeParser.ToString(tags.Tags[MetaTagIdentifier.Title]));
+    }
+
+    [Fact]
+    public async Task Read_Media_M4A_In_Test_Folder()
+    {
+        var testFolder = Path.Combine(Directory.GetCurrentDirectory(), "melodee_test", "tests", "good");
+        if (!Directory.Exists(testFolder))
+        {
+            return;
+        }
+
+        var tags = await AudioTagManager.ReadAllTagsAsync(Path.Combine(testFolder, "test.m4a"), CancellationToken.None);
+        Assert.NotEqual(AudioFormat.Unknown, tags.Format);
+        Assert.NotEqual(0, tags.FileMetadata.FileSize);
+        Assert.NotEqual(string.Empty, tags.FileMetadata.FilePath);
+        Assert.NotEqual(DateTimeOffset.MinValue, tags.FileMetadata.Created);
+        Assert.NotEqual(DateTimeOffset.MinValue, tags.FileMetadata.LastModified);
+        Assert.NotNull(tags.Tags);
+        Assert.NotEmpty(tags.Tags);
+        Assert.NotEmpty(tags.Tags.Keys);
+        Assert.NotEmpty(tags.Tags.Values);
+        Assert.NotEmpty(SafeParser.ToString(tags.Tags[MetaTagIdentifier.Artist]));
+        Assert.True(SafeParser.ToNumber<int>(tags.Tags[MetaTagIdentifier.TrackNumber]) > 0);
+        Assert.NotEmpty(SafeParser.ToString(tags.Tags[MetaTagIdentifier.Title]));
     }
 }

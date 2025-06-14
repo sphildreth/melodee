@@ -44,7 +44,7 @@ public sealed class SearchService(
         var totalSongs = 0;
         var totalPlaylists = 0;
         var totalMusicBrainzArtists = 0;
-        
+
         List<ArtistDataInfo> artists = new();
         List<AlbumDataInfo> albums = new();
         List<SongDataInfo> songs = new();
@@ -100,7 +100,7 @@ public sealed class SearchService(
                 var contributorAlbumsResult = await albumService.ListForContributorsAsync(new PagedRequest
                 {
                     Page = albumPage,
-                    PageSize = pageSize,
+                    PageSize = pageSize
                 }, HttpUtility.UrlDecode(searchTerm) ?? Guid.NewGuid().ToString(), cancellationToken);
                 if (contributorAlbumsResult.TotalCount > 0)
                 {
@@ -128,7 +128,7 @@ public sealed class SearchService(
                 var contributorSongResult = await songService.ListForContributorsAsync(new PagedRequest
                 {
                     Page = songPage,
-                    PageSize = pageSize,
+                    PageSize = pageSize
                 }, HttpUtility.UrlDecode(searchTerm) ?? Guid.NewGuid().ToString(), cancellationToken);
                 if (contributorSongResult.TotalCount > 0)
                 {

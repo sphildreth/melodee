@@ -1,4 +1,3 @@
-@using Melodee.Blazor.Components.Pages
 @using Melodee.Blazor.ViewModels
 @using Melodee.Common.Models.SearchEngines
 @using Melodee.Common.Services.SearchEngines
@@ -86,7 +85,7 @@
 
 @code {
 
-    bool _isLoading = false;
+    bool _isLoading;
     int _maxResults = 10;
     bool _doDeleteExistingImages = true;
 
@@ -138,6 +137,7 @@
         {
             return;
         }
+
         _isLoading = true;
         try
         {

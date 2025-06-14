@@ -1,9 +1,7 @@
 @page "/search/{Query}"
 @using System.Security.Claims
-@using Melodee.Blazor.Components.Pages.Data
 @using Melodee.Common.Data.Models.Extensions
 @using Melodee.Common.Models.Collection
-@using Melodee.Common.Models.Collection.Extensions
 @using Melodee.Common.Models.Search
 @using Album = Melodee.Common.Data.Models.Album
 @using Artist = Melodee.Common.Data.Models.Artist
@@ -95,7 +93,7 @@
         <HeaderTemplate>
             <RadzenText TextStyle="TextStyle.Subtitle2" class="rz-display-flex rz-m-0">
                 <RadzenIcon Icon="album" class="rz-me-1"/>
-                Songs  (@_searchResult.Songs.Length)
+                Songs (@_searchResult.Songs.Length)
             </RadzenText>
         </HeaderTemplate>
         <ChildContent>
@@ -176,7 +174,7 @@
                 Query,
                 1,
                 1,
-                    1,
+                1,
                 _defaultMaxResults,
                 SearchInclude.Data);
             if (searchResult.IsSuccess)
@@ -203,7 +201,7 @@
 
     private async Task PlaySong(SongDataInfo song)
     {
-        var songs = new List<Common.Data.Models.Song>
+        var songs = new List<Song>
         {
             new Song
             {
@@ -242,4 +240,5 @@
         };
         await PlayAction(song.Title, songs.Select(x => x.ToSongDataInfo()).ToList());
     }
+
 }

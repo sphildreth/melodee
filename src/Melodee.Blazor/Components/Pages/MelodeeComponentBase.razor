@@ -5,8 +5,6 @@
 @inject IMelodeeConfigurationFactory ConfigurationFactory
 @inject DialogService DialogService
 
-@using Song = Melodee.Common.Data.Models.Song
-
 @code {
 
     protected short DefaultPageSize { get; private set; } = 25;
@@ -36,8 +34,8 @@
 
     protected async Task PlayAction(string dialogTitle, List<SongDataInfo> songs)
     {
-        await DialogService.OpenAsync<MusicPlayer>(dialogTitle, new Dictionary<string, object>{ { "Songs", songs }},
-            new DialogOptions()
+        await DialogService.OpenAsync<MusicPlayer>(dialogTitle, new Dictionary<string, object> { { "Songs", songs } },
+            new DialogOptions
             {
                 Resizable = false,
                 Draggable = false,

@@ -18,11 +18,11 @@ public enum PictureIdentifier
     ///     Front cover
     /// </summary>
     Front,
-    
+
     /// <summary>
     ///     Back cover
     /// </summary>
-    Back,    
+    Back,
 
     /// <summary>
     ///     Front cover, but not the primary like Cover01, Cover02
@@ -38,17 +38,17 @@ public enum PictureIdentifier
     ///     File icon
     /// </summary>
     Icon,
-    
+
     /// <summary>
     ///     Artist/performer
     /// </summary>
     Artist,
-    
+
     /// <summary>
     ///     Conductor
     /// </summary>
     Conductor,
-    
+
     /// <summary>
     ///     Band/Orchestra
     /// </summary>
@@ -68,7 +68,7 @@ public enum PictureIdentifier
     ///     Band/artist logotype
     /// </summary>
     BandLogo,
-    
+
     /// <summary>
     ///     Artist/performer, but not the primary like Artist01, Artist02
     /// </summary>

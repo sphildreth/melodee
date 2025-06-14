@@ -10,9 +10,9 @@ public class ImportSetting : Spectre.Console.Cli.CommandSettings
     [CommandOption("--verbose")]
     [DefaultValue(true)]
     public bool Verbose { get; init; }
-    
+
     [Description("CSV filename")]
     [CommandArgument(0, "[CSV]")]
     [Required]
-    public string CsvFileName { get; init; } = string.Empty;     
+    public string CsvFileName { get; init; } = string.Empty;
 }

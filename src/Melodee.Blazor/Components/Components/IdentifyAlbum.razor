@@ -50,7 +50,8 @@
                 }
                 @foreach (var result in _results)
                 {
-                    <div class="@(_selectedResult == result ? "selected" : string.Empty) album-search-container" @onclick="() => _selectedResult = result">
+                    <div class="@(_selectedResult == result ? "selected" : string.Empty) album-search-container"
+                         @onclick="() => _selectedResult = result">
                         <AlbumDataInfoCardCompactComponent ShowAlbumLink="false" Album="result"/>
                     </div>
                 }
@@ -61,7 +62,7 @@
 
 @code {
 
-    bool _isLoading = false;
+    bool _isLoading;
     int _maxResults = 10;
 
     private AlbumDataInfo[] _results = [];
@@ -102,6 +103,7 @@
         {
             return;
         }
+
         _isLoading = true;
         try
         {
@@ -109,7 +111,7 @@
             _results = (await AlbumSearchEngineService.DoSearchAsync(new AlbumQuery
                 {
                     Artist = SearchValues.First(x => x.Key == nameof(AlbumQuery.Artist)).Value,
-                    ArtistMusicBrainzId = SearchValues.First(x => x.Key ==  nameof(AlbumQuery.ArtistMusicBrainzId)).Value,
+                    ArtistMusicBrainzId = SearchValues.First(x => x.Key == nameof(AlbumQuery.ArtistMusicBrainzId)).Value,
                     Name = searchName,
                     Year = SafeParser.ToNumber<int>(SearchValues.First(x => x.Key == nameof(AlbumQuery.Year)).Value)
                 }, _maxResults))

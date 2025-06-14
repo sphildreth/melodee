@@ -2,7 +2,6 @@ using Melodee.Common.Enums;
 using Melodee.Common.Models;
 using Melodee.Common.Models.Extensions;
 using Melodee.Tests.Validation;
-using ServiceStack;
 
 namespace Melodee.Tests.Models;
 
@@ -13,16 +12,16 @@ public class AlbumModelTest
     {
         var album1 = AlbumValidatorTests.TestAlbum;
         var album1SongCount = album1.Songs.Count();
-        
+
         var album2 = AlbumValidatorTests.TestAlbum;
-        
+
         var merged = album1.Merge(album2);
         Assert.Equal(album1SongCount, merged.Songs.Count());
-        
+
         var songIds = merged.Songs.Select(x => x.SongUniqueId()).ToList();
         Assert.Equal(album1SongCount, songIds.Count());
     }
-    
+
     [Fact]
     public void ValidateAlbumsMerge()
     {
@@ -79,10 +78,10 @@ public class AlbumModelTest
         {
             Songs = album2Songs
         };
-        
+
         var merged = album1.Merge(album2);
         Assert.Equal(3, merged.Songs.Count());
-        
+
         Assert.Contains(merged.Songs, x => x.CrcHash == "TestValue3");
         Assert.Equal(3, merged.SongTotalValue());
     }

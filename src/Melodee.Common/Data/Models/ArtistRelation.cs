@@ -21,8 +21,7 @@ public class ArtistRelation : DataModelBase
 
     [RequiredGreaterThanZero] public int ArtistRelationType { get; set; }
 
-    [NotMapped]
-    public ArtistRelationType ArtistRelationTypeValue => SafeParser.ToEnum<ArtistRelationType>(ArtistRelationType);
+    [NotMapped] public ArtistRelationType ArtistRelationTypeValue => SafeParser.ToEnum<ArtistRelationType>(ArtistRelationType);
 
     public Instant? RelationStart { get; set; }
 

@@ -18,9 +18,9 @@ public static class UserInfoExtensions
     {
         return Path.Combine(libraryPath, $"{user.Id.ToStringPadLeft(8)}.gif");
     }
-    
+
     public static string ToApiKey(this UserInfo user)
     {
         return $"user{OpenSubsonicServer.ApiIdSeparator}{user.ApiKey}";
-    }    
+    }
 }

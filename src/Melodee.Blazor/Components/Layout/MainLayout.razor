@@ -67,8 +67,9 @@
                                                            Icon="power_settings_new"/>
                                 </ChildContent>
                                 <Template>
-                                    <RadzenImage Path="@($"/images/{context.User.ToApiKey()}/{MelodeeConfiguration.DefaultThumbNailSize}")"
-                                                 style="border-radius:5px;height:40px;width:40px;"/>
+                                    <RadzenImage
+                                        Path="@($"/images/{context.User.ToApiKey()}/{MelodeeConfiguration.DefaultThumbNailSize}")"
+                                        style="border-radius:5px;height:40px;width:40px;"/>
                                 </Template>
                             </RadzenProfileMenu>
                         </RadzenStack>
@@ -80,15 +81,17 @@
                     <RadzenPanelMenuItem Text="Dashboard" Path="/" Icon="dashboard"/>
                     <RadzenPanelMenuItem Text="Artists" Path="/data/artists" Icon="artist"/>
                     <RadzenPanelMenuItem Text="Albums" Path="/data/albums" Icon="album"/>
-                    <RadzenPanelMenuItem Text="Libraries" Path="/data/libraries" Icon="library_music" Visible="@AuthService.IsAdmin"/>
+                    <RadzenPanelMenuItem Text="Libraries" Path="/data/libraries" Icon="library_music"
+                                         Visible="@AuthService.IsAdmin"/>
                     <RadzenPanelMenuItem Text="Now Playing" Path="/activity/nowplaying" Icon="sound_sampler"/>
                     <RadzenPanelMenuItem Text="Playlists" Path="/data/playlists" Icon="playlist_play"/>
                     <RadzenPanelMenuItem Text="Radio Stations" Path="/data/radiostations" Icon="radio"/>
                     <RadzenPanelMenuItem Text="Songs" Path="/data/songs" Icon="music_note"/>
                     <RadzenPanelMenuItem Text="Shares" Path="/data/shares" Icon="share"/>
                     <RadzenPanelMenuItem Text="Users" Path="/data/users" Icon="group"/>
-                    <RadzenPanelMenuItem Text="Admin" Icon="admin_panel_settings" IconColor="@Colors.Danger" Visible="@AuthService.IsAdmin">
-                        <RadzenPanelMenuItem Text="Dashboard" Path="/admin/dashboard"  Icon="dashboard"/>
+                    <RadzenPanelMenuItem Text="Admin" Icon="admin_panel_settings" IconColor="@Colors.Danger"
+                                         Visible="@AuthService.IsAdmin">
+                        <RadzenPanelMenuItem Text="Dashboard" Path="/admin/dashboard" Icon="dashboard"/>
                         <RadzenPanelMenuItem Text="Media" Icon="perm_media">
                             @foreach (var mediaLibraryInfo in _mediaLibraryInfos)
                             {

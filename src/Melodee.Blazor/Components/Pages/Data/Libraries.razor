@@ -111,7 +111,7 @@
                                       Visible="@(CurrentUser?.IsAdmin() ?? false)"
                                       Click=@(_ => NavigationManager.NavigateTo($"/data/libraryedit/{data.ApiKey}"))
                                       Icon="edit" ButtonStyle="ButtonStyle.Secondary"/>
-                        <RadzenLink Path="@($"/data/library/{ data.ApiKey}")">@data.Name</RadzenLink>
+                        <RadzenLink Path="@($"/data/library/{data.ApiKey}")">@data.Name</RadzenLink>
                     </Template>
                 </RadzenDataGridColumn>
                 <RadzenDataGridColumn Property="@nameof(Library.Path)" Title="Path"/>

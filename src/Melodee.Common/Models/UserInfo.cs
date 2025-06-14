@@ -12,6 +12,8 @@ public record UserInfo(int Id, Guid ApiKey, string UserName, string Email, strin
 {
     public List<string>? Roles { get; init; }
 
+    public static UserInfo BlankUserInfo => new(0, Guid.Empty, string.Empty, string.Empty, string.Empty, string.Empty);
+
     public ClaimsPrincipal ToClaimsPrincipal(IMelodeeConfiguration configuration, string userAvatarPath)
     {
         var userSalt = UserService.GenerateSalt();
@@ -47,6 +49,4 @@ public record UserInfo(int Id, Guid ApiKey, string UserName, string Email, strin
             Roles = principal.FindAll(ClaimTypes.Role).Select(c => c.Value).ToList()
         };
     }
-    
-    public static UserInfo BlankUserInfo => new(0, Guid.Empty, string.Empty, string.Empty, string.Empty, string.Empty);    
 }

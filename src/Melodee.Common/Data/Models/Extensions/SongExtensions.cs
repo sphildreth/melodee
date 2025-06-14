@@ -126,6 +126,6 @@ public static class SongExtensions
             song.Tags ?? string.Empty,
             userSong?.IsStarred ?? false,
             userSong?.Rating ?? 0
-            );
+        );
     }
 }

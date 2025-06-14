@@ -509,8 +509,8 @@ public enum MetaTagIdentifier
     ///     Used when parsing CUE Files.
     /// </summary>
     [Description("[SubCodeFlags]")] SubCodeFlags,
-    
-    
+
+
     Images,
     ReplayGainAlbum,
     ReplayGainTrack,

@@ -49,12 +49,12 @@ public static class AlbumExtensions
     {
         var albumTags = new List<MetaTag<object?>>
         {
-            new MetaTag<object?>
+            new()
             {
                 Identifier = MetaTagIdentifier.Album,
                 Value = album.Name
             },
-            new MetaTag<object?>
+            new()
             {
                 Identifier = MetaTagIdentifier.RecordingYear,
                 Value = album.ReleaseDate.Year

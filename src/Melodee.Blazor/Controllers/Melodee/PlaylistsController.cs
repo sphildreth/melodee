@@ -40,23 +40,24 @@ public sealed class PlaylistsController(
         if (!userResult.IsSuccess || userResult.Data == null)
         {
             return Unauthorized(new { error = "Authorization token is invalid" });
-        }        
-        
+        }
+
         if (userResult.Data.IsLocked)
         {
             return Forbid("User is locked");
         }
-        
+
         var playlistResult = await playlistService.GetByApiKeyAsync(userResult.Data.ToUserInfo(), id, cancellationToken).ConfigureAwait(false);
         if (!playlistResult.IsSuccess || playlistResult.Data == null)
         {
             return NotFound(new { error = "Playlist not found" });
         }
+
         return Ok(playlistResult.Data.ToPlaylistModel(
             GetBaseUrl(await ConfigurationFactory.GetConfigurationAsync(cancellationToken).ConfigureAwait(false)),
             userResult.Data.ToUserModel(GetBaseUrl(await ConfigurationFactory.GetConfigurationAsync(cancellationToken).ConfigureAwait(false)))));
-    }     
-    
+    }
+
     [HttpGet]
     public async Task<IActionResult> ListAsync(short page, short pageSize, CancellationToken cancellationToken = default)
     {
@@ -75,7 +76,7 @@ public sealed class PlaylistsController(
         {
             return Forbid("User is locked");
         }
-        
+
         var playlists = await playlistService.ListAsync(userResult.Data.ToUserInfo(), new PagedRequest { Page = page, PageSize = pageSize }, cancellationToken).ConfigureAwait(false);
         var baseUrl = GetBaseUrl(await ConfigurationFactory.GetConfigurationAsync(cancellationToken).ConfigureAwait(false));
         return Ok(new
@@ -88,8 +89,8 @@ public sealed class PlaylistsController(
             ),
             data = playlists.Data.Select(x => x.ToPlaylistModel(baseUrl, userResult.Data.ToUserModel(baseUrl))).ToArray()
         });
-    }     
-    
+    }
+
     [HttpGet]
     [Route("{apiKey:guid}/songs")]
     public async Task<IActionResult> SongsForPlaylist(Guid apiKey, int? page, short? pageSize, CancellationToken cancellationToken = default)

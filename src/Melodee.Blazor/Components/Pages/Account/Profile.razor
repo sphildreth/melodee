@@ -1,8 +1,7 @@
 @page "/account/profile"
-@inherits MelodeeComponentBase
-
 @using System.ComponentModel.DataAnnotations
 @using Melodee.Common.Data.Models.Extensions
+@inherits MelodeeComponentBase
 @inject NavigationManager NavigationManager
 @inject NotificationService NotificationService
 @inject DialogService DialogService
@@ -36,7 +35,7 @@
                     class="rz-my-2"
                     Icon="photo_camera"
                     ButtonStyle="ButtonStyle.Secondary"
-                    Click="@OpenFileUploadDialog" />
+                    Click="@OpenFileUploadDialog"/>
             </div>
 
             <div class="profile-info-section">
@@ -45,18 +44,18 @@
                         <RadzenFieldset Text="Profile Information">
                             <RadzenStack Gap="1rem">
                                 <RadzenFormField Text="Username" Variant="Variant.Outlined">
-                                    <RadzenTextBox @bind-Value="@UserProfile.Username" Name="Username" />
-                                    <RadzenRequiredValidator Text="Username is required" Component="Username" />
+                                    <RadzenTextBox @bind-Value="@UserProfile.Username" Name="Username"/>
+                                    <RadzenRequiredValidator Text="Username is required" Component="Username"/>
                                 </RadzenFormField>
 
                                 <RadzenFormField Text="Email" Variant="Variant.Outlined">
-                                    <RadzenTextBox @bind-Value="@UserProfile.Email" Name="Email" />
-                                    <RadzenRequiredValidator Text="Email is required" Component="Email" />
-                                    <RadzenEmailValidator Text="Please enter a valid email" Component="Email" />
+                                    <RadzenTextBox @bind-Value="@UserProfile.Email" Name="Email"/>
+                                    <RadzenRequiredValidator Text="Email is required" Component="Email"/>
+                                    <RadzenEmailValidator Text="Please enter a valid email" Component="Email"/>
                                 </RadzenFormField>
 
                                 <RadzenFormField Text="Bio" Variant="Variant.Outlined">
-                                    <RadzenTextArea @bind-Value="@UserProfile.Bio" Name="Bio" Rows="4" MaxLength="500" />
+                                    <RadzenTextArea @bind-Value="@UserProfile.Bio" Name="Bio" Rows="4" MaxLength="500"/>
                                 </RadzenFormField>
                             </RadzenStack>
                         </RadzenFieldset>
@@ -66,7 +65,7 @@
                                       ButtonStyle="ButtonStyle.Primary"
                                       ButtonType="ButtonType.Submit"
                                       IsBusy="@isSaving"
-                                      BusyText="Saving..." />
+                                      BusyText="Saving..."/>
                     </RadzenStack>
                 </RadzenTemplateForm>
             </div>
@@ -75,10 +74,10 @@
 </RadzenCard>
 
 @code {
-    private UserProfileModel UserProfile { get; set; } = new UserProfileModel();
-    private bool isSaving = false;
+    private UserProfileModel UserProfile { get; set; } = new();
+    private bool isSaving;
     private string? errorMessage;
-    private ImageSearchResult? _newSelectedProfileImage = null;
+    private ImageSearchResult? _newSelectedProfileImage;
 
     protected override async Task OnInitializedAsync()
     {
@@ -97,9 +96,9 @@
     {
         await DialogService.OpenAsync("Profile Image", ds =>
             @<ImageSearchUpload
-                 SearchType="ImageSearchType.Profile"
-                 OnUpdateCallback="ProfileImageSelected"
-                 SearchValues="[]"/>);
+                SearchType="ImageSearchType.Profile"
+                OnUpdateCallback="ProfileImageSelected"
+                SearchValues="[]"/>);
     }
 
     private void ProfileImageSelected(ImageSearchResult? selectedImageSearchResult)
@@ -169,7 +168,6 @@
 
         public string? ProfilePicturePath { get; set; }
     }
-
 
 
 }

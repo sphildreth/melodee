@@ -5,7 +5,7 @@ using NodaTime;
 namespace Melodee.Common.Models.Collection;
 
 public sealed record SongDataInfo(
-    [property:JsonIgnore] int Id,
+    [property: JsonIgnore] int Id,
     Guid ApiKey,
     bool IsLocked,
     string Title,
@@ -26,10 +26,10 @@ public sealed record SongDataInfo(
     public static string InfoLineTitle => "Song Number | Duration";
 
     public string InfoLineData => $"{SongNumber.ToStringPadLeft(3)} | {Duration.ToFormattedDateTimeOffset()}";
-    
+
     public int PlayedCount { get; set; }
-    
+
     public Instant? LastUpdatedAt { get; set; }
-    
+
     public string? Genre { get; set; }
 }

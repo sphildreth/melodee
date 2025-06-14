@@ -15,8 +15,6 @@ using Microsoft.EntityFrameworkCore;
 using NodaTime;
 using Serilog;
 using SmartFormat;
-using System.Linq.Dynamic.Core;
-using System.Linq.Dynamic;
 using MelodeeModels = Melodee.Common.Models;
 
 namespace Melodee.Common.Services;
@@ -44,7 +42,7 @@ public class PlaylistService(
     }
 
     /// <summary>
-    /// Return a paginated list of all playlists in the database.
+    ///     Return a paginated list of all playlists in the database.
     /// </summary>
     public async Task<MelodeeModels.PagedResult<Playlist>> ListAsync(MelodeeModels.UserInfo userInfo, MelodeeModels.PagedRequest pagedRequest, CancellationToken cancellationToken = default)
     {
@@ -64,15 +62,16 @@ public class PlaylistService(
                 var listSqlParts = pagedRequest.FilterByParts("SELECT * FROM \"Playlists\"");
                 var listSql = $"{listSqlParts.Item1} ORDER BY {orderBy} OFFSET {pagedRequest.SkipValue} ROWS FETCH NEXT {pagedRequest.TakeValue} ROWS ONLY;";
                 playlists = (await dbConn
-                    .QueryAsync<Playlist>(listSql, listSqlParts.Item2)
-                    .ConfigureAwait(false))
+                        .QueryAsync<Playlist>(listSql, listSqlParts.Item2)
+                        .ConfigureAwait(false))
                     .ToList();
             }
         }
+
         var dynamicPlaylists = await DynamicListAsync(userInfo, pagedRequest, cancellationToken);
         playlists.AddRange(dynamicPlaylists.Data);
         playlistCount += dynamicPlaylists.TotalCount;
-        
+
         return new MelodeeModels.PagedResult<Playlist>
         {
             TotalCount = playlistCount,
@@ -82,7 +81,7 @@ public class PlaylistService(
     }
 
     /// <summary>
-    /// Returns a paginated list of dynamic (those which are file defined) Playlists.
+    ///     Returns a paginated list of dynamic (those which are file defined) Playlists.
     /// </summary>
     public async Task<MelodeeModels.PagedResult<Playlist>> DynamicListAsync(MelodeeModels.UserInfo userInfo, MelodeeModels.PagedRequest pagedRequest, CancellationToken cancellationToken = default)
     {
@@ -93,7 +92,6 @@ public class PlaylistService(
         var isDynamicPlaylistsDisabled = configuration.GetValue<bool>(SettingRegistry.PlaylistDynamicPlaylistsDisabled);
         if (!isDynamicPlaylistsDisabled)
         {
-
             await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
             {
                 var dbConn = scopedContext.Database.GetDbConnection();
@@ -113,7 +111,7 @@ public class PlaylistService(
                     }
 
                     playlistCount = dynamicPlaylists.Count;
-                    
+
                     foreach (var dp in dynamicPlaylists.Where(x => x.IsEnabled))
                     {
                         try
@@ -163,9 +161,9 @@ public class PlaylistService(
                     }
                 }
             }
-        }        
-        
-        playlists  = playlists.Skip(pagedRequest.SkipValue).Take(pagedRequest.TakeValue).ToList();
+        }
+
+        playlists = playlists.Skip(pagedRequest.SkipValue).Take(pagedRequest.TakeValue).ToList();
 
         return new MelodeeModels.PagedResult<Playlist>
         {
@@ -178,7 +176,7 @@ public class PlaylistService(
     public async Task<MelodeeModels.PagedResult<SongDataInfo>> SongsForPlaylistAsync(Guid apiKey, MelodeeModels.UserInfo userInfo, MelodeeModels.PagedRequest pagedRequest, CancellationToken cancellationToken = default)
     {
         Guard.Against.Expression(_ => apiKey == Guid.Empty, apiKey, nameof(apiKey));
-        
+
         var playlistResult = await GetByApiKeyAsync(userInfo, apiKey, cancellationToken).ConfigureAwait(false);
         if (!playlistResult.IsSuccess)
         {
@@ -224,20 +222,20 @@ public class PlaylistService(
                 songCount = await dbConn
                     .QuerySingleAsync<int>(sql)
                     .ConfigureAwait(false);
-                
+
                 sql = $"""
-                           SELECT s."Id", s."ApiKey", s."IsLocked", s."Title", s."TitleNormalized", s."SongNumber", a."ReleaseDate",
-                                  a."Name" as "AlbumName", a."ApiKey" as "AlbumApiKey", ar."Name" as "ArtistName", ar."ApiKey" as "ArtistApiKey",
-                                  s."FileSize", s."Duration", s."CreatedAt", s."Tags", uus."IsStarred" as "UserStarred", uus."Rating" as "UserRating"
-                           FROM "Songs" s
-                           join "Albums" a on (s."AlbumId" = a."Id")
-                           join "Artists" ar on (a."ArtistId" = ar."Id")
-                           left join "UserSongs" us on (s."Id" = us."SongId")
-                           left join "UserSongs" uus on (s."Id" = uus."SongId" and uus."UserId" = {userInfo.Id})
-                           where {dpWhere}
-                           order by {dpOrderBy}
-                           offset {pagedRequest.SkipValue} rows fetch next {pagedRequest.TakeValue} rows only;
-                           """;                
+                       SELECT s."Id", s."ApiKey", s."IsLocked", s."Title", s."TitleNormalized", s."SongNumber", a."ReleaseDate",
+                              a."Name" as "AlbumName", a."ApiKey" as "AlbumApiKey", ar."Name" as "ArtistName", ar."ApiKey" as "ArtistApiKey",
+                              s."FileSize", s."Duration", s."CreatedAt", s."Tags", uus."IsStarred" as "UserStarred", uus."Rating" as "UserRating"
+                       FROM "Songs" s
+                       join "Albums" a on (s."AlbumId" = a."Id")
+                       join "Artists" ar on (a."ArtistId" = ar."Id")
+                       left join "UserSongs" us on (s."Id" = us."SongId")
+                       left join "UserSongs" uus on (s."Id" = uus."SongId" and uus."UserId" = {userInfo.Id})
+                       where {dpWhere}
+                       order by {dpOrderBy}
+                       offset {pagedRequest.SkipValue} rows fetch next {pagedRequest.TakeValue} rows only;
+                       """;
                 songs = (await dbConn
                     .QueryAsync<SongDataInfo>(sql)
                     .ConfigureAwait(false)).ToArray();
@@ -260,7 +258,7 @@ public class PlaylistService(
                     .Select(x => x.Song.ToSongDataInfo(x.Song.UserSongs.FirstOrDefault())).ToArray() ?? [];
             }
         }
-        
+
         return new MelodeeModels.PagedResult<SongDataInfo>
         {
             TotalCount = songCount,
@@ -297,6 +295,7 @@ public class PlaylistService(
                     Data = dynamicPlaylist
                 };
             }
+
             return new MelodeeModels.OperationResult<Playlist?>("Unknown playlist.")
             {
                 Data = null

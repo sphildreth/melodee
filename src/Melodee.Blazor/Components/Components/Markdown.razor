@@ -1,6 +1,5 @@
 @using Markdig
-
-@inject System.Net.Http.HttpClient Http
+@inject HttpClient Http
 
 @if (Content != null)
 {
@@ -11,9 +10,12 @@
 
     [Parameter] public string? Content { get; set; }
 
-    private string BuildHtmlFromMarkdown(string value) => Markdig.Markdown.ToHtml(
-        markdown: value,
-        pipeline: new MarkdownPipelineBuilder().UseAdvancedExtensions().Build()
-    );
+    private string BuildHtmlFromMarkdown(string value)
+    {
+        return Markdig.Markdown.ToHtml(
+            value,
+            new MarkdownPipelineBuilder().UseAdvancedExtensions().Build()
+        );
+    }
 
 }

@@ -2,12 +2,13 @@ using Melodee.Common.Data;
 using Melodee.Common.Extensions;
 using Melodee.Common.Services;
 using Microsoft.EntityFrameworkCore;
+using ILogger = Serilog.ILogger;
 
 namespace Melodee.Blazor.Services;
 
 public class StartupMelodeeConfigurationService(
-    Serilog.ILogger logger,
-    IDbContextFactory<MelodeeDbContext> contextFactory, 
+    ILogger logger,
+    IDbContextFactory<MelodeeDbContext> contextFactory,
     LibraryService libraryService,
     IConfiguration configuration)
     : IStartupMelodeeConfigurationService
@@ -26,10 +27,11 @@ public class StartupMelodeeConfigurationService(
                     var result = await libraryService.UpdateAsync(storageLibrary.Data.First(), cancellationToken).ConfigureAwait(false);
                     if (result.IsSuccess)
                     {
-                        logger.Information("Storage path updated to {Path}", storagePath);   
+                        logger.Information("Storage path updated to {Path}", storagePath);
                     }
                 }
             }
+
             var inboundPath = configuration.GetValue<string>("MELODEE_INBOUND_PATH");
             if (inboundPath.Nullify() != null)
             {
@@ -40,10 +42,11 @@ public class StartupMelodeeConfigurationService(
                     var result = await libraryService.UpdateAsync(inboundLibrary.Data, cancellationToken).ConfigureAwait(false);
                     if (result.IsSuccess)
                     {
-                        logger.Information("Inbound path updated to {Path}", inboundPath);   
+                        logger.Information("Inbound path updated to {Path}", inboundPath);
                     }
                 }
-            }            
+            }
+
             var stagingPath = configuration.GetValue<string>("MELODEE_STAGING_PATH");
             if (stagingPath.Nullify() != null)
             {
@@ -54,10 +57,11 @@ public class StartupMelodeeConfigurationService(
                     var result = await libraryService.UpdateAsync(stagingLibrary.Data, cancellationToken).ConfigureAwait(false);
                     if (result.IsSuccess)
                     {
-                        logger.Information("Staging path updated to {Path}", stagingPath);   
+                        logger.Information("Staging path updated to {Path}", stagingPath);
                     }
                 }
-            }              
+            }
+
             var userImagePath = configuration.GetValue<string>("MELODEE_USER_IMAGES_PATH");
             if (userImagePath.Nullify() != null)
             {
@@ -68,10 +72,11 @@ public class StartupMelodeeConfigurationService(
                     var result = await libraryService.UpdateAsync(userImageLibrary.Data, cancellationToken).ConfigureAwait(false);
                     if (result.IsSuccess)
                     {
-                        logger.Information("User image path updated to {Path}", userImagePath);   
+                        logger.Information("User image path updated to {Path}", userImagePath);
                     }
                 }
-            }               
+            }
+
             var playlistPath = configuration.GetValue<string>("MELODEE_PLAYLISTS_PATH");
             if (playlistPath.Nullify() != null)
             {
@@ -82,13 +87,12 @@ public class StartupMelodeeConfigurationService(
                     var result = await libraryService.UpdateAsync(playlistLibrary.Data, cancellationToken).ConfigureAwait(false);
                     if (result.IsSuccess)
                     {
-                        logger.Information("Inbound path updated to {Path}", inboundPath);   
+                        logger.Information("Inbound path updated to {Path}", inboundPath);
                     }
                 }
-            }            
+            }
+
             await scopedContext.SaveChangesAsync(cancellationToken);
         }
     }
-    
-
 }

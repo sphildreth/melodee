@@ -67,25 +67,41 @@
 {
     foreach (var alert in _alertMessages)
     {
-        <RadzenAlert AlertStyle="AlertStyle.Warning" Size="AlertSize.Small" Icon="warning" AllowClose="false" Text="@alert" />
+        <RadzenAlert AlertStyle="AlertStyle.Warning" Size="AlertSize.Small" Icon="warning" AllowClose="false"
+                     Text="@alert"/>
     }
 }
 <RadzenStack>
     <RadzenMenu>
-        <RadzenMenuItem Text="Delete"  Visible="CurrentUser?.IsEditor() ?? false" Disabled="_artist.IsLocked" Click="DeleteButtonClick" title="Delete the artist, all artist albums, and all album files. BEWARE!" IconColor="@Colors.Danger" Icon="delete"></RadzenMenuItem>
-        <RadzenMenuItem Text="@($"Delete Albums ({_selectedAlbums.Count})")"  Visible="CurrentUser?.IsEditor() ?? false" Disabled="_selectedAlbums.Count == 0" Click="DeleteAlbumsButtonClick" title="Delete the selected albums. BEWARE!" IconColor="@Colors.Danger" Icon="remove"></RadzenMenuItem>
-        <RadzenMenuItem Text="Edit" Visible="CurrentUser?.IsEditor() ?? false" Disabled="_artist.IsLocked" Click="EditButtonClick" title="Edit artist." Icon="edit"></RadzenMenuItem>
+        <RadzenMenuItem Text="Delete" Visible="CurrentUser?.IsEditor() ?? false" Disabled="_artist.IsLocked"
+                        Click="DeleteButtonClick"
+                        title="Delete the artist, all artist albums, and all album files. BEWARE!"
+                        IconColor="@Colors.Danger" Icon="delete"></RadzenMenuItem>
+        <RadzenMenuItem Text="@($"Delete Albums ({_selectedAlbums.Count})")" Visible="CurrentUser?.IsEditor() ?? false"
+                        Disabled="_selectedAlbums.Count == 0" Click="DeleteAlbumsButtonClick"
+                        title="Delete the selected albums. BEWARE!" IconColor="@Colors.Danger"
+                        Icon="remove"></RadzenMenuItem>
+        <RadzenMenuItem Text="Edit" Visible="CurrentUser?.IsEditor() ?? false" Disabled="_artist.IsLocked"
+                        Click="EditButtonClick" title="Edit artist." Icon="edit"></RadzenMenuItem>
         @if (_artist.IsLocked)
         {
-            <RadzenMenuItem Text="Unlock" Visible="CurrentUser?.IsEditor() ?? false" Click="UnlockButtonClick" title="Unlock artist, will allow modifications." IconColor="@Colors.Warning" Icon="lock_open"></RadzenMenuItem>
+            <RadzenMenuItem Text="Unlock" Visible="CurrentUser?.IsEditor() ?? false" Click="UnlockButtonClick"
+                            title="Unlock artist, will allow modifications." IconColor="@Colors.Warning"
+                            Icon="lock_open"></RadzenMenuItem>
         }
         else
         {
-            <RadzenMenuItem Text="Lock" Visible="CurrentUser?.IsEditor() ?? false" Disabled="_artist.IsLocked" Click="LockButtonClick" title="Lock artist, will prevent modifications." IconColor="@Colors.Warning" Icon="lock"></RadzenMenuItem>
+            <RadzenMenuItem Text="Lock" Visible="CurrentUser?.IsEditor() ?? false" Disabled="_artist.IsLocked"
+                            Click="LockButtonClick" title="Lock artist, will prevent modifications."
+                            IconColor="@Colors.Warning" Icon="lock"></RadzenMenuItem>
         }
-        <RadzenMenuItem Text="Rescan" Visible="CurrentUser?.IsEditor() ?? false" Disabled="_artist.IsLocked" Click="RescanButtonClick" title="Rebuild metadata and rescan artists albums." Icon="refresh"></RadzenMenuItem>
-        <RadzenMenuItem Text="Json" Visible="CurrentUser?.IsEditor() ?? false" Click="GenerateJsonClick" title="Generate JSON for for artist." Icon="text_snippet"></RadzenMenuItem>
-        <RadzenMenuItem Text="Web Search" Click="OnInternetSearchClick" title="Search the web for artist." Icon="public"></RadzenMenuItem>
+        <RadzenMenuItem Text="Rescan" Visible="CurrentUser?.IsEditor() ?? false" Disabled="_artist.IsLocked"
+                        Click="RescanButtonClick" title="Rebuild metadata and rescan artists albums."
+                        Icon="refresh"></RadzenMenuItem>
+        <RadzenMenuItem Text="Json" Visible="CurrentUser?.IsEditor() ?? false" Click="GenerateJsonClick"
+                        title="Generate JSON for for artist." Icon="text_snippet"></RadzenMenuItem>
+        <RadzenMenuItem Text="Web Search" Click="OnInternetSearchClick" title="Search the web for artist."
+                        Icon="public"></RadzenMenuItem>
     </RadzenMenu>
     <RadzenText Text="@_artist.Name" TextStyle="TextStyle.DisplayH6" TagName="TagName.H1" style="margin: 0"/>
 </RadzenStack>
@@ -104,7 +120,7 @@
                         <RadzenTreeItem Text="Images">
                             <Template>
                                 <RadzenIcon Icon="image"/>
-                                @($"{ context.Text } ({(_artist.ImageCount ?? 0)})")
+                                @($"{context.Text} ({_artist.ImageCount ?? 0})")
                             </Template>
                         </RadzenTreeItem>
                         <RadzenTreeItem Text="Relationships">
@@ -126,7 +142,7 @@
                             </RadzenText>
                         </HeaderTemplate>
                         <ChildContent>
-                            <Markdown Content="@(_artist.Description ?? string.Empty)" />
+                            <Markdown Content="@(_artist.Description ?? string.Empty)"/>
                         </ChildContent>
                     </RadzenPanel>
                 }
@@ -149,7 +165,7 @@
                             {
                                 <CondensedStatistic Label="Real Name" Statistic="@_artist.RealName"/>
                             }
-                            @if (@CurrentUser?.IsAdmin() ?? false)
+                            @if (CurrentUser?.IsAdmin() ?? false)
                             {
                                 <CondensedStatistic Label="Directory" Statistic="@_artist.Directory"/>
                             }
@@ -261,18 +277,24 @@
                                                    OnValueChanged="@FilterAlbumsAsync"
                                                    ForceNotifyByEnter="true"
                                                    ForceNotifyOnBlur="true"/>
-                                    <RadzenSplitButton Icon="sort" Text="Sort" Click="@(async (args) =>
+                                    <RadzenSplitButton Icon="sort" Text="Sort" Click="@(async args =>
                                                                                       {
                                                                                           _albumSort = SafeParser.ToEnum<AlbumSort>(args.Value);
                                                                                           await LoadAlbums();
                                                                                       })">
                                         <ChildContent>
-                                            <RadzenSplitButtonItem Icon="date_range" Text="Release Date ⬆️" Value="@AlbumSort.ReleaseDate.ToString()"/>
-                                            <RadzenSplitButtonItem Icon="date_range" Text="Release Date ⬇️" Value="@AlbumSort.ReleaseDateDesc.ToString()"/>
-                                            <RadzenSplitButtonItem Icon="timelapse" Text="Duration ⬆️" Value="@AlbumSort.Duration.ToString()"/>
-                                            <RadzenSplitButtonItem Icon="timelapse" Text="Duration ⬇️" Value="@AlbumSort.DurationDesc.ToString()"/>
-                                            <RadzenSplitButtonItem Icon="music_note" Text="Song Count ⬆️" Value="@AlbumSort.SongCount.ToString()"/>
-                                            <RadzenSplitButtonItem Icon="music_note" Text="Song Count ⬇️" Value="@AlbumSort.SongCountDesc.ToString()"/>
+                                            <RadzenSplitButtonItem Icon="date_range" Text="Release Date ⬆️"
+                                                                   Value="@AlbumSort.ReleaseDate.ToString()"/>
+                                            <RadzenSplitButtonItem Icon="date_range" Text="Release Date ⬇️"
+                                                                   Value="@AlbumSort.ReleaseDateDesc.ToString()"/>
+                                            <RadzenSplitButtonItem Icon="timelapse" Text="Duration ⬆️"
+                                                                   Value="@AlbumSort.Duration.ToString()"/>
+                                            <RadzenSplitButtonItem Icon="timelapse" Text="Duration ⬇️"
+                                                                   Value="@AlbumSort.DurationDesc.ToString()"/>
+                                            <RadzenSplitButtonItem Icon="music_note" Text="Song Count ⬆️"
+                                                                   Value="@AlbumSort.SongCount.ToString()"/>
+                                            <RadzenSplitButtonItem Icon="music_note" Text="Song Count ⬇️"
+                                                                   Value="@AlbumSort.SongCountDesc.ToString()"/>
                                         </ChildContent>
                                     </RadzenSplitButton>
                                 </RadzenStack>
@@ -290,8 +312,8 @@
                                 @foreach (var album in _albums)
                                 {
                                     <AlbumDataInfoCardCompactComponent
-                                        FromUrl=@($"/data/artist/{ _artist.ApiKey}")
-                                        Checked="@(_selectedAlbums.Any() == true && (_albums.All(i => _selectedAlbums.Contains(album)) && _albums.Any(i => _selectedAlbums.Contains(album))))"
+                                        FromUrl=@($"/data/artist/{_artist.ApiKey}")
+                                        Checked="@(_selectedAlbums.Any() && _albums.All(i => _selectedAlbums.Contains(album)) && _albums.Any(i => _selectedAlbums.Contains(album)))"
                                         CheckedChanged="@((bool arg) => ToggleAlbumSelected(arg, album))"
                                         Album="@album"/>
                                 }
@@ -335,7 +357,7 @@
                                     </Items>
                                 </RadzenCarousel>
                             }
-                            <Markdown Content="@(_artist.Biography ?? _biographyNoAvailablePlaceholder)" />
+                            <Markdown Content="@(_artist.Biography ?? _biographyNoAvailablePlaceholder)"/>
                         </RadzenStack>
                     </RadzenColumn>
                 </RadzenRow>
@@ -386,7 +408,7 @@
 
     IEnumerable<AlbumDataInfo> _albums = [];
 
-    IList<AlbumDataInfo> _selectedAlbums = [];
+    readonly IList<AlbumDataInfo> _selectedAlbums = [];
 
     AlbumSort _albumSort = AlbumSort.ReleaseDateDesc;
 
@@ -418,7 +440,7 @@
     int? _currentPage = 1;
     readonly short _pageSize = 50;
 
-    private List<string> _alertMessages = [];
+    private readonly List<string> _alertMessages = [];
     private string _debounceAlbumFilterValue;
 
     async Task PageChanged(PagerEventArgs args)
@@ -431,7 +453,7 @@
     {
         _isLoading = true;
 
-         Dictionary<string, string> orderBy;
+        Dictionary<string, string> orderBy;
         switch (_albumSort)
         {
             case AlbumSort.Duration:
@@ -508,8 +530,9 @@
                 var artistDirectory = Path.Combine(_artist.Library.Path, _artist.Directory).ToFileSystemDirectoryInfo();
                 if (!artistDirectory.Exists())
                 {
-                    _alertMessages.Add($"Artist directory [{ artistDirectory.FullName()}] is not found.");
+                    _alertMessages.Add($"Artist directory [{artistDirectory.FullName()}] is not found.");
                 }
+
                 await LoadAlbums();
 
                 if (_artist.ImageCount > 1)
@@ -520,10 +543,10 @@
                         .Select((x, i) => new
                         {
                             index = i,
-                            file =x.ToFileSystemInfo()
+                            file = x.ToFileSystemInfo()
                         }), CancellationToken.None, async (artistImage, token) =>
                     {
-                        var imageBase64 = await artistImage.file.ImageBase64(artistDirectory, cancellationToken: token);
+                        var imageBase64 = await artistImage.file.ImageBase64(artistDirectory, token);
                         if (imageBase64 != null)
                         {
                             artistImagesInBase64.Add((artistImage.index, imageBase64));
@@ -638,6 +661,7 @@
         {
             _selectedAlbums.Add(album);
         }
+
         StateHasChanged();
     }
 
@@ -651,6 +675,7 @@
             {
                 NavigationManager.Refresh(true);
             }
+
             NotificationService.Notify(NotificationMessageForResult(deleteResult, "deleted artist albums", ToastTime));
         }
     }
@@ -665,7 +690,7 @@
     {
         var json = Serializer.Serialize(_artist.ToMelodeeArtistModel());
         var result = await DialogService.OpenAsync("Artists Melodee Json", ds =>
-            @<RadzenTextArea Disabled="true" Style="width: 100%"  @bind-Value="@json" Rows="10" />);
+            @<RadzenTextArea Disabled="true" Style="width: 100%" @bind-Value="@json" Rows="10"/>);
     }
 
 }

@@ -28,7 +28,6 @@ public sealed class AlbumsController(
     configuration,
     configurationFactory)
 {
-    
     [HttpGet]
     [Route("{id:guid}")]
     public async Task<IActionResult> AlbumById(Guid id, CancellationToken cancellationToken = default)
@@ -42,23 +41,24 @@ public sealed class AlbumsController(
         if (!userResult.IsSuccess || userResult.Data == null)
         {
             return Unauthorized(new { error = "Authorization token is invalid" });
-        }        
-        
+        }
+
         if (userResult.Data.IsLocked)
         {
             return Forbid("User is locked");
         }
-        
+
         var albumResult = await albumService.GetByApiKeyAsync(id, cancellationToken).ConfigureAwait(false);
         if (!albumResult.IsSuccess || albumResult.Data == null)
         {
             return NotFound(new { error = "Album not found" });
         }
+
         return Ok(albumResult.Data.ToAlbumDataInfo().ToAlbumModel(
             GetBaseUrl(await ConfigurationFactory.GetConfigurationAsync(cancellationToken).ConfigureAwait(false)),
             userResult.Data.ToUserModel(GetBaseUrl(await ConfigurationFactory.GetConfigurationAsync(cancellationToken).ConfigureAwait(false)))));
-    }    
-    
+    }
+
     [HttpGet]
     public async Task<IActionResult> ListAsync(short page, short pageSize, string? orderBy, string? orderDirection, CancellationToken cancellationToken = default)
     {
@@ -71,23 +71,23 @@ public sealed class AlbumsController(
         if (!userResult.IsSuccess || userResult.Data == null)
         {
             return Unauthorized(new { error = "Authorization token is invalid" });
-        }        
-        
+        }
+
         if (userResult.Data.IsLocked)
         {
             return Forbid("User is locked");
         }
-        
+
         var orderByValue = orderBy ?? nameof(AlbumDataInfo.CreatedAt);
         var orderDirectionValue = orderDirection ?? PagedRequest.OrderDescDirection;
-        
+
         var listResult = await albumService.ListAsync(new PagedRequest
         {
             Page = page,
             PageSize = pageSize,
-            OrderBy = new Dictionary<string, string>{{ orderByValue, orderDirectionValue}}
+            OrderBy = new Dictionary<string, string> { { orderByValue, orderDirectionValue } }
         }, null, cancellationToken).ConfigureAwait(false);
-        
+
         var baseUrl = GetBaseUrl(await ConfigurationFactory.GetConfigurationAsync(cancellationToken).ConfigureAwait(false));
 
         return Ok(new
@@ -99,9 +99,9 @@ public sealed class AlbumsController(
                 listResult.TotalPages
             ),
             data = listResult.Data.Select(x => x.ToAlbumModel(baseUrl, userResult.Data.ToUserModel(baseUrl))).ToArray()
-        });        
-    }   
-    
+        });
+    }
+
     [HttpGet]
     [Route("recent")]
     public async Task<IActionResult> RecentlyAddedAsync(short limit, CancellationToken cancellationToken = default)
@@ -115,22 +115,22 @@ public sealed class AlbumsController(
         if (!userResult.IsSuccess || userResult.Data == null)
         {
             return Unauthorized(new { error = "Authorization token is invalid" });
-        }        
-        
+        }
+
         if (userResult.Data.IsLocked)
         {
             return Forbid("User is locked");
         }
-        
+
         var albumRecentResult = await albumService.ListAsync(new PagedRequest
         {
             Page = 1,
             PageSize = limit,
-            OrderBy = new Dictionary<string, string>{{ nameof(AlbumDataInfo.CreatedAt), PagedRequest.OrderDescDirection}}
+            OrderBy = new Dictionary<string, string> { { nameof(AlbumDataInfo.CreatedAt), PagedRequest.OrderDescDirection } }
         }, null, cancellationToken).ConfigureAwait(false);
-        
+
         var baseUrl = GetBaseUrl(await ConfigurationFactory.GetConfigurationAsync(cancellationToken).ConfigureAwait(false));
-        
+
         return Ok(new
         {
             meta = new PaginationMetadata(
@@ -142,7 +142,7 @@ public sealed class AlbumsController(
             data = albumRecentResult.Data.Select(x => x.ToAlbumModel(baseUrl, userResult.Data.ToUserModel(baseUrl))).ToArray()
         });
     }
-    
+
     [HttpGet]
     [Route("{id:guid}/songs")]
     public async Task<IActionResult> AlbumSongsAsync(Guid id, CancellationToken cancellationToken = default)
@@ -156,13 +156,13 @@ public sealed class AlbumsController(
         if (!userResult.IsSuccess || userResult.Data == null)
         {
             return Unauthorized(new { error = "Authorization token is invalid" });
-        }        
-        
+        }
+
         if (userResult.Data.IsLocked)
         {
             return Forbid("User is locked");
         }
-        
+
         var albumResult = await albumService.GetByApiKeyAsync(id, cancellationToken).ConfigureAwait(false);
         if (!albumResult.IsSuccess || albumResult.Data == null)
         {
@@ -170,7 +170,7 @@ public sealed class AlbumsController(
         }
 
         var baseUrl = GetBaseUrl(await ConfigurationFactory.GetConfigurationAsync(cancellationToken).ConfigureAwait(false));
-        
+
         return Ok(new
         {
             meta = new PaginationMetadata(
@@ -180,7 +180,6 @@ public sealed class AlbumsController(
                 1
             ),
             data = albumResult.Data.Songs.Select(x => x.ToSongDataInfo().ToSongModel(baseUrl, userResult.Data.ToUserModel(baseUrl), userResult.Data.PublicKey)).ToArray()
-        });        
+        });
     }
-    
 }

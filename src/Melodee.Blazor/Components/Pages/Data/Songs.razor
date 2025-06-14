@@ -113,8 +113,10 @@
             SelectionMode="DataGridSelectionMode.Multiple"
             @bind-Value="@_selectedSongs">
             <PagingSummaryTemplate>
-                <RadzenIcon Icon="database" Style="color: var(--rz-primary); font-size: var(--rz-pager-summary-font-size);" />
-                Displaying page @context.CurrentPage of @context.NumberOfPages <b>(total @context.TotalCount records)</b>
+                <RadzenIcon Icon="database"
+                            Style="color: var(--rz-primary); font-size: var(--rz-pager-summary-font-size);"/>
+                Displaying
+                page @context.CurrentPage of @context.NumberOfPages <b>(total @context.TotalCount records)</b>
             </PagingSummaryTemplate>
             <Columns>
                 <RadzenDataGridColumn Width="60px" Sortable="false" Filterable="false">
@@ -211,8 +213,8 @@
 
 @code {
     Statistic[] _statistics = [];
-    bool _yourFavoriteSongsFilterSet = false;
-    bool _yourRatedSongsFilterSet = false;
+    bool _yourFavoriteSongsFilterSet;
+    bool _yourRatedSongsFilterSet;
 
     RadzenDataGrid<SongDataInfo> _grid = null!;
     int _count;
@@ -223,8 +225,7 @@
 
     string _debounceInputValue = "";
 
-    [Parameter]
-    public string? Filter { get; set; }
+    [Parameter] public string? Filter { get; set; }
 
     void OnPage(PagerEventArgs args)
     {
@@ -352,9 +353,11 @@
                 {
                     column.ClearFilters();
                 }
+
                 await _grid.RefreshDataAsync();
             }
         }
+
         if (statistic.Title.ToNormalizedString() == "Your Rated Songs".ToNormalizedString())
         {
             _yourRatedSongsFilterSet = !_yourRatedSongsFilterSet;
@@ -370,6 +373,7 @@
                 {
                     column.ClearFilters();
                 }
+
                 await _grid.RefreshDataAsync();
             }
         }
@@ -381,10 +385,12 @@
         {
             return BadgeStyle.Warning;
         }
+
         if (_yourRatedSongsFilterSet && statistic.Title.ToNormalizedString() == "Your Rated Songs".ToNormalizedString())
         {
             return BadgeStyle.Warning;
         }
+
         return BadgeStyle.Info;
     }
 

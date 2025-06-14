@@ -7,7 +7,7 @@ namespace Melodee.Common.Metadata.AudioTags;
 
 public static class AudioTagManager
 {
-    public static Dictionary<MetaTagIdentifier, object> DefaultTags => new Dictionary<MetaTagIdentifier, object>
+    public static Dictionary<MetaTagIdentifier, object> DefaultTags => new()
     {
         { MetaTagIdentifier.Title, string.Empty },
         { MetaTagIdentifier.Artist, string.Empty },
@@ -17,7 +17,7 @@ public static class AudioTagManager
         { MetaTagIdentifier.Genre, string.Empty },
         { MetaTagIdentifier.Comment, string.Empty }
     };
-    
+
     public static async Task<IEnumerable<FileInfo>> AllMediaFilesForDirectoryAsync(string directoryPath, CancellationToken cancellationToken = default)
     {
         var directoryInfo = new DirectoryInfo(directoryPath);
@@ -61,7 +61,7 @@ public static class AudioTagManager
         {
             throw new FileNotFoundException($"The file '{filePath}' does not exist or is invalid.");
         }
-        
+
         var format = await FileFormatDetector.DetectFormatAsync(filePath, cancellationToken);
         ITagReader? reader = format switch
         {
@@ -78,7 +78,7 @@ public static class AudioTagManager
         }
 
         var tags = await reader.ReadTagsAsync(filePath, cancellationToken);
-        
+
         // Ensure all default tags are present in the tag's dictionary
         foreach (var defaultTag in DefaultTags)
         {
@@ -87,7 +87,7 @@ public static class AudioTagManager
                 tags[defaultTag.Key] = defaultTag.Value;
             }
         }
-        
+
         var images = await reader.ReadImagesAsync(filePath, cancellationToken);
         var metadata = await FileMetadataReader.GetFileMetadataAsync(filePath);
         return new AudioTagData
@@ -100,11 +100,14 @@ public static class AudioTagManager
     }
 
     /// <summary>
-    /// Determines whether the given file needs to be converted to MP3 format.
+    ///     Determines whether the given file needs to be converted to MP3 format.
     /// </summary>
     /// <param name="fileInfo">The file to check</param>
     /// <param name="cancellationToken">Optional cancellation token</param>
-    /// <returns>True if the file is in a format other than MP3 and needs conversion, false if it's already an MP3 or not a valid audio file</returns>
+    /// <returns>
+    ///     True if the file is in a format other than MP3 and needs conversion, false if it's already an MP3 or not a
+    ///     valid audio file
+    /// </returns>
     public static async Task<bool> NeedsConversionToMp3Async(FileInfo fileInfo, CancellationToken cancellationToken = default)
     {
         // Check for null fileInfo to prevent NullReferenceException
@@ -125,9 +128,9 @@ public static class AudioTagManager
 
             // For non-MP3 extensions, check if it's a valid audio format that can be converted
             var detectedFormat = await FileFormatDetector.DetectFormatAsync(fileInfo.FullName, cancellationToken);
-            
+
             // Return true if it's a known audio format that isn't MP3
-            return detectedFormat != AudioFormat.Unknown && 
+            return detectedFormat != AudioFormat.Unknown &&
                    detectedFormat != AudioFormat.MP3;
         }
         catch

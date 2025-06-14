@@ -34,11 +34,10 @@ namespace Melodee.Tests.Services;
 
 public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
 {
+    private readonly DbContextOptions<ArtistSearchEngineServiceDbContext> _dbArtistSearchEngineContextOptions;
     private readonly DbConnection _dbConnection;
 
     private readonly DbContextOptions<MelodeeDbContext> _dbContextOptions;
-    
-    private readonly DbContextOptions<ArtistSearchEngineServiceDbContext> _dbArtistSearchEngineContextOptions;
 
     protected ServiceTestBase()
     {
@@ -60,7 +59,7 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
         _dbContextOptions = new DbContextOptionsBuilder<MelodeeDbContext>()
             .UseSqlite(_dbConnection, x => x.UseNodaTime())
             .Options;
-        
+
         _dbArtistSearchEngineContextOptions = new DbContextOptionsBuilder<ArtistSearchEngineServiceDbContext>()
             .UseSqlite(_dbConnection)
             .Options;
@@ -70,12 +69,12 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
             context.Database.EnsureCreated();
             context.SaveChanges();
         }
-        
+
         using (var context = new ArtistSearchEngineServiceDbContext(_dbArtistSearchEngineContextOptions))
         {
             context.Database.EnsureCreated();
             context.SaveChanges();
-        }        
+        }
     }
 
     protected ILogger Logger { get; }
@@ -115,7 +114,7 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
             Serializer,
             MockHttpClientFactory());
     }
-    
+
     protected IDbContextFactory<MelodeeDbContext> MockFactory()
     {
         var mockFactory = new Mock<IDbContextFactory<MelodeeDbContext>>();
@@ -123,14 +122,14 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
             => f.CreateDbContextAsync(It.IsAny<CancellationToken>())).ReturnsAsync(() => new MelodeeDbContext(_dbContextOptions));
         return mockFactory.Object;
     }
-    
+
     protected IDbContextFactory<ArtistSearchEngineServiceDbContext> MockArtistSearchEngineFactory()
     {
         var mockFactory = new Mock<IDbContextFactory<ArtistSearchEngineServiceDbContext>>();
         mockFactory.Setup(f
             => f.CreateDbContextAsync(It.IsAny<CancellationToken>())).ReturnsAsync(() => new ArtistSearchEngineServiceDbContext(_dbArtistSearchEngineContextOptions));
         return mockFactory.Object;
-    }    
+    }
 
     protected ApiRequest GetApiRequest(string username, string salt, string password)
     {
@@ -255,7 +254,7 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
 
     protected ArtistService GetArtistService()
     {
-        return new ArtistService(Logger, CacheManager, MockConfigurationFactory(), MockFactory(), Serializer, MockHttpClientFactory(), GetAlbumService(), MockBus() );
+        return new ArtistService(Logger, CacheManager, MockConfigurationFactory(), MockFactory(), Serializer, MockHttpClientFactory(), GetAlbumService(), MockBus());
     }
 
     protected AlbumService GetAlbumService()
@@ -280,9 +279,9 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
 
     protected PlaylistService GetPlaylistService()
     {
-        return new PlaylistService(Logger, CacheManager, Serializer, MockConfigurationFactory(), MockFactory(), GetLibraryService() );
+        return new PlaylistService(Logger, CacheManager, Serializer, MockConfigurationFactory(), MockFactory(), GetLibraryService());
     }
-    
+
     protected INowPlayingRepository GetNowPlayingRepository()
     {
         return new NowPlayingInMemoryRepository();
@@ -306,12 +305,12 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
     {
         return new MelodeeMetadataMaker
         (
-            Logger, 
-            MockConfigurationFactory(), 
-            Serializer, 
-            GetArtistSearchEngineService(), 
-            GetAlbumImageSearchEngineService(), 
-            MockHttpClientFactory(), 
+            Logger,
+            MockConfigurationFactory(),
+            Serializer,
+            GetArtistSearchEngineService(),
+            GetAlbumImageSearchEngineService(),
+            MockHttpClientFactory(),
             GetMediaEditService());
     }
 

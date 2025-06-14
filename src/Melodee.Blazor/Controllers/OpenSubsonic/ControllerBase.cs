@@ -35,7 +35,8 @@ public abstract class ControllerBase(EtagRepository etagRepository, ISerializer 
 
             var bytes = (byte[])model.ResponseData.Data!;
             HttpContext.Response.Headers.Append("ETag", model.ResponseData.Etag);
-            HttpContext.Response.Headers.Append("Content-Length", bytes.Length.ToString());;
+            HttpContext.Response.Headers.Append("Content-Length", bytes.Length.ToString());
+            ;
             etagRepository.AddEtag(model.ApiKeyId, model.ResponseData.Etag);
             return new FileContentResult(bytes, model.ResponseData.ContentType ?? "image/jpeg");
         }
@@ -111,7 +112,7 @@ public abstract class ControllerBase(EtagRepository etagRepository, ISerializer 
 
         var requiresAuth = true;
         var configuration = await configurationFactory.GetConfigurationAsync();
-        
+
         // If the request is from localhost, from baseUrl, or an image request, then do not require authentication
         if (context.HttpContext.IsLocalRequest() ||
             context.HttpContext.IsImageRequest() ||
@@ -124,12 +125,10 @@ public abstract class ControllerBase(EtagRepository etagRepository, ISerializer 
             context.HttpContext.Request.Cookies.TryGetValue("melodee_blazor_token", out var melodeeBlazorTokenCookie);
             if (!string.IsNullOrWhiteSpace(melodeeBlazorTokenCookie))
             {
-
                 var cookieHash = HashHelper.CreateMd5(DateTime.UtcNow.ToString(MelodeeBlazorCookieMiddleware.DateFormat) + configuration.GetValue<string>(SettingRegistry.EncryptionPrivateKey)) ?? string.Empty;
                 requiresAuth = melodeeBlazorTokenCookie != cookieHash;
             }
         }
-
 
 
         values.Add(new KeyValue("QueryString", context.HttpContext.Request.QueryString.ToString()));

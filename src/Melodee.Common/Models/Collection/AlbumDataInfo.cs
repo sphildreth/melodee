@@ -23,9 +23,9 @@ public sealed record AlbumDataInfo(
     short AlbumStatus)
 {
     public bool UserStarred { get; set; }
-    
+
     public int UserRating { get; set; }
-    
+
     /// <summary>
     ///     This is populated when the record is created from a Media Album File.
     /// </summary>
@@ -63,9 +63,9 @@ public sealed record AlbumDataInfo(
 
     public string InfoLineData =>
         $"{ReleaseDate.Year} | {SongCount.ToStringPadLeft(4)} | {Duration.ToFormattedDateTimeOffset()} {(IsLocked ? " | \ud83d\udd12" : string.Empty)}";
-    
+
     public Instant? LastUpdatedAt { get; set; }
-    
+
     public static AlbumDataInfo BlankAlbumDataInfo =>
         new(0,
             Guid.Empty,
@@ -79,6 +79,6 @@ public sealed record AlbumDataInfo(
             0,
             Instant.MinValue,
             string.Empty,
-            LocalDate.MinIsoValue, 
-            (short)Enums.AlbumStatus.Invalid);  
+            LocalDate.MinIsoValue,
+            (short)Enums.AlbumStatus.Invalid);
 }

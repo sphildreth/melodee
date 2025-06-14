@@ -25,7 +25,7 @@ public class SerializerTests : ServiceTestBase
         Assert.Equal(artist.NameNormalized, deserialized.NameNormalized);
         Assert.Equal(artist.SortName, deserialized.SortName);
     }
-    
+
     [Fact]
     public async Task ValidateDeserializerWriteToFileReadBackTextWithUnicode()
     {
@@ -36,16 +36,16 @@ public class SerializerTests : ServiceTestBase
             "Jäde"
         );
         var fileName = Path.GetTempFileName();
-        await System.IO.File.WriteAllTextAsync(fileName, Serializer.Serialize(artist));
+        await File.WriteAllTextAsync(fileName, Serializer.Serialize(artist));
         var fileInfo = new FileInfo(fileName);
         Assert.True(fileInfo.Exists);
-        var deserialized = Serializer.Deserialize<Artist>(await System.IO.File.ReadAllTextAsync(fileName));
+        var deserialized = Serializer.Deserialize<Artist>(await File.ReadAllTextAsync(fileName));
         Assert.NotNull(deserialized);
         Assert.Equal(artist.Name, deserialized.Name);
         Assert.Equal(artist.NameNormalized, deserialized.NameNormalized);
         Assert.Equal(artist.SortName, deserialized.SortName);
-    }    
-    
+    }
+
     [Fact]
     public async Task ValidateUnicodeDeserializerWriteToFileReadBackBytesWithUnicode()
     {
@@ -56,16 +56,16 @@ public class SerializerTests : ServiceTestBase
             "Jäde"
         );
         var fileName = Path.GetTempFileName();
-        await System.IO.File.WriteAllTextAsync(fileName, Serializer.Serialize(artist));
+        await File.WriteAllTextAsync(fileName, Serializer.Serialize(artist));
         var fileInfo = new FileInfo(fileName);
         Assert.True(fileInfo.Exists);
-        var deserialized = Serializer.Deserialize<Artist>(await System.IO.File.ReadAllBytesAsync(fileName));
+        var deserialized = Serializer.Deserialize<Artist>(await File.ReadAllBytesAsync(fileName));
         Assert.NotNull(deserialized);
         Assert.Equal(artist.Name, deserialized.Name);
         Assert.Equal(artist.NameNormalized, deserialized.NameNormalized);
         Assert.Equal(artist.SortName, deserialized.SortName);
-    }      
-    
+    }
+
     [Fact]
     public async Task ValidateTextDeserializerWriteToFileReadBackBytes()
     {
@@ -76,16 +76,16 @@ public class SerializerTests : ServiceTestBase
             "SquarePants, Spongebob"
         );
         var fileName = Path.GetTempFileName();
-        await System.IO.File.WriteAllTextAsync(fileName, Serializer.Serialize(artist));
+        await File.WriteAllTextAsync(fileName, Serializer.Serialize(artist));
         var fileInfo = new FileInfo(fileName);
         Assert.True(fileInfo.Exists);
-        var deserialized = Serializer.Deserialize<Artist>(await System.IO.File.ReadAllBytesAsync(fileName));
+        var deserialized = Serializer.Deserialize<Artist>(await File.ReadAllBytesAsync(fileName));
         Assert.NotNull(deserialized);
         Assert.Equal(artist.Name, deserialized.Name);
         Assert.Equal(artist.NameNormalized, deserialized.NameNormalized);
         Assert.Equal(artist.SortName, deserialized.SortName);
-    }     
-    
+    }
+
     [Fact]
     public void CanSerializerAndDeserializerAlbum()
     {

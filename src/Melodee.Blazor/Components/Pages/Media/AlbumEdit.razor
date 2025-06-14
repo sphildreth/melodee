@@ -10,6 +10,8 @@
 @using Melodee.Common.Services.Scanning
 @using Melodee.Common.Services.SearchEngines
 @using SixLabors.ImageSharp
+@using Album = Melodee.Common.Data.Models.Album
+@using FileInfo = System.IO.FileInfo
 @using ImageInfo = Melodee.Common.Models.ImageInfo
 
 @using ImageSearchResult = Melodee.Blazor.Components.Components.ImageSearchResult
@@ -72,7 +74,7 @@
             }
         </RadzenColumn>
         <RadzenColumn Size="12" SizeMD="8">
-            <RadzenTemplateForm TItem="Melodee.Blazor.ViewModels.AlbumEdit" Data="@_album" Submit="@OnSubmit"
+            <RadzenTemplateForm TItem="ViewModels.AlbumEdit" Data="@_album" Submit="@OnSubmit"
                                 InvalidSubmit="@OnInvalidSubmit">
                 <RadzenFieldset>
                     <RadzenStack Gap="20px" class="rz-p-2 rz-p-md-1">
@@ -203,7 +205,7 @@
     string _artistName = string.Empty;
     object? _selectedArtist;
 
-    Melodee.Blazor.ViewModels.AlbumEdit _album = new()
+    ViewModels.AlbumEdit _album = new()
     {
         ArtistSearchResult = new ArtistSearchResult
         {
@@ -270,16 +272,14 @@
 
         var configuration = await ConfigurationFactory.GetConfigurationAsync();
         _maxResults = configuration.GetValue<short?>(SettingRegistry.SearchEngineDefaultPageSize) ?? configuration.GetValue<short>(SettingRegistry.DefaultsPageSize);
-
     }
 
-    async Task OnSubmit(Melodee.Blazor.ViewModels.AlbumEdit model)
+    async Task OnSubmit(ViewModels.AlbumEdit model)
     {
         MainLayoutProxyService.ToggleSpinnerVisible();
 
         try
         {
-
             var album = await AlbumDiscoveryService.AlbumByUniqueIdAsync(_library.ToFileSystemDirectoryInfo(), ApiKey);
             album.MusicBrainzId = SafeParser.ToGuid(_album.MusicBrainzId);
             album.AmgId = _album.AmgId;
@@ -295,6 +295,7 @@
                     SpotifyId = selectedArtist.SpotifyId
                 };
             }
+
             album.SetTagValue(MetaTagIdentifier.Album, _album.Title);
             album.SetTagValue(MetaTagIdentifier.Genre, _album.Genre);
             album.SetTagValue(MetaTagIdentifier.RecordingYear, _album.Year);
@@ -303,11 +304,13 @@
             {
                 album.Images = _images.ToArray();
             }
+
             var result = await MediaEditService.SaveMelodeeAlbum(album);
             if (result.Data)
             {
                 NotificationService.Notify(NotificationMessageForResult(result, "editing album", ToastTime));
             }
+
             NavigationManager.NavigateTo($"/media/album/{LibraryApiKey}/{ApiKey}", true);
         }
         catch (Exception ex)
@@ -376,12 +379,12 @@
                 var httpClient = HttpClientFactory.CreateClient();
                 var album = await AlbumDiscoveryService.AlbumByUniqueIdAsync(_library.ToFileSystemDirectoryInfo(), ApiKey);
                 var imageValidator = new ImageValidator(await ConfigurationFactory.GetConfigurationAsync());
-                var albumImageFromSearchFileName = Path.Combine(album.Directory.FullName(), album.Directory.GetNextFileNameForType(Common.Data.Models.Album.FrontImageType).Item1);
+                var albumImageFromSearchFileName = Path.Combine(album.Directory.FullName(), album.Directory.GetNextFileNameForType(Album.FrontImageType).Item1);
 
                 if (selectedImageSearchResult.ImageBytes != null)
                 {
                     await File.WriteAllBytesAsync(albumImageFromSearchFileName, selectedImageSearchResult.ImageBytes);
-                    var newImageInfo = new System.IO.FileInfo(albumImageFromSearchFileName);
+                    var newImageInfo = new FileInfo(albumImageFromSearchFileName);
                     var imageInfo = await Image.IdentifyAsync(albumImageFromSearchFileName).ConfigureAwait(false);
                     _images = new List<ImageInfo>
                     {
@@ -404,7 +407,7 @@
                             albumImageFromSearchFileName,
                             async (_, newFileInfo, _) => (await imageValidator.ValidateImage(newFileInfo, PictureIdentifier.Front)).Data.IsValid).ConfigureAwait(false))
                     {
-                        var newImageInfo = new System.IO.FileInfo(albumImageFromSearchFileName);
+                        var newImageInfo = new FileInfo(albumImageFromSearchFileName);
                         var imageInfo = await Image.IdentifyAsync(albumImageFromSearchFileName).ConfigureAwait(false);
                         _images = new List<ImageInfo>
                         {
@@ -427,7 +430,6 @@
                     var imageBytes = await File.ReadAllBytesAsync(_images.First().FileInfo!.FullName(album.Directory));
                     _coverImage = $"data:image/jpeg;base64,{Convert.ToBase64String(imageBytes)}";
                 }
-
             }
         }
         finally

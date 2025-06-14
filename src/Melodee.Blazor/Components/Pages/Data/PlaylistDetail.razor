@@ -6,7 +6,6 @@
 @using Melodee.Common.Enums
 @using Melodee.Common.Filtering
 @using Melodee.Common.Models.Collection
-
 @using Playlist = Melodee.Common.Data.Models.Playlist
 @inject PlaylistService PlaylistService
 @inject UserService UserService
@@ -107,8 +106,10 @@
                             JustifyContent="JustifyContent.Left"
                             class="rz-pt-1"
                             Gap="5px">
-                            <CondensedStatistic Label="Duration" Statistic="@(CurrentUser!.FormatDuration(_playlist.Duration.ToDuration()))"/>
-                            <CondensedStatistic Label="Song Count" Statistic="@(_playlist.SongCount.ToStringPadLeft(4))"/>
+                            <CondensedStatistic Label="Duration"
+                                                Statistic="@(CurrentUser!.FormatDuration(_playlist.Duration.ToDuration()))"/>
+                            <CondensedStatistic Label="Song Count"
+                                                Statistic="@(_playlist.SongCount.ToStringPadLeft(4))"/>
                             <CondensedStatistic Label="Created"
                                                 Statistic="@(CurrentUser?.FormatInstant(_playlist.CreatedAt))"/>
                             <CondensedStatistic Label="Last Updated"
@@ -156,11 +157,11 @@
                         </RadzenPanel>
                     </RadzenColumn>
                     <RadzenColumn Size="12" SizeMD="4">
-                            <RadzenImage
-                                Path=@($"/images/{_playlist.ToApiKey(_playlist.IsDynamic)}/600")
-                                Style="margin:auto;display: block;"
-                                AlternateText="@_playlist.Name"/>
-                        <Markdown Content="@(_playlist.Description)" />
+                        <RadzenImage
+                            Path=@($"/images/{_playlist.ToApiKey(_playlist.IsDynamic)}/600")
+                            Style="margin:auto;display: block;"
+                            AlternateText="@_playlist.Name"/>
+                        <Markdown Content="@(_playlist.Description)"/>
                     </RadzenColumn>
                 </RadzenRow>
             }
@@ -223,7 +224,7 @@
         _isLoading = true;
 
         FilterOperatorInfo[]? filters = null;
-        var songListResult = await PlaylistService.SongsForPlaylistAsync(_playlist.ApiKey, UserInfo.FromClaimsPrincipal(CurrentUser!),  new PagedRequest
+        var songListResult = await PlaylistService.SongsForPlaylistAsync(_playlist.ApiKey, UserInfo.FromClaimsPrincipal(CurrentUser!), new PagedRequest
         {
             FilterBy = filters,
             Page = _currentPage,
@@ -244,7 +245,7 @@
 
     private async Task PlayPlaylist()
     {
-        var songListResult = await PlaylistService.SongsForPlaylistAsync(_playlist.ApiKey, UserInfo.FromClaimsPrincipal(CurrentUser!),  new PagedRequest
+        var songListResult = await PlaylistService.SongsForPlaylistAsync(_playlist.ApiKey, UserInfo.FromClaimsPrincipal(CurrentUser!), new PagedRequest
         {
             Page = _currentPage,
             PageSize = _pageSize
@@ -287,4 +288,5 @@
         // _playlist.IsLocked = true;
         throw new NotImplementedException();
     }
+
 }

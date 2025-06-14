@@ -289,6 +289,7 @@ public class ArtistService(
             CacheManager.Remove(
                 CacheKeyDetailByMusicBrainzIdTemplate.FormatSmart(artist.MusicBrainzId.Value.ToString()));
         }
+
         await albumService.ClearCacheForArtist(artist.Id, cancellationToken);
     }
 
@@ -426,23 +427,23 @@ public class ArtistService(
             }
 
             dbDetail.Directory = artist.Directory;
-            
+
             var configuration = await configurationFactory.GetConfigurationAsync(cancellationToken);
-            
+
             var newArtistDirectory = artist.ToMelodeeArtistModel().ToDirectoryName(configuration.GetValue<int>(SettingRegistry.ProcessingMaximumArtistDirectoryNameLength));
             var newDirectory = Path.Combine(dbDetail.Library.Path, newArtistDirectory);
-            var originalDirectory = new DirectoryInfo(Path.Combine(dbDetail.Library.Path,dbDetail.Directory));
+            var originalDirectory = new DirectoryInfo(Path.Combine(dbDetail.Library.Path, dbDetail.Directory));
             if (!originalDirectory.IsSameDirectory(newDirectory))
             {
                 originalDirectory.MoveTo(newDirectory);
                 dbDetail.Directory = newArtistDirectory;
             }
-            
+
             dbDetail.AlternateNames = artist.AlternateNames;
             dbDetail.AmgId = artist.AmgId;
             dbDetail.Biography = artist.Biography.Nullify();
             dbDetail.Description = artist.Description;
-            
+
             dbDetail.DeezerId = artist.DeezerId;
             dbDetail.DiscogsId = artist.DiscogsId;
             dbDetail.ImageCount = artist.ImageCount;

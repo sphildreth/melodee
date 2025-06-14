@@ -34,7 +34,8 @@
                     <RadzenText class="rz-text-wrap">@Album.Name</RadzenText>
                 }
             </RadzenText>
-            <RadzenText TextStyle="TextStyle.Overline" Style="margin:0;padding:0;">@AlbumDataInfo.InfoLineTitle</RadzenText>
+            <RadzenText TextStyle="TextStyle.Overline"
+                        Style="margin:0;padding:0;">@AlbumDataInfo.InfoLineTitle</RadzenText>
             <RadzenText TextStyle="TextStyle.Body1" Style="margin:0;padding:0;">@Album.InfoLineData</RadzenText>
         </RadzenStack>
     </RadzenStack>
@@ -44,7 +45,7 @@
     [Parameter] public AlbumDataInfo Album { get; set; } = null!;
     [Parameter] public string? FromUrl { get; set; }
     [Parameter] public bool ShowAlbumLink { get; set; } = true;
-    [Parameter] public bool Checked { get; set; } = false;
+    [Parameter] public bool Checked { get; set; }
     [Parameter] public Action<bool>? CheckedChanged { get; set; }
 
 }

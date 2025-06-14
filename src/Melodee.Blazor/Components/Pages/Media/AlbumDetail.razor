@@ -11,7 +11,9 @@
 @using Melodee.Common.Services.SearchEngines
 @using Rebus.Bus
 @using SixLabors.ImageSharp
+@using FileInfo = System.IO.FileInfo
 @using ImageInfo = Melodee.Common.Models.ImageInfo
+@using ImageSearchResult = Melodee.Blazor.Components.Components.ImageSearchResult
 
 @inherits MelodeeComponentBase
 
@@ -41,22 +43,35 @@
 </RadzenBreadCrumb>
 <RadzenStack>
     <RadzenMenu>
-        <RadzenMenuItem Text="Add Artist" Click="AddNewArtistButtonClick" title="Add a new artist to metadata database using this artists details." Icon="add_circle_outline"></RadzenMenuItem>
+        <RadzenMenuItem Text="Add Artist" Click="AddNewArtistButtonClick"
+                        title="Add a new artist to metadata database using this artists details."
+                        Icon="add_circle_outline"></RadzenMenuItem>
         <RadzenMenuItem Text="Edit" Icon="edit">
-            <RadzenMenuItem Text="Edit album" Icon="edit" Value="@MenuItems.EditAlbum" Click="OnMenuItemClicked"></RadzenMenuItem>
-            <RadzenMenuItem Text="Manually validate album" Icon="data_check" Value="@MenuItems.ManuallyValidateAlbum" Click="OnMenuItemClicked"></RadzenMenuItem>
-            <RadzenMenuItem Text="Renumber all songs" Icon="format_list_numbered" Value="@MenuItems.RenumberSongs" Click="OnMenuItemClicked"></RadzenMenuItem>
-            <RadzenMenuItem Text="Set artist on all songs" Icon="artist" Value="@MenuItems.SetArtistOnAllSongs" Click="OnMenuItemClicked"></RadzenMenuItem>
+            <RadzenMenuItem Text="Edit album" Icon="edit" Value="@MenuItems.EditAlbum"
+                            Click="OnMenuItemClicked"></RadzenMenuItem>
+            <RadzenMenuItem Text="Manually validate album" Icon="data_check" Value="@MenuItems.ManuallyValidateAlbum"
+                            Click="OnMenuItemClicked"></RadzenMenuItem>
+            <RadzenMenuItem Text="Renumber all songs" Icon="format_list_numbered" Value="@MenuItems.RenumberSongs"
+                            Click="OnMenuItemClicked"></RadzenMenuItem>
+            <RadzenMenuItem Text="Set artist on all songs" Icon="artist" Value="@MenuItems.SetArtistOnAllSongs"
+                            Click="OnMenuItemClicked"></RadzenMenuItem>
         </RadzenMenuItem>
-        <RadzenMenuItem Text="Delete" Click="DeleteButtonClick" title="Delete the album and all album files. BEWARE!" IconColor="@Colors.Warning" Icon="delete"></RadzenMenuItem>
+        <RadzenMenuItem Text="Delete" Click="DeleteButtonClick" title="Delete the album and all album files. BEWARE!"
+                        IconColor="@Colors.Warning" Icon="delete"></RadzenMenuItem>
         @if (_selectedSongs.Count > 0)
         {
-            <RadzenMenuItem Text="Delete Selected Songs" Click="OnMenuItemClicked" Value="@MenuItems.DeleteSelectedSongs"  title="Delete the selected songs. BEWARE!" IconColor="@Colors.Warning" Icon="remove"></RadzenMenuItem>
+            <RadzenMenuItem Text="Delete Selected Songs" Click="OnMenuItemClicked"
+                            Value="@MenuItems.DeleteSelectedSongs" title="Delete the selected songs. BEWARE!"
+                            IconColor="@Colors.Warning" Icon="remove"></RadzenMenuItem>
         }
-        <RadzenMenuItem Text="Identify" Click="IdentifyButtonClick" title="Identify the album from search providers." Icon="edit"></RadzenMenuItem>
-        <RadzenMenuItem Text="Move to Storage" Click="MoveButtonClick" title="Move to Storage library." Icon="move_group"></RadzenMenuItem>
-        <RadzenMenuItem Text="Reprocess Album" Click="ReprocessAlbumButtonClick" title="Reprocess the album." Icon="refresh"></RadzenMenuItem>
-        <RadzenMenuItem Text="Set Cover Image" Click="SetCoverImageButtonClick" title="Set the album cover image." Icon="image"></RadzenMenuItem>
+        <RadzenMenuItem Text="Identify" Click="IdentifyButtonClick" title="Identify the album from search providers."
+                        Icon="edit"></RadzenMenuItem>
+        <RadzenMenuItem Text="Move to Storage" Click="MoveButtonClick" title="Move to Storage library."
+                        Icon="move_group"></RadzenMenuItem>
+        <RadzenMenuItem Text="Reprocess Album" Click="ReprocessAlbumButtonClick" title="Reprocess the album."
+                        Icon="refresh"></RadzenMenuItem>
+        <RadzenMenuItem Text="Set Cover Image" Click="SetCoverImageButtonClick" title="Set the album cover image."
+                        Icon="image"></RadzenMenuItem>
         <RadzenMenuItem Text="Web Search" Icon="public">
             <RadzenMenuItem Text="Album" Click="@(() => DoWebSearch(1))"></RadzenMenuItem>
             <RadzenMenuItem Text="Album + Year" Click="@(() => DoWebSearch(2))"></RadzenMenuItem>
@@ -171,8 +186,8 @@
                             <HeaderTemplate>
                                 <RadzenText TextStyle="TextStyle.H6"
                                             class="rz-display-flex rz-align-items-center rz-m-0">
-                                <RadzenIcon Icon="music_note" class="rz-me-1"/>
-                                @($"Songs {(_selectedSongs.Count > 0 ? $" (selected {_selectedSongs.Count})" : string.Empty)}")
+                                    <RadzenIcon Icon="music_note" class="rz-me-1"/>
+                                    @($"Songs {(_selectedSongs.Count > 0 ? $" (selected {_selectedSongs.Count})" : string.Empty)}")
                                 </RadzenText>
                             </HeaderTemplate>
                             <ChildContent>
@@ -185,17 +200,20 @@
                                     </tr>
                                     </thead>
                                     <tbody>
-                                    @foreach (var song in (_album.Songs ?? []).OrderBy(x  => x.SongNumber()))
+                                    @foreach (var song in (_album.Songs ?? []).OrderBy(x => x.SongNumber()))
                                     {
                                         <tr>
                                             <td>
-                                                <RadzenCheckBox TValue="bool" Value="@(_selectedSongs.Contains(song))" Change="@(args => ToggleSelectedSong(song))" />
+                                                <RadzenCheckBox TValue="bool" Value="@(_selectedSongs.Contains(song))"
+                                                                Change="@(args => ToggleSelectedSong(song))"/>
                                                 @($"{song.SongNumber().ToStringPadLeft(3)}")
                                             </td>
                                             <td>@song.Title()</td>
                                             <td>
                                                 @CurrentUser!.FormatDuration(song.Duration().ToDuration())
-                                                <RadzenIcon IconColor="@Colors.Warning" Style="cursor:pointer;" title="Delete Song" Icon="delete" @onclick="@(() => DeleteSong(song))" />
+                                                <RadzenIcon IconColor="@Colors.Warning" Style="cursor:pointer;"
+                                                            title="Delete Song" Icon="delete"
+                                                            @onclick="@(() => DeleteSong(song))"/>
                                             </td>
                                         </tr>
                                     }
@@ -326,6 +344,7 @@
             {
                 NavigationManager.NavigateTo($"/media/library/{_library.ApiKey}", true);
             }
+
             NotificationService.Notify(NotificationMessageForResult(new OperationResult<bool> { Data = false }, "deleting album", ToastTime));
         }
     }
@@ -383,8 +402,8 @@
         };
         await DialogService.OpenAsync("Identify Album", ds =>
             @<IdentifyAlbum
-                 OnUpdateCallback="IdentifyAlbumCallback"
-                 SearchValues="searchValues"/>);
+                OnUpdateCallback="IdentifyAlbumCallback"
+                SearchValues="searchValues"/>);
     }
 
     private async Task IdentifyAlbumCallback(AlbumDataInfo? arg)
@@ -402,8 +421,8 @@
                 SpotifyId = arg.AlbumSearchResult.Artist?.SpotifyId,
                 SearchEngineResultUniqueId = arg.AlbumSearchResult.Artist?.UniqueId
             };
-            _album.SetTagValue(MetaTagIdentifier.Album, arg.AlbumSearchResult.Name, doSetSongValue: false);
-            _album.SetTagValue(MetaTagIdentifier.RecordingYear, arg.AlbumSearchResult.Year, doSetSongValue: false);
+            _album.SetTagValue(MetaTagIdentifier.Album, arg.AlbumSearchResult.Name, false);
+            _album.SetTagValue(MetaTagIdentifier.RecordingYear, arg.AlbumSearchResult.Year, false);
             if (_album.Images?.Count() == 0)
             {
                 var imageSearch = await AlbumImageSearchEngineService.DoSearchAsync(_album.ToAlbumQuery(), _maxResults);
@@ -420,7 +439,7 @@
                                 albumImageFromSearchFileName,
                                 async (_, newFileInfo, _) => (await imageValidator.ValidateImage(newFileInfo, PictureIdentifier.Front)).Data.IsValid).ConfigureAwait(false))
                         {
-                            var newImageInfo = new System.IO.FileInfo(albumImageFromSearchFileName);
+                            var newImageInfo = new FileInfo(albumImageFromSearchFileName);
                             var imageInfo = await Image.IdentifyAsync(albumImageFromSearchFileName).ConfigureAwait(false);
                             _album.Images = new List<ImageInfo>
                             {
@@ -461,7 +480,9 @@
     }
 
     private Task DeleteSong(Song song)
-        => DeleteSongsAction([song]);
+    {
+        return DeleteSongsAction([song]);
+    }
 
 
     private async Task DeleteSongsAction(Song[] songs)
@@ -518,6 +539,7 @@
                 searchTerms.Add(title);
                 break;
         }
+
         await JsRuntime.InvokeVoidAsync("openInNewTab", Configuration.GenerateWebSearchUrl(searchTerms.ToArray()));
     }
 
@@ -534,6 +556,7 @@
                 {
                     NotificationService.Notify(NotificationMessageForResult(result, "renumbered songs", ToastTime));
                 }
+
                 break;
 
             case MenuItems.ManuallyValidateAlbum:
@@ -542,6 +565,7 @@
                 {
                     NotificationService.Notify(NotificationMessageForResult(result, "manually validated album", ToastTime));
                 }
+
                 break;
 
             case MenuItems.SetArtistOnAllSongs:
@@ -551,6 +575,7 @@
                 {
                     NotificationService.Notify(NotificationMessageForResult(result, "set artists on all songs", ToastTime));
                 }
+
                 break;
 
             case MenuItems.DeleteSelectedSongs:
@@ -561,7 +586,6 @@
             default:
                 NavigationManager.NavigateTo($"/media/album/{LibraryApiKey}/{ApiKey}/edit", true);
                 break;
-
         }
     }
 
@@ -587,7 +611,7 @@
         }
     ];
 
-    private async Task AlbumSearchImageCallback(Components.ImageSearchResult? selectedImageSearchResult)
+    private async Task AlbumSearchImageCallback(ImageSearchResult? selectedImageSearchResult)
     {
         MainLayoutProxyService.ToggleSpinnerVisible();
 
@@ -604,7 +628,7 @@
                 if (selectedImageSearchResult.ImageBytes != null)
                 {
                     await File.WriteAllBytesAsync(albumImageFromSearchFileName, selectedImageSearchResult.ImageBytes);
-                    var newImageInfo = new System.IO.FileInfo(albumImageFromSearchFileName);
+                    var newImageInfo = new FileInfo(albumImageFromSearchFileName);
                     var imageInfo = await Image.IdentifyAsync(albumImageFromSearchFileName).ConfigureAwait(false);
                     _album.Images = new List<ImageInfo>
                     {
@@ -627,7 +651,7 @@
                             albumImageFromSearchFileName,
                             async (_, newFileInfo, _) => (await imageValidator.ValidateImage(newFileInfo, PictureIdentifier.Front)).Data.IsValid).ConfigureAwait(false))
                     {
-                        var newImageInfo = new System.IO.FileInfo(albumImageFromSearchFileName);
+                        var newImageInfo = new FileInfo(albumImageFromSearchFileName);
                         var imageInfo = await Image.IdentifyAsync(albumImageFromSearchFileName).ConfigureAwait(false);
                         _album.Images = new List<ImageInfo>
                         {
@@ -644,11 +668,13 @@
                         };
                     }
                 }
+
                 var result = await MediaEditService.SaveMelodeeAlbum(_album);
                 if (result.Data)
                 {
                     NotificationService.Notify(NotificationMessageForResult(result, "set cover image", ToastTime));
                 }
+
                 NavigationManager.Refresh(true);
             }
         }
@@ -662,9 +688,9 @@
     {
         await DialogService.OpenAsync("Image Search", ds =>
             @<ImageSearchUpload
-                 SearchType="ImageSearchType.Album"
-                 OnUpdateCallback="AlbumSearchImageCallback"
-                 SearchValues="SearchValues"/>);
+                SearchType="ImageSearchType.Album"
+                OnUpdateCallback="AlbumSearchImageCallback"
+                SearchValues="SearchValues"/>);
     }
 
     private async Task ReprocessAlbumButtonClick()

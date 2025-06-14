@@ -7,7 +7,6 @@ using Melodee.Blazor.Controllers.Melodee.Models;
 using Melodee.Blazor.Filters;
 using Melodee.Blazor.Services;
 using Melodee.Common.Configuration;
-using Melodee.Common.Constants;
 using Melodee.Common.Data.Models.Extensions;
 using Melodee.Common.Models;
 using Melodee.Common.Serialization;
@@ -50,12 +49,12 @@ public class UsersController(
             return Forbid("User is locked");
         }
 
-        if (await blacklistService.IsEmailBlacklistedAsync(authResult.Data.Email).ConfigureAwait(false) || 
+        if (await blacklistService.IsEmailBlacklistedAsync(authResult.Data.Email).ConfigureAwait(false) ||
             await blacklistService.IsIpBlacklistedAsync(GetRequestIp(HttpContext)).ConfigureAwait(false))
         {
             return StatusCode(StatusCodes.Status403Forbidden, new { error = "User is blacklisted" });
         }
-        
+
         var tokenHandler = new JwtSecurityTokenHandler();
         var key = Encoding.UTF8.GetBytes(Configuration.GetSection("MelodeeAuthSettings:Token").Value!);
         var tokenHoursString = Configuration.GetSection("MelodeeAuthSettings:TokenHours").Value;
@@ -82,7 +81,7 @@ public class UsersController(
     }
 
     /// <summary>
-    /// Return information about the current user making the request.
+    ///     Return information about the current user making the request.
     /// </summary>
     [HttpGet]
     [Route("me")]
@@ -103,7 +102,7 @@ public class UsersController(
     }
 
     /// <summary>
-    /// Return the last three songs played by the user
+    ///     Return the last three songs played by the user
     /// </summary>
     [HttpGet]
     [Route("lastPlayed")]
@@ -124,8 +123,8 @@ public class UsersController(
         {
             return Forbid("User is locked");
         }
-        
-        if (await blacklistService.IsEmailBlacklistedAsync(userResult.Data.Email).ConfigureAwait(false) || 
+
+        if (await blacklistService.IsEmailBlacklistedAsync(userResult.Data.Email).ConfigureAwait(false) ||
             await blacklistService.IsIpBlacklistedAsync(GetRequestIp(HttpContext)).ConfigureAwait(false))
         {
             return StatusCode(StatusCodes.Status403Forbidden, new { error = "User is blacklisted" });
@@ -165,12 +164,12 @@ public class UsersController(
             return Forbid("User is locked");
         }
 
-        if (await blacklistService.IsEmailBlacklistedAsync(userResult.Data.Email).ConfigureAwait(false) || 
+        if (await blacklistService.IsEmailBlacklistedAsync(userResult.Data.Email).ConfigureAwait(false) ||
             await blacklistService.IsIpBlacklistedAsync(GetRequestIp(HttpContext)).ConfigureAwait(false))
         {
             return StatusCode(StatusCodes.Status403Forbidden, new { error = "User is blacklisted" });
         }
-        
+
         var pageValue = page ?? 1;
         var pageSizeValue = pageSize ?? 50;
         var playlists = await playlistService.ListAsync(userResult.Data.ToUserInfo(), new PagedRequest { Page = pageValue, PageSize = pageSizeValue }, cancellationToken).ConfigureAwait(false);

@@ -47,8 +47,8 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Configuration
     .SetBasePath(Directory.GetCurrentDirectory())
-    .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
-    .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true)
+    .AddJsonFile("appsettings.json", false, true)
+    .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", true)
     .AddEnvironmentVariables();
 
 Trace.Listeners.Clear();
@@ -67,7 +67,7 @@ builder.Services.AddDbContextFactory<MelodeeDbContext>(opt =>
         => o.UseNodaTime()
             .UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery)));
 
-builder.Services.AddDbContextFactory<ArtistSearchEngineServiceDbContext>(opt 
+builder.Services.AddDbContextFactory<ArtistSearchEngineServiceDbContext>(opt
     => opt.UseSqlite(builder.Configuration.GetConnectionString("ArtistSearchEngineConnection")));
 
 builder.Services.AddSingleton<IDbConnectionFactory>(_ =>
@@ -252,7 +252,7 @@ if (!isQuartzDisabled)
                 .StartNow()
                 .Build());
     }
-    
+
     var artistSearchEngineHousekeepingCronExpression = melodeeConfiguration.GetValue<string>(SettingRegistry.JobsArtistSearchEngineHousekeepingCronExpression);
     if (artistSearchEngineHousekeepingCronExpression.Nullify() != null)
     {
@@ -265,7 +265,7 @@ if (!isQuartzDisabled)
                 .WithCronSchedule(artistSearchEngineHousekeepingCronExpression!)
                 .StartNow()
                 .Build());
-    }    
+    }
 
     var libraryInboundProcessJobKeyCronExpression = melodeeConfiguration.GetValue<string>(SettingRegistry.JobsLibraryProcessCronExpression);
     if (libraryInboundProcessJobKeyCronExpression.Nullify() != null)

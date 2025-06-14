@@ -25,8 +25,6 @@ public record Artist(
             0,
             0,
             "",
-            "",
-            null,
-            null);
+            "");
     }
 }

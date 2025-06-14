@@ -21,7 +21,7 @@ public static class PlaylistExtensions
             playlist.IsPublic,
             playlist.User.ToUserModel(baseUrl),
             playlist.CreatedAt.ToString(),
-            playlist.LastUpdatedAt?.ToString() ?? string.Empty           
-            );
+            playlist.LastUpdatedAt?.ToString() ?? string.Empty
+        );
     }
 }

@@ -1,6 +1,5 @@
 @page "/musicplayer"
 @inherits MelodeeComponentBase
-
 @using Melodee.Common.Models.Collection.Extensions
 @using SongDataInfo = Melodee.Common.Models.Collection.SongDataInfo
 @inject ScrobbleService ScrobbleService
@@ -57,7 +56,8 @@
         <div class="playlist">
             @foreach (var (song, index) in Songs.Select((value, i) => (value, i)))
             {
-                <div class="playlist-item @(index == CurrentSongIndex ? "active" : "")" @onclick="() => PlaySelectedSong(index)">
+                <div class="playlist-item @(index == CurrentSongIndex ? "active" : "")"
+                     @onclick="() => PlaySelectedSong(index)">
                     <span class="playlist-number">@(index + 1)</span>
                     <div class="playlist-info">
                         <div class="playlist-title">@song.Title</div>
@@ -89,14 +89,14 @@
 
     private string CurrentTimeFormatted => FormatTime(CurrentTime);
     private string DurationFormatted => FormatTime(Duration);
-    private double ProgressPercentage => Duration > 0 ? (CurrentTime / Duration) * 100 : 0;
+    private double ProgressPercentage => Duration > 0 ? CurrentTime / Duration * 100 : 0;
 
     private double Duration { get; set; }
     private double Volume { get; set; } = 100;
     private bool IsMuted { get; set; }
 
 
-    private bool _nowPlayingRecordedForCurrentSong = false;
+    private bool _nowPlayingRecordedForCurrentSong;
 
     protected override async Task OnInitializedAsync()
     {
@@ -195,6 +195,7 @@
         {
             CurrentSongIndex = Songs.Count - 1;
         }
+
         await LoadSong();
         if (IsPlaying)
         {
@@ -209,6 +210,7 @@
         {
             CurrentSongIndex = 0;
         }
+
         await LoadSong();
         if (IsPlaying)
         {
@@ -270,14 +272,13 @@
         {
             return "🔇";
         }
-        else if (Volume < 0.5)
+
+        if (Volume < 0.5)
         {
             return "🔉";
         }
-        else
-        {
-            return "🔊";
-        }
+
+        return "🔊";
     }
 
     private static string FormatTime(double seconds)
@@ -306,8 +307,10 @@
         {
             await _module.DisposeAsync();
         }
+
         _objRef?.Dispose();
     }
+
 }
 
 

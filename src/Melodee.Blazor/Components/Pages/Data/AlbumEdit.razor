@@ -2,16 +2,11 @@
 
 @inherits MelodeeComponentBase
 @attribute [Authorize(Roles = "Administrator,Editor")]
-
-@using Melodee.Blazor.ViewModels
-@using Melodee.Common.Data.Constants
 @using Melodee.Common.Data.Models
 @using Melodee.Common.Data.Models.Extensions
-@using Melodee.Common.Plugins.SearchEngine.MusicBrainz.Data
 @using NodaTime
 @using Album = Melodee.Common.Data.Models.Album
 @using Artist = Melodee.Common.Data.Models.Artist
-@using ImageSearchResult = Melodee.Blazor.Components.Components.ImageSearchResult
 
 @inject MainLayoutProxyService MainLayoutProxyService
 @inject ILogger Logger
@@ -104,7 +99,8 @@
                                     DateFormat="MM/dd/yyyy"
                                     @bind-Value="@_releaseDate"
                                     class="rz-w-100"/>
-                                <RadzenRequiredValidator Component="ReleaseDate" Text="Release Date is required" Popup="false" Style="position: absolute"/>
+                                <RadzenRequiredValidator Component="ReleaseDate" Text="Release Date is required"
+                                                         Popup="false" Style="position: absolute"/>
                             </RadzenColumn>
                         </RadzenRow>
 
@@ -137,7 +133,7 @@
                                 <RadzenLabel Text="Description" Component="Description"/>
                             </RadzenColumn>
                             <RadzenColumn Size="12" SizeMD="10">
-                                <MarkdownEditor UploadImage="false" Value="@_album.Description" />
+                                <MarkdownEditor UploadImage="false" Value="@_album.Description"/>
                             </RadzenColumn>
                         </RadzenRow>
                         <RadzenRow AlignItems="AlignItems.Center" RowGap="0.25rem">
@@ -213,7 +209,7 @@
                                 <RadzenLabel Text="Notes" Component="Notes"/>
                             </RadzenColumn>
                             <RadzenColumn Size="12" SizeMD="10">
-                                <MarkdownEditor UploadImage="false" Value="@_album.Notes" />
+                                <MarkdownEditor UploadImage="false" Value="@_album.Notes"/>
                             </RadzenColumn>
                         </RadzenRow>
                         <RadzenRow AlignItems="AlignItems.Center" RowGap="0.25rem">

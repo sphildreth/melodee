@@ -62,7 +62,7 @@
 
     private bool _disposedValue;
     private Timer? _timer;
-    private ulong _eventCount = 0;
+    private ulong _eventCount;
 
     /// <summary>
     ///     Can be set to start `true` or stop `false` timer. Returns the inner state of the timer. `True` if timer is running
@@ -71,8 +71,7 @@
     [Parameter]
     public bool IsEnabled { get; set; }
 
-    [Parameter]
-    public EventCallback<bool> IsEnabledChanged { get; set; }
+    [Parameter] public EventCallback<bool> IsEnabledChanged { get; set; }
 
     /// <summary>
     ///     Starts the internal timer which will start after the set delay and fire event for the given occurrence times.
@@ -137,6 +136,7 @@
         {
             return;
         }
+
         _intervalInMs = IntervalInMs > 0 ? IntervalInMs : 1;
         if (_timer is not null)
         {
@@ -156,7 +156,6 @@
                 Stop();
             }
         }
-
     }
 
 

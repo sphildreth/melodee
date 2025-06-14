@@ -20,7 +20,7 @@
 </RadzenFieldset>
 
 @code {
-    private dynamic _model = new object();
+    private readonly dynamic _model = new object();
     private string _input = string.Empty;
 
     public string Input
@@ -33,7 +33,7 @@
         }
     }
 
-    private bool _wasSetToEmpty = false;
+    private bool _wasSetToEmpty;
 
     [Parameter] public List<string> Value { get; set; } = new();
 

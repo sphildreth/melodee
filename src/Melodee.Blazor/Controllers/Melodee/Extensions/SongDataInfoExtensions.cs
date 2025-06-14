@@ -36,7 +36,7 @@ public static class SongDataInfoExtensions
                 {
                     Id = albumInfoData.ArtistApiKey,
                     Name = albumInfoData.ArtistName
-                },                
+                },
                 $"{baseUrl}/images/{albumInfoData.ToApiKey()}/{MelodeeConfiguration.DefaultThumbNailSize}",
                 $"{baseUrl}/images/{albumInfoData.ToApiKey()}/{MelodeeConfiguration.DefaultImageSize}",
                 songDataInfo.AlbumName,
@@ -48,7 +48,7 @@ public static class SongDataInfoExtensions
                 string.Empty,
                 string.Empty,
                 string.Empty
-            ),            
+            ),
             $"{baseUrl}/song/stream/{songDataInfo.ApiKey}/{currentUser.Id}/{currentUser.CreateAuthUrlFragment(userSecret, songDataInfo.ApiKey.ToString())}",
             $"{baseUrl}/images/{songDataInfo.ToApiKey()}/{MelodeeConfiguration.DefaultThumbNailSize}",
             $"{baseUrl}/images/{songDataInfo.ToApiKey()}/{MelodeeConfiguration.DefaultImageSize}",

@@ -53,7 +53,7 @@ public static class FileFormatDetector
         {
             return AudioFormat.Vorbis;
         }
-        
+
         // FLAC detection
         if (buffer[0] == 'f' && buffer[1] == 'L' && buffer[2] == 'a' && buffer[3] == 'C')
         {
@@ -65,14 +65,14 @@ public static class FileFormatDetector
         {
             return AudioFormat.APE;
         }
-        
+
         // If we get here and the file extension is .flac, assume it's a FLAC file
         // This handles cases where the file might not have the standard header
         if (Path.GetExtension(filePath).Equals(".flac", StringComparison.OrdinalIgnoreCase))
         {
             return AudioFormat.Vorbis;
         }
-        
+
         // If we get here and the file extension is .ogg, assume it's an Ogg Vorbis file
         if (Path.GetExtension(filePath).Equals(".ogg", StringComparison.OrdinalIgnoreCase))
         {

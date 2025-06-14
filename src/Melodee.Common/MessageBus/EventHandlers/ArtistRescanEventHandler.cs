@@ -79,7 +79,7 @@ public class ArtistRescanEventHandler(
                     logger.Debug("[{JobName}] Processing artist directories found [{ArtistDirectoryInfosCount}].",
                         nameof(ArtistRescanEventHandler),
                         artistDirectoryInfos.Length
-                    );                    
+                    );
                     await Parallel.ForEachAsync(artistDirectoryInfos, cancellationToken,
                         async (artistDirectoryInfo, tt) =>
                         {

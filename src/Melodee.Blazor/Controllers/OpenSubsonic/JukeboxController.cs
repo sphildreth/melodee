@@ -1,7 +1,6 @@
 using Melodee.Blazor.Filters;
 using Melodee.Common.Configuration;
 using Melodee.Common.Serialization;
-using Melodee.Common.Services;
 
 namespace Melodee.Blazor.Controllers.OpenSubsonic;
 

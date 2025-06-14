@@ -952,9 +952,9 @@ public static partial class StringExtensions
     {
         return input.Nullify() == null ? null : Markdown.ToHtml(input!);
     }
-    
+
     /// <summary>
-    /// Normalizes line endings by converting all CR, LF, or CR+LF combinations to a single LF (\n) character.
+    ///     Normalizes line endings by converting all CR, LF, or CR+LF combinations to a single LF (\n) character.
     /// </summary>
     /// <param name="input">The input string with potentially mixed line endings</param>
     /// <returns>A string with all line endings normalized to LF (\n)</returns>
@@ -964,9 +964,10 @@ public static partial class StringExtensions
         {
             return null;
         }
+
         return Regex.Replace(input!, "\r\n|\r", "\n");
     }
-    
+
 
     [GeneratedRegex("[^a-zA-Z0-9 -.:]")]
     private static partial Regex OnlyAlphaNumericRegex();

@@ -16,10 +16,12 @@ public record struct AudioTagData
         {
             return false;
         }
+
         if (string.IsNullOrWhiteSpace(FileMetadata.FilePath) || FileMetadata.FileSize <= 0)
         {
             return false;
         }
+
         foreach (var tag in AudioTagManager.DefaultTags)
         {
             if (!Tags.ContainsKey(tag.Key) || (tag.Value is string str && string.IsNullOrWhiteSpace(str)) || tag.Value is int and <= 0)
@@ -27,6 +29,7 @@ public record struct AudioTagData
                 return false;
             }
         }
+
         return true;
     }
 }

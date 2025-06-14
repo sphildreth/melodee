@@ -1,3 +1,5 @@
+using Melodee.Common.Plugins.SearchEngine.Deezer;
+
 namespace Melodee.Tests.Plugins.SearchEngine;
 
 public class DeezerTests : TestsBase
@@ -26,7 +28,7 @@ public class DeezerTests : TestsBase
                      "next" : "https://api.deezer.com/search/artist?q=%22The%20Offspring%22&output=json&limit=1&order=RANKING&index=1"
                    }
                    """;
-        var artistResult = Serializer.Deserialize<Melodee.Common.Plugins.SearchEngine.Deezer.ArtistSearchResult>(json);
+        var artistResult = Serializer.Deserialize<ArtistSearchResult>(json);
         Assert.NotNull(artistResult);
         Assert.NotNull(artistResult.Data);
         Assert.NotNull(artistResult.Data.First());

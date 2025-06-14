@@ -10,7 +10,7 @@ public sealed record SearchResult(
     SongDataInfo[] Songs,
     int TotalSongs,
     PlaylistDataInfo[] Playlists,
-    int TotalPlaylists,    
+    int TotalPlaylists,
     ArtistDataInfo[] MusicBrainzArtists,
     int TotalMusicBrainzArtists)
 {

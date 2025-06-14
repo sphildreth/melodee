@@ -3,7 +3,6 @@ using Melodee.Common.Configuration;
 using Melodee.Common.Models;
 using Melodee.Common.Models.Extensions;
 
-
 namespace Melodee.Blazor.Controllers.Melodee.Extensions;
 
 public static class UserInfoExtensions
@@ -26,7 +25,7 @@ public static class UserInfoExtensions
             0,
             0,
             string.Empty,
-            string.Empty            
+            string.Empty
         );
     }
 }

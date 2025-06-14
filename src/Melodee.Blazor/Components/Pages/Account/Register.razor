@@ -1,5 +1,4 @@
 @page "/account/register"
-@using Melodee.Common.Data.Models
 
 @attribute [AllowAnonymous]
 
@@ -38,7 +37,8 @@ else
                                         <RadzenLabel Text="Username" Component="Username"/>
                                     </RadzenColumn>
                                     <RadzenColumn Size="12" SizeMD="10">
-                                        <RadzenTextBox style="display: block" Name="Username" @bind-Value="@_model.Username"
+                                        <RadzenTextBox style="display: block" Name="Username"
+                                                       @bind-Value="@_model.Username"
                                                        Placeholder="Username"
                                                        class="rz-w-100"/>
                                         <RadzenDataAnnotationValidator Component="Username" Popup="false"
@@ -73,15 +73,19 @@ else
                                 @if (_registerPrivateCodeLength > 0)
                                 {
                                     <div class="warning-banner">
-                                        <p>🔒 Registering a new account requires an access code to be entered. Whoever invited you can provide this code to you.</p>
+                                        <p>🔒 Registering a new account requires an access code to be entered. Whoever
+                                            invited you can provide this code to you.</p>
                                         <p>If you do not have the code, kindly go away 👉.</p>
                                     </div>
                                     <RadzenRow AlignItems="AlignItems.Center" RowGap="0.25rem">
-                                        <RadzenColumn Size="12" SizeMD="2" class="rz-text-align-start rz-text-align-md-end">
+                                        <RadzenColumn Size="12" SizeMD="2"
+                                                      class="rz-text-align-start rz-text-align-md-end">
                                             <RadzenLabel Text="Access Code" Component="RegisterCode"/>
                                         </RadzenColumn>
                                         <RadzenColumn Size="12" SizeMD="10">
-                                            <RadzenSecurityCode required Name="RegisterCode" @bind-Value=@_registerPrivateCode Count="@_registerPrivateCodeLength" Gap="5px"/>
+                                            <RadzenSecurityCode required Name="RegisterCode"
+                                                                @bind-Value=@_registerPrivateCode
+                                                                Count="@_registerPrivateCodeLength" Gap="5px"/>
                                         </RadzenColumn>
                                     </RadzenRow>
                                 }
@@ -89,7 +93,8 @@ else
                                     <RadzenProgressBar Visible="@_isLoading" Style="width:100px;"
                                                        ProgressBarStyle="ProgressBarStyle.Info" Value="100"
                                                        ShowValue="false" Mode="ProgressBarMode.Indeterminate"/>
-                                    <RadzenButton Disabled="@(_isLoading)" ButtonType="ButtonType.Submit" Text="Register"
+                                    <RadzenButton Disabled="@(_isLoading)" ButtonType="ButtonType.Submit"
+                                                  Text="Register"
                                                   Style="width: 100%"/>
                                 </RadzenRow>
                             </RadzenStack>
@@ -107,7 +112,7 @@ else
     bool _isRegistrationDisabled;
     readonly ViewModels.Register _model = new();
     string? _registerPrivateCode;
-    int _registerPrivateCodeLength = 0;
+    int _registerPrivateCodeLength;
 
     protected override async Task OnInitializedAsync()
     {
@@ -151,7 +156,8 @@ else
                     SummaryContent = _ => @<RadzenText TextStyle="TextStyle.H6">Successfully registered!</RadzenText>,
                     DetailContent = ns =>
                         @<RadzenStack>
-                            <RadzenText TextStyle="TextStyle.Subtitle1">Registered new account, you should get an email, be sure and click the validate button.
+                            <RadzenText TextStyle="TextStyle.Subtitle1">Registered new account, you should get an email,
+                                be sure and click the validate button.
                             </RadzenText>
                             <RadzenButton Text="Close" Click="@(args => ns.Messages.Clear())"></RadzenButton>
                         </RadzenStack>

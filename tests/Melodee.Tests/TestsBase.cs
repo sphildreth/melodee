@@ -26,7 +26,7 @@ public abstract class TestsBase
     protected ISerializer Serializer { get; }
 
     protected bool IsTestDirectoryFound => Directory.Exists("/melodee_test/tests");
-    
+
     protected ImageConvertor GetImageConvertor()
     {
         return new ImageConvertor(NewPluginsConfiguration());

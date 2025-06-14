@@ -10,7 +10,7 @@ using Melodee.Common.Serialization;
 
 namespace Melodee.Common.Plugins.MetaData.Song;
 
-public class LyricPlugin(ISerializer serializer, IMelodeeConfigurationFactory configurationFactory): ILyricPlugin
+public class LyricPlugin(ISerializer serializer, IMelodeeConfigurationFactory configurationFactory) : ILyricPlugin
 {
     public string Id => "130C1EC9-D04D-4F22-BCBD-17791649CEF7";
 
@@ -19,11 +19,6 @@ public class LyricPlugin(ISerializer serializer, IMelodeeConfigurationFactory co
     public bool IsEnabled { get; set; } = true;
 
     public int SortOrder { get; } = 0;
-    
-    public bool DoesHandleFile(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemInfo)
-    {
-        return false;
-    }
 
     public async Task<OperationResult<Lyrics?>> GetLyricsAsync(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemInfo, CancellationToken token = default)
     {
@@ -36,12 +31,12 @@ public class LyricPlugin(ISerializer serializer, IMelodeeConfigurationFactory co
             if (File.Exists(lyricsFileName))
             {
                 var lyricsFileContent = await File.ReadAllTextAsync(lyricsFileName, token).ConfigureAwait(false);
-                result = serializer.Deserialize<Lyrics>(lyricsFileContent);      
+                result = serializer.Deserialize<Lyrics>(lyricsFileContent);
             }
             else
             {
                 var lyricsList = await GetLyricListAsync(directoryInfo, fileSystemInfo, token).ConfigureAwait(false);
-                if(lyricsList is { IsSuccess: true, Data: not null })
+                if (lyricsList is { IsSuccess: true, Data: not null })
                 {
                     result = lyricsList.Data.ToLyrics();
                 }
@@ -61,7 +56,7 @@ public class LyricPlugin(ISerializer serializer, IMelodeeConfigurationFactory co
                         Artist = fileAtl.AlbumArtist ?? fileAtl.Artist,
                         Title = fileAtl.Title,
                         Value = ult!
-                    };                        
+                    };
                 }
             }
         }
@@ -74,7 +69,7 @@ public class LyricPlugin(ISerializer serializer, IMelodeeConfigurationFactory co
 
     public async Task<OperationResult<LyricsList?>> GetLyricListAsync(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemInfo, CancellationToken token = default)
     {
-        LyricsList? result = null; 
+        LyricsList? result = null;
         var configuration = await configurationFactory.GetConfigurationAsync(token).ConfigureAwait(false);
         var lyricFilesEnabled = configuration.GetValue<bool>(SettingRegistry.LyricFilesEnabled);
         if (lyricFilesEnabled)
@@ -87,6 +82,7 @@ public class LyricPlugin(ISerializer serializer, IMelodeeConfigurationFactory co
                 result = lyricsList;
             }
         }
+
         if (result == null)
         {
             if (fileSystemInfo.Exists(directoryInfo))
@@ -106,9 +102,15 @@ public class LyricPlugin(ISerializer serializer, IMelodeeConfigurationFactory co
                 }
             }
         }
+
         return new OperationResult<LyricsList?>
         {
             Data = result
         };
+    }
+
+    public bool DoesHandleFile(FileSystemDirectoryInfo directoryInfo, FileSystemFileInfo fileSystemInfo)
+    {
+        return false;
     }
 }

@@ -35,27 +35,27 @@ public class SongTests
         Assert.NotNull(album.Songs?.FirstOrDefault());
 
         var firstSong = album.Songs!.First();
-        
+
         var albumTitle1 = firstSong.AlbumTitle();
         var albumTitle2 = album.MetaTagValue<string>(MetaTagIdentifier.Album);
         Assert.Equal("Cold Spring Harbor", albumTitle1);
         Assert.Equal(albumTitle1, albumTitle2);
-        
+
         var title = firstSong.MetaTagValue<string>(MetaTagIdentifier.Title);
         Assert.Equal("She's Got a Way", title);
 
         var year = firstSong.MetaTagValue<int>(MetaTagIdentifier.RecordingYear);
         Assert.Equal(1971, year);
-        
+
         var yearDateTime = firstSong.MetaTagValue<DateTime>(MetaTagIdentifier.RecordingDate);
-        Assert.Equal(DateTime.Parse("11/01/1971"), yearDateTime);        
-        
+        Assert.Equal(DateTime.Parse("11/01/1971"), yearDateTime);
+
         var numberofMediasInt = firstSong.MetaTagValue<int>(MetaTagIdentifier.DiscTotal);
-        Assert.Equal(1, numberofMediasInt);        
-        
+        Assert.Equal(1, numberofMediasInt);
+
         var numberofMedias = firstSong.MetaTagValue<short>(MetaTagIdentifier.DiscTotal);
         Assert.Equal(1, numberofMedias);
-        
+
         album.SetSongTagValue(firstSong.Id, MetaTagIdentifier.SongTotal, 10);
         firstSong = album.Songs!.First(x => x.Id == firstSong.Id);
         var numberofSongs = firstSong.MetaTagValue<short>(MetaTagIdentifier.SongTotal);
@@ -66,8 +66,6 @@ public class SongTests
         firstSong = album.Songs!.First(x => x.Id == firstSong.Id);
         var trackNumber = firstSong.MetaTagValue<int>(MetaTagIdentifier.TrackNumber);
         Assert.Equal(34, trackNumber);
-        
-        
     }
 
     [Fact]

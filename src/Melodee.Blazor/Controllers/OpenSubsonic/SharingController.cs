@@ -14,7 +14,6 @@ public class SharingController(
     serializer,
     configurationFactory)
 {
-   
     /// <summary>
     ///     Returns information about shared media this user is allowed to manage.
     /// </summary>
@@ -26,8 +25,8 @@ public class SharingController(
     public Task<IActionResult> GetSharesAsync(CancellationToken cancellationToken = default)
     {
         return MakeResult(openSubsonicApiService.GetSharesAsync(ApiRequest, cancellationToken));
-    }    
-    
+    }
+
     /// <summary>
     ///     Deletes an existing share.
     /// </summary>
@@ -40,8 +39,8 @@ public class SharingController(
     public Task<IActionResult> DeleteShareAsync(string id, CancellationToken cancellationToken = default)
     {
         return MakeResult(openSubsonicApiService.DeleteShareAsync(id, ApiRequest, cancellationToken));
-    }    
-    
+    }
+
     /// <summary>
     ///     Creates a public URL that can be used by anyone to stream music or playlist from the server.
     /// </summary>
@@ -57,7 +56,7 @@ public class SharingController(
     {
         return MakeResult(openSubsonicApiService.CreateShareAsync(ApiRequest, id, description, expires, cancellationToken));
     }
-    
+
     /// <summary>
     ///     Updates the description and/or expiration date for an existing share.
     /// </summary>
@@ -72,5 +71,5 @@ public class SharingController(
     public Task<IActionResult> UpdateShareAsync(string id, string? description, long? expires, CancellationToken cancellationToken = default)
     {
         return MakeResult(openSubsonicApiService.UpdateShareAsync(ApiRequest, id, description, expires, cancellationToken));
-    }      
+    }
 }

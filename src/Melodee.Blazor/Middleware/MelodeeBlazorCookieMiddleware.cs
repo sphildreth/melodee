@@ -17,6 +17,7 @@ public class MelodeeBlazorCookieMiddleware(RequestDelegate next, IMelodeeConfigu
             await next(context);
             return;
         }
+
         var configuration = await configurationFactory.GetConfigurationAsync();
         context.Response.Cookies.Append(CookieName,
             HashHelper.CreateMd5(DateTime.UtcNow.ToString(DateFormat) + configuration.GetValue<string>(SettingRegistry.EncryptionPrivateKey)) ?? string.Empty,

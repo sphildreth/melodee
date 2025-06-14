@@ -15,7 +15,7 @@ public class InternetRadioController(
     configurationFactory)
 {
     // 
-    
+
     /// <summary>
     ///     Deletes an existing internet radio station.
     /// </summary>
@@ -28,8 +28,8 @@ public class InternetRadioController(
     public Task<IActionResult> DeleteInternetRadioStationAsync(string id, CancellationToken cancellationToken = default)
     {
         return MakeResult(openSubsonicApiService.DeleteInternetRadioStationAsync(id, ApiRequest, cancellationToken));
-    }    
-    
+    }
+
     /// <summary>
     ///     Adds a new internet radio station.
     /// </summary>
@@ -44,12 +44,12 @@ public class InternetRadioController(
     public Task<IActionResult> CreateInternetRadioStationAsync(string name, string streamUrl, string? homePageUrl, CancellationToken cancellationToken = default)
     {
         return MakeResult(openSubsonicApiService.CreateInternetRadioStationAsync(name, streamUrl, homePageUrl, ApiRequest, cancellationToken));
-    }    
-    
+    }
+
     /// <summary>
     ///     Updates an existing internet radio station.
     /// </summary>
-    /// <param name="id">ID of the radio station to update, as obtained by getInternetRadioStations.</param> 
+    /// <param name="id">ID of the radio station to update, as obtained by getInternetRadioStations.</param>
     /// <param name="name">The stream URL for the station.</param>
     /// <param name="streamUrl">The user-defined name for the station.</param>
     /// <param name="homePageUrl">The home page URL for the station.</param>
@@ -61,8 +61,8 @@ public class InternetRadioController(
     public Task<IActionResult> UpdateInternetRadioStationAsync(string id, string name, string streamUrl, string? homePageUrl, CancellationToken cancellationToken = default)
     {
         return MakeResult(openSubsonicApiService.UpdateInternetRadioStationAsync(id, name, streamUrl, homePageUrl, ApiRequest, cancellationToken));
-    }    
-    
+    }
+
     /// <summary>
     ///     Returns all internet radio stations.
     /// </summary>
@@ -74,5 +74,5 @@ public class InternetRadioController(
     public Task<IActionResult> GetInternetRadioStationsAsync(CancellationToken cancellationToken = default)
     {
         return MakeResult(openSubsonicApiService.GetInternetRadioStationsAsync(ApiRequest, cancellationToken));
-    }    
+    }
 }

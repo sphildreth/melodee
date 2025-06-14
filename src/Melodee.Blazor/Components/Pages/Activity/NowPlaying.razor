@@ -1,8 +1,6 @@
 @page "/activity/nowplaying"
-@using Melodee.Common.Filtering
 @using Melodee.Common.Models.Collection
 @using Melodee.Common.Plugins.Scrobbling
-@using FilterOperator = Melodee.Common.Filtering.FilterOperator
 @inherits MelodeeComponentBase
 
 @inject IMelodeeConfigurationFactory MelodeeConfigurationFactory
@@ -22,7 +20,7 @@
         <RadzenStack Orientation="Orientation.Horizontal">
             @if (_nowPlayingSongs.Length == 0)
             {
-                <RadzenText Text="No songs are currently playing." class="rz-m-2" />
+                <RadzenText Text="No songs are currently playing." class="rz-m-2"/>
             }
             @foreach (var nowPlayingSong in _nowPlayingSongs)
             {

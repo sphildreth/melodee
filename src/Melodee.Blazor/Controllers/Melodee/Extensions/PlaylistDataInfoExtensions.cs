@@ -1,6 +1,5 @@
 using Melodee.Blazor.Controllers.Melodee.Models;
 using Melodee.Common.Configuration;
-using Melodee.Common.Data.Models.Extensions;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models.Collection.Extensions;
 using MelodeeModelsCollection = Melodee.Common.Models.Collection;
@@ -22,7 +21,7 @@ public static class PlaylistDataInfoExtensions
             playlist.IsPublic,
             playlist.User.ToUserModel(baseUrl),
             playlist.CreatedAt.ToString(),
-            playlist.LastUpdatedAt?.ToString() ?? string.Empty           
+            playlist.LastUpdatedAt?.ToString() ?? string.Empty
         );
-    }    
+    }
 }

@@ -25,7 +25,7 @@ public static class UserExtensions
             0,
             0,
             user.CreatedAt.ToString(),
-            user.LastUpdatedAt?.ToString() ?? string.Empty            
-            );
+            user.LastUpdatedAt?.ToString() ?? string.Empty
+        );
     }
 }

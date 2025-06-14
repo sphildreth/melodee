@@ -8,7 +8,6 @@ namespace Melodee.Blazor.Controllers.Melodee.Extensions;
 
 public static class AlbumExtensions
 {
-    
     public static Album ToAlbumModel(this MelodeeModelsCollection.AlbumDataInfo album, string baseUrl, User currentUser)
     {
         return new Album(album.ApiKey,

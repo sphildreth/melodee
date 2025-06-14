@@ -1,16 +1,15 @@
 using System.Diagnostics;
-using Melodee.Blazor.Filters;
-using Melodee.Common.Configuration;
-using Melodee.Common.Models;
-using Melodee.Common.Serialization;
-using Microsoft.AspNetCore.Mvc.Filters;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using Melodee.Blazor.Filters;
+using Melodee.Common.Configuration;
+using Melodee.Common.Models;
 using Melodee.Common.Models.OpenSubsonic.Requests;
 using Melodee.Common.Models.Scrobbling;
+using Melodee.Common.Serialization;
+using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.IdentityModel.Tokens;
-
 
 namespace Melodee.Blazor.Controllers.Melodee;
 
@@ -26,7 +25,7 @@ public abstract class ControllerBase(
     public IMelodeeConfigurationFactory ConfigurationFactory { get; } = configurationFactory;
 
     /// <summary>
-    /// Validates a JWT token, ensures it's not expired, and returns the claims if valid.
+    ///     Validates a JWT token, ensures it's not expired, and returns the claims if valid.
     /// </summary>
     /// <param name="token">The JWT token to validate</param>
     /// <returns>A result object containing validation status and claims if valid</returns>
@@ -121,47 +120,6 @@ public abstract class ControllerBase(
         }
     }
 
-    /// <summary>
-    /// Class to hold token validation results
-    /// </summary>
-    protected record TokenValidationResult
-    {
-        /// <summary>
-        /// Indicates whether the token is valid
-        /// </summary>
-        public bool IsValid { get; init; }
-
-        /// <summary>
-        /// Error message if validation fails
-        /// </summary>
-        public string? ErrorMessage { get; init; }
-
-        /// <summary>
-        /// The ClaimsPrincipal extracted from the token if valid
-        /// </summary>
-        public ClaimsPrincipal? ClaimsPrincipal { get; init; }
-
-        /// <summary>
-        /// List of claims from the token if valid
-        /// </summary>
-        public List<Claim>? Claims { get; init; }
-
-        /// <summary>
-        /// Token expiration date
-        /// </summary>
-        public DateTime Expiration { get; init; }
-
-        /// <summary>
-        /// Gets a specific claim value by type
-        /// </summary>
-        /// <param name="claimType">The type of claim to retrieve</param>
-        /// <returns>The claim value or null if not found</returns>
-        public string? GetClaimValue(string claimType)
-        {
-            return Claims?.FirstOrDefault(c => c.Type == claimType)?.Value;
-        }
-    }
-
     public override async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
     {
         var values = new List<KeyValue>();
@@ -202,4 +160,44 @@ public abstract class ControllerBase(
         await next().ConfigureAwait(false);
     }
 
+    /// <summary>
+    ///     Class to hold token validation results
+    /// </summary>
+    protected record TokenValidationResult
+    {
+        /// <summary>
+        ///     Indicates whether the token is valid
+        /// </summary>
+        public bool IsValid { get; init; }
+
+        /// <summary>
+        ///     Error message if validation fails
+        /// </summary>
+        public string? ErrorMessage { get; init; }
+
+        /// <summary>
+        ///     The ClaimsPrincipal extracted from the token if valid
+        /// </summary>
+        public ClaimsPrincipal? ClaimsPrincipal { get; init; }
+
+        /// <summary>
+        ///     List of claims from the token if valid
+        /// </summary>
+        public List<Claim>? Claims { get; init; }
+
+        /// <summary>
+        ///     Token expiration date
+        /// </summary>
+        public DateTime Expiration { get; init; }
+
+        /// <summary>
+        ///     Gets a specific claim value by type
+        /// </summary>
+        /// <param name="claimType">The type of claim to retrieve</param>
+        /// <returns>The claim value or null if not found</returns>
+        public string? GetClaimValue(string claimType)
+        {
+            return Claims?.FirstOrDefault(c => c.Type == claimType)?.Value;
+        }
+    }
 }

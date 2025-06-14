@@ -1,4 +1,3 @@
-using Mapster;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 using Melodee.Common.Models;
@@ -109,7 +108,7 @@ public class AlbumValidatorTests : TestsBase
                         {
                             Identifier = MetaTagIdentifier.RecordingDate,
                             Value = "11/01/1971"
-                        },                        
+                        },
                         new MetaTag<object?>
                         {
                             Identifier = MetaTagIdentifier.TrackNumber,
@@ -119,12 +118,12 @@ public class AlbumValidatorTests : TestsBase
                         {
                             Identifier = MetaTagIdentifier.DiscNumber,
                             Value = "1"
-                        },             
+                        },
                         new MetaTag<object?>
                         {
                             Identifier = MetaTagIdentifier.DiscTotal,
                             Value = "1"
-                        },                         
+                        },
                         new MetaTag<object?>
                         {
                             Identifier = MetaTagIdentifier.Title,
@@ -319,12 +318,11 @@ public class AlbumValidatorTests : TestsBase
     public void ValidateAlbumWithNoInvalidValidations()
     {
         var album = NewTestAlbum();
-        var validator = new AlbumValidator(TestsBase.NewPluginsConfiguration());
+        var validator = new AlbumValidator(NewPluginsConfiguration());
         var validationResult = validator.ValidateAlbum(album);
         Assert.True(validationResult.IsSuccess);
         Assert.Equal(AlbumStatus.Invalid, validationResult.Data.AlbumStatus);
         Assert.Equal(AlbumNeedsAttentionReasons.HasInvalidSongs, validationResult.Data.AlbumStatusReasons);
-        
     }
 
     [Fact]
@@ -335,7 +333,7 @@ public class AlbumValidatorTests : TestsBase
         {
             Images = []
         };
-        var validator = new AlbumValidator(TestsBase.NewPluginsConfiguration());
+        var validator = new AlbumValidator(NewPluginsConfiguration());
         var validationResult = validator.ValidateAlbum(album);
         Assert.True(validationResult.IsSuccess);
         Assert.Equal(AlbumStatus.Invalid, validationResult.Data.AlbumStatus);
@@ -358,12 +356,11 @@ public class AlbumValidatorTests : TestsBase
             Tags = albumTags
         };
 
-        var validator = new AlbumValidator(TestsBase.NewPluginsConfiguration());
+        var validator = new AlbumValidator(NewPluginsConfiguration());
         var validationResult = validator.ValidateAlbum(album);
         Assert.True(validationResult.IsSuccess);
         Assert.Equal(AlbumStatus.Invalid, validationResult.Data.AlbumStatus);
         Assert.Equal(AlbumNeedsAttentionReasons.HasInvalidArtists | AlbumNeedsAttentionReasons.HasInvalidSongs, validationResult.Data.AlbumStatusReasons);
-       
     }
 
     [Fact]
@@ -378,7 +375,7 @@ public class AlbumValidatorTests : TestsBase
             Tags = albumTags
         };
 
-        var validator = new AlbumValidator(TestsBase.NewPluginsConfiguration());
+        var validator = new AlbumValidator(NewPluginsConfiguration());
         var validationResult = validator.ValidateAlbum(album);
         Assert.True(validationResult.IsSuccess);
         Assert.Equal(AlbumStatus.Invalid, validationResult.Data.AlbumStatus);
@@ -390,7 +387,7 @@ public class AlbumValidatorTests : TestsBase
     {
         var testAlbum = NewTestAlbum();
         testAlbum.SetSongTagValue(testAlbum.Songs!.First().Id, MetaTagIdentifier.AlbumArtist, Guid.NewGuid().ToString());
-        var validator = new AlbumValidator(TestsBase.NewPluginsConfiguration());
+        var validator = new AlbumValidator(NewPluginsConfiguration());
         var validationResult = validator.ValidateAlbum(testAlbum);
         Assert.True(validationResult.IsSuccess);
         Assert.Equal(AlbumStatus.Invalid, validationResult.Data.AlbumStatus);
@@ -417,7 +414,7 @@ public class AlbumValidatorTests : TestsBase
             OriginalDirectory = testAlbum.OriginalDirectory
         };
 
-        var validator = new AlbumValidator(TestsBase.NewPluginsConfiguration());
+        var validator = new AlbumValidator(NewPluginsConfiguration());
         var validationResult = validator.ValidateAlbum(album);
         Assert.True(validationResult.IsSuccess);
         Assert.Equal(AlbumStatus.Invalid, validationResult.Data.AlbumStatus);

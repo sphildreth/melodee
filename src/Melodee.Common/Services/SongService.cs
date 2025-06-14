@@ -4,7 +4,6 @@ using Dapper;
 using Melodee.Common.Data;
 using Melodee.Common.Data.Models;
 using Melodee.Common.Filtering;
-using Melodee.Common.MessageBus.Events;
 using Melodee.Common.Models.Collection;
 using Melodee.Common.Models.OpenSubsonic.DTO;
 using Melodee.Common.Models.OpenSubsonic.Responses;
@@ -273,6 +272,7 @@ public class SongService(
                 )
             };
         }
+
         var sql = """
                   select l."Path" || aa."Directory" || a."Directory" || s."FileName" as Path, s."FileSize", s."Duration"/1000 as "Duration",s."BitRate", s."ContentType"
                   from "Songs" s 
@@ -300,7 +300,7 @@ public class SongService(
                     )
                 };
             }
-            
+
             var bytesToRead = (int)songStreamInfo.FileSize;
             var trackBytes = new byte[bytesToRead];
             var numberOfBytesRead = 0;
@@ -317,7 +317,7 @@ public class SongService(
                     Logger.Error(ex, "Reading song [{SongInfo}]", songStreamInfo);
                 }
             }
-            
+
             var contentLength = numberOfBytesRead > 0 ? numberOfBytesRead : songStreamInfo.FileSize;
 
             return new MelodeeModels.OperationResult<StreamResponse>
@@ -336,12 +336,9 @@ public class SongService(
                         { "Expires", "Mon, 01 Jan 1990 00:00:00 GMT" }
                     },
                     numberOfBytesRead > 0,
-                    trackBytes,
-                    null,
-                    null
+                    trackBytes
                 )
             };
-        }        
+        }
     }
-    
 }

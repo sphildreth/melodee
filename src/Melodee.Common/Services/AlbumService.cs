@@ -14,7 +14,6 @@ using Microsoft.EntityFrameworkCore;
 using NodaTime;
 using Rebus.Bus;
 using Serilog;
-using ServiceStack;
 using SmartFormat;
 using MelodeeModels = Melodee.Common.Models;
 
@@ -42,7 +41,7 @@ public class AlbumService(
                 .Artists
                 .Include(x => x.Albums)
                 .FirstOrDefaultAsync(x => x.Id == artistId, cancellationToken).ConfigureAwait(false);
-            
+
             // For each album for artist clear the cache for the artist
             foreach (var album in dbArtist?.Albums ?? [])
             {
@@ -50,7 +49,7 @@ public class AlbumService(
             }
         }
     }
-    
+
     public async Task ClearCacheAsync(int albumId, CancellationToken cancellationToken = default)
     {
         var album = await GetAsync(albumId, cancellationToken).ConfigureAwait(false);

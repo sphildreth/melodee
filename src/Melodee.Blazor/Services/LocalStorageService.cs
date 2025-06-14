@@ -19,6 +19,7 @@ public class LocalStorageService(ProtectedLocalStorage protectedLocalStorage) : 
             {
                 return null;
             }
+
             return result.Value;
         }
         catch (Exception e)

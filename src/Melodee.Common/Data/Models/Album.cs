@@ -38,8 +38,7 @@ public sealed class Album : MetaDataModelBase
 
     public int MetaDataStatus { get; set; } = SafeParser.ToNumber<int>(MetaDataModelStatus.ReadyToProcess);
 
-    [NotMapped]
-    public MetaDataModelStatus MetaDataStatusValue => SafeParser.ToEnum<MetaDataModelStatus>(MetaDataStatus);
+    [NotMapped] public MetaDataModelStatus MetaDataStatusValue => SafeParser.ToEnum<MetaDataModelStatus>(MetaDataStatus);
 
     /// <summary>
     ///     Be able to query for albums that need images.

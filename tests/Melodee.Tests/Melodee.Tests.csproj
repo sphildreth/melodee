@@ -41,7 +41,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Security\" />
+    <Folder Include="Security\"/>
   </ItemGroup>
 
 </Project>

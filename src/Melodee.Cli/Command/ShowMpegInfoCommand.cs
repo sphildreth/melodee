@@ -1,7 +1,6 @@
 using System.Diagnostics;
 using Melodee.Cli.CommandSettings;
 using Melodee.Common.Configuration;
-using Melodee.Common.Extensions;
 using Melodee.Common.Metadata.AudioTags;
 using Melodee.Common.Plugins.Conversion.Image;
 using Melodee.Common.Plugins.Validation;
@@ -40,7 +39,7 @@ public class ShowMpegInfoCommand : CommandBase<ShowMpegInfoSettings>
             Trace.WriteLine($"\ud83d\udcdc Processing File [{settings.Filename}]");
 
             var tags = await AudioTagManager.ReadAllTagsAsync(fileInfo.FullName, CancellationToken.None);
-            
+
             AnsiConsole.Write(
                 new Panel(new JsonText(serializer.Serialize(tags) ?? string.Empty))
                     .Header("MPEG Info")

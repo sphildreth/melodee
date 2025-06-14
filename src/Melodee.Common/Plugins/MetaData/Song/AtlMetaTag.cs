@@ -206,7 +206,7 @@ public sealed class AtlMetaTag(
                         Identifier = MediaAudioIdentifier.ChannelLayout,
                         Value = fileAtl.ChannelsArrangement.ToString()
                     });
-                    
+
 
                     if (fileAtl.IsVBR)
                     {
