@@ -79,7 +79,7 @@ public static class AudioTagManager
 
         var tags = await reader.ReadTagsAsync(filePath, cancellationToken);
         
-        // Ensure all default tags are present in the tags dictionary
+        // Ensure all default tags are present in the tag's dictionary
         foreach (var defaultTag in DefaultTags)
         {
             if (!tags.ContainsKey(defaultTag.Key))
@@ -108,7 +108,7 @@ public static class AudioTagManager
     public static async Task<bool> NeedsConversionToMp3Async(FileInfo fileInfo, CancellationToken cancellationToken = default)
     {
         // Check for null fileInfo to prevent NullReferenceException
-        if (fileInfo == null || !fileInfo.Exists)
+        if (!fileInfo.Exists)
         {
             return false;
         }

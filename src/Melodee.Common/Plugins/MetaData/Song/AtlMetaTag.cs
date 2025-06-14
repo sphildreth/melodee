@@ -5,7 +5,6 @@ using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
-using Melodee.Common.Metadata.Mpeg;
 using Melodee.Common.Models;
 using Melodee.Common.Models.Extensions;
 using Melodee.Common.Plugins.Conversion.Image;
@@ -151,8 +150,10 @@ public sealed class AtlMetaTag(
         return FileHelper.IsFileMediaType(fileSystemInfo.Extension(directoryInfo));
     }
 
-    public async Task<OperationResult<Models.Song>> ProcessFileAsync(FileSystemDirectoryInfo directoryInfo,
-        FileSystemFileInfo fileSystemFileInfo, CancellationToken cancellationToken = default)
+    public async Task<OperationResult<Models.Song>> ProcessFileAsync(
+        FileSystemDirectoryInfo directoryInfo,
+        FileSystemFileInfo fileSystemFileInfo,
+        CancellationToken cancellationToken = default)
     {
         var tags = new List<MetaTag<object?>>();
         var mediaAudios = new List<MediaAudio<object?>>();
@@ -190,23 +191,22 @@ public sealed class AtlMetaTag(
                         }
                     }
 
-                    var mpeg = new Mpeg(fileSystemFileInfo.FullName(directoryInfo));
-                    await mpeg.ReadAsync(cancellationToken);
                     mediaAudios.Add(new MediaAudio<object?>
                     {
                         Identifier = MediaAudioIdentifier.CodecLongName,
-                        Value = mpeg.Version
+                        Value = fileAtl.AudioFormat.Name
                     });
                     mediaAudios.Add(new MediaAudio<object?>
                     {
                         Identifier = MediaAudioIdentifier.Channels,
-                        Value = mpeg.Channels
+                        Value = fileAtl.ChannelsArrangement.Description
                     });
                     mediaAudios.Add(new MediaAudio<object?>
                     {
                         Identifier = MediaAudioIdentifier.ChannelLayout,
-                        Value = mpeg.ChannelMode
+                        Value = fileAtl.ChannelsArrangement.ToString()
                     });
+                    
 
                     if (fileAtl.IsVBR)
                     {
@@ -516,8 +516,7 @@ public sealed class AtlMetaTag(
 
             try
             {
-                var doDeleteComment =
-                    MelodeeConfiguration.GetValue<bool?>(SettingRegistry.ProcessingDoDeleteComments) ?? true;
+                var doDeleteComment = MelodeeConfiguration.GetValue<bool?>(SettingRegistry.ProcessingDoDeleteComments) ?? true;
 
                 var fileAtl = new Track(songFileName)
                 {

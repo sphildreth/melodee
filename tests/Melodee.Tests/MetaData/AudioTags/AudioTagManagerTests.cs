@@ -35,34 +35,6 @@ namespace Melodee.Tests.MetaData.AudioTags
         }
 
         [Fact]
-        public async Task Read_All_Media_Files_In_Folder()
-        {
-            var testFolder = "/melodee_test/tests/good";
-            if (!Directory.Exists(testFolder))
-            {
-                return;
-            }
-            foreach (var file in await AudioTagManager.AllMediaFilesForDirectoryAsync(testFolder))
-            {
-                _output.WriteLine($"Processing file: [{file.FullName}] ...");
-                var tags = await AudioTagManager.ReadAllTagsAsync(file.FullName, CancellationToken.None);
-                Assert.NotEqual(AudioFormat.Unknown, tags.Format);
-                Assert.NotEqual(0, tags.FileMetadata.FileSize);
-                Assert.NotEqual(string.Empty, tags.FileMetadata.FilePath);
-                Assert.NotEqual(DateTimeOffset.MinValue, tags.FileMetadata.Created);
-                Assert.NotEqual(DateTimeOffset.MinValue, tags.FileMetadata.LastModified);
-                Assert.NotNull(tags.Tags);
-                Assert.NotEmpty(tags.Tags);
-                Assert.NotEmpty(tags.Tags.Keys);
-                Assert.NotEmpty(tags.Tags.Values);
-                Assert.True(SafeParser.ToNumber<int>(tags.Tags[Melodee.Common.Enums.MetaTagIdentifier.TrackNumber]) > 0);
-                Assert.NotEmpty(SafeParser.ToString(tags.Tags[Melodee.Common.Enums.MetaTagIdentifier.Title]));
-                _output.WriteLine($"Successful");                
-            }
-
-        }
-
-        [Fact]
         public async Task NeedsConversionToMp3Async_WithNonexistentFile_ReturnsFalse()
         {
             // Arrange

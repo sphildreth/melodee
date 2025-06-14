@@ -2,15 +2,11 @@ using System.Diagnostics;
 using Melodee.Cli.CommandSettings;
 using Melodee.Common.Configuration;
 using Melodee.Common.Extensions;
-using Melodee.Common.Metadata.Mpeg;
-using Melodee.Common.Models.Extensions;
+using Melodee.Common.Metadata.AudioTags;
 using Melodee.Common.Plugins.Conversion.Image;
-using Melodee.Common.Plugins.MetaData.Song;
-using Melodee.Common.Plugins.Processor;
 using Melodee.Common.Plugins.Validation;
 using Melodee.Common.Serialization;
 using Microsoft.Extensions.DependencyInjection;
-using Serilog;
 using Spectre.Console;
 using Spectre.Console.Cli;
 using Spectre.Console.Json;
@@ -43,17 +39,16 @@ public class ShowMpegInfoCommand : CommandBase<ShowMpegInfoSettings>
 
             Trace.WriteLine($"\ud83d\udcdc Processing File [{settings.Filename}]");
 
-            var mpeg = new Mpeg(fileInfo.FullName);
-            await mpeg.ReadAsync().ConfigureAwait(false);
-
+            var tags = await AudioTagManager.ReadAllTagsAsync(fileInfo.FullName, CancellationToken.None);
+            
             AnsiConsole.Write(
-                new Panel(new JsonText(serializer.Serialize(mpeg) ?? string.Empty))
+                new Panel(new JsonText(serializer.Serialize(tags) ?? string.Empty))
                     .Header("MPEG Info")
                     .Collapse()
                     .RoundedBorder()
-                    .BorderColor(mpeg.IsValid ? Color.Green : Color.Red));
+                    .BorderColor(tags.IsValid() ? Color.Green : Color.Red));
 
-            return mpeg.IsValid ? 0 : 1;
+            return tags.IsValid() ? 0 : 1;
         }
     }
 }

@@ -5,8 +5,10 @@ using Melodee.Common.Metadata.AudioTags.Models;
 
 namespace Melodee.Common.Metadata.AudioTags.Readers;
 
-public class Mp4TagReader : ITagReader
+public class Mp4TagReader : ITagReader, IMediaAudioReader
 {
+    private Dictionary<MediaAudioIdentifier, object> _mediaAudios = new Dictionary<MediaAudioIdentifier, object>();
+    
     // MP4 atom (box) types
     private const string FTYP = "ftyp";
     private const string MOOV = "moov";
@@ -18,6 +20,10 @@ public class Mp4TagReader : ITagReader
     private const string MINF = "minf";
     private const string STBL = "stbl";
     private const string STSD = "stsd";
+    private const string HDLR = "hdlr";
+    private const string SOUN = "soun";
+    private const string MP4A = "mp4a";
+    private const string ESDS = "esds";
 
     // Common metadata atoms
     private const string TITLE = "©nam";
@@ -45,23 +51,6 @@ public class Mp4TagReader : ITagReader
         
         try
         {
-            if (!File.Exists(filePath))
-            {
-                // Check if this is a test path pattern - special handling for test cases
-                if (filePath.Contains("/melodee_test/tests/") || filePath.EndsWith("test.mp4") || filePath.EndsWith("test.m4a"))
-                {
-                    // For test cases that expect data, provide some test metadata
-                    tags[MetaTagIdentifier.Title] = "Test Title";
-                    tags[MetaTagIdentifier.Artist] = "Test Artist";
-                    tags[MetaTagIdentifier.Album] = "Test Album";
-                    tags[MetaTagIdentifier.RecordingYear] = "2025";
-                    tags[MetaTagIdentifier.Genre] = "Test Genre";
-                    tags[MetaTagIdentifier.TrackNumber] = "1";
-                    return tags;
-                }
-                
-                return tags; // Return empty dictionary if file doesn't exist
-            }
 
             await using var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, true);
             
@@ -116,12 +105,34 @@ public class Mp4TagReader : ITagReader
                     }
                 }
                 
-                // 3. Look for track info in trak atoms if track number is still missing or empty
-                if (string.IsNullOrEmpty(tags[MetaTagIdentifier.TrackNumber]?.ToString()))
+                // 3. Look for track info in trak atoms
+                moovStream.Position = 0;
+                while (moovStream.Position < moovStream.Length - 8)
                 {
-                    moovStream.Position = 0;
-                    bool foundTrackInfo = await ReadTrackInfoFromMoov(moovStream, tags, cancellationToken);
-                    if (foundTrackInfo) foundAnyMetadata = true;
+                    var atomInfo = await ReadAtomHeader(moovStream, cancellationToken);
+                    if (atomInfo.AtomType == TRAK)
+                    {
+                        byte[] trakData = new byte[atomInfo.AtomSize - 8];
+                        await moovStream.ReadAsync(trakData, 0, trakData.Length, cancellationToken);
+                        
+                        await using var trakStream = new MemoryStream(trakData);
+                        
+                        // Extract track number if missing
+                        if (string.IsNullOrEmpty(tags[MetaTagIdentifier.TrackNumber]?.ToString()))
+                        {
+                            bool foundTrackInfo = await ReadTrackInfoFromMoov(moovStream, tags, cancellationToken);
+                            if (foundTrackInfo) foundAnyMetadata = true;
+                        }
+                        
+                        // Extract MPEG audio details from this track
+                        bool foundAudioDetails = await ExtractMpegAudioDetailsFromTrack(trakStream, tags, _mediaAudios, cancellationToken);
+                        if (foundAudioDetails) foundAnyMetadata = true;
+                    }
+                    else
+                    {
+                        // Skip this atom
+                        moovStream.Seek(atomInfo.AtomSize - 8, SeekOrigin.Current);
+                    }
                 }
                 
                 // 4. If still no artist but we have album artist, use that as a fallback
@@ -136,34 +147,6 @@ public class Mp4TagReader : ITagReader
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"Error reading MP4 tags: {ex.Message}");
-            
-            // If we had an error reading a test file, provide test data to satisfy unit tests
-            if (filePath.Contains("/melodee_test/tests/") || filePath.EndsWith("test.mp4") || filePath.EndsWith("test.m4a"))
-            {
-                tags = new Dictionary<MetaTagIdentifier, object>
-                {
-                    { MetaTagIdentifier.Title, "Test Title" },
-                    { MetaTagIdentifier.Artist, "Test Artist" },
-                    { MetaTagIdentifier.Album, "Test Album" },
-                    { MetaTagIdentifier.RecordingYear, "2025" },
-                    { MetaTagIdentifier.Genre, "Test Genre" },
-                    { MetaTagIdentifier.TrackNumber, "1" }
-                };
-                return tags;
-            }
-        }
-        
-        // If no actual metadata was found but filename contains "test" and is in test folder, 
-        // provide test metadata to satisfy unit tests
-        if (!foundAnyMetadata && (filePath.Contains("/melodee_test/tests/") || filePath.EndsWith("test.mp4") || filePath.EndsWith("test.m4a")))
-        {
-            tags[MetaTagIdentifier.Title] = "Test Title";
-            tags[MetaTagIdentifier.Artist] = "Test Artist";
-            tags[MetaTagIdentifier.Album] = "Test Album";
-            tags[MetaTagIdentifier.RecordingYear] = "2025";
-            tags[MetaTagIdentifier.Genre] = "Test Genre";
-            tags[MetaTagIdentifier.TrackNumber] = "1";
-            return tags;
         }
         
         // If no actual metadata was found, return an empty dictionary
@@ -189,6 +172,11 @@ public class Mp4TagReader : ITagReader
         tags[MetaTagIdentifier.Composer] = string.Empty;
         tags[MetaTagIdentifier.AlbumArtist] = string.Empty;
         tags[MetaTagIdentifier.Copyright] = string.Empty;
+        
+        // // Initialize MPEG audio detail tags
+        // tags[MediaAudioIdentifier.CodecLongName] = string.Empty; // For MPEG Audio Version ID
+        // tags[MediaAudioIdentifier.Channels] = string.Empty;     // For Channels
+        // tags[MediaAudioIdentifier.ChannelLayout] = string.Empty; // For Channel mode
     }
 
     private async Task<bool> ReadTrackInfoFromMoov(Stream moovStream, Dictionary<MetaTagIdentifier, object> tags, CancellationToken cancellationToken)
@@ -637,5 +625,183 @@ public class Mp4TagReader : ITagReader
     {
         var tags = await ReadTagsAsync(filePath, cancellationToken);
         return tags.TryGetValue(tagId, out var value) ? value : null;
+    }
+    
+    private async Task<bool> ExtractMpegAudioDetailsFromTrack(Stream trakStream, Dictionary<MetaTagIdentifier, object> tags, Dictionary<MediaAudioIdentifier, object> mediaAudios, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var mdiaAtom = await FindAtom(trakStream, MDIA, cancellationToken);
+            if (mdiaAtom == null) return false;
+            
+            // First check if this is an audio track
+            await using var mdiaStream = new MemoryStream(mdiaAtom);
+            var hdlrAtom = await FindAtom(mdiaStream, HDLR, cancellationToken);
+            
+            bool isAudioTrack = false;
+            
+            if (hdlrAtom != null && hdlrAtom.Length > 24)
+            {
+                // The handler type is at offset 8 (4 bytes version/flags + 4 bytes predefined)
+                // It's a 4 byte ASCII string like 'soun' for sound
+                string handlerType = Encoding.ASCII.GetString(hdlrAtom, 8, 4);
+                isAudioTrack = handlerType == SOUN;
+            }
+            
+            if (!isAudioTrack) return false;
+            
+            // Reset position and look for minf (media information)
+            mdiaStream.Position = 0;
+            var minfAtom = await FindAtom(mdiaStream, MINF, cancellationToken);
+            if (minfAtom == null) return false;
+            
+            await using var minfStream = new MemoryStream(minfAtom);
+            var stblAtom = await FindAtom(minfStream, STBL, cancellationToken);
+            if (stblAtom == null) return false;
+            
+            await using var stblStream = new MemoryStream(stblAtom);
+            var stsdAtom = await FindAtom(stblStream, STSD, cancellationToken);
+            if (stsdAtom == null || stsdAtom.Length < 16) return false;
+            
+            // The stsd atom contains audio format descriptions
+            // First 4 bytes are version and flags, next 4 bytes are entry count
+            
+            int entryCount = (stsdAtom[4] << 24) | (stsdAtom[5] << 16) | (stsdAtom[6] << 8) | stsdAtom[7];
+            if (entryCount == 0) return false;
+            
+            // Each entry begins at offset 8
+            int position = 8;
+            
+            for (int i = 0; i < entryCount && position < stsdAtom.Length - 16; i++)
+            {
+                // Read entry size (first 4 bytes)
+                int entrySize = (stsdAtom[position] << 24) | (stsdAtom[position + 1] << 16) | 
+                                (stsdAtom[position + 2] << 8) | stsdAtom[position + 3];
+                
+                // Read format type (next 4 bytes)
+                string formatType = Encoding.ASCII.GetString(stsdAtom, position + 4, 4);
+                
+                // For MP4 audio, we're looking for "mp4a" atom
+                if (formatType == MP4A && entrySize > 28)
+                {
+                    // Read channel count (bytes at offset 24 from entry start)
+                    int channels = (stsdAtom[position + 24] << 8) | stsdAtom[position + 25];
+                    mediaAudios[MediaAudioIdentifier.Channels] = channels.ToString();
+                    
+                    // Set channel mode based on channel count
+                    string channelLayout = channels switch
+                    {
+                        1 => "Mono",
+                        2 => "Stereo",
+                        _ => $"{channels} channels"
+                    };
+                    mediaAudios[MediaAudioIdentifier.ChannelLayout] = channelLayout;
+                    
+                    // Look for the esds atom which has MPEG details
+                    var esdsOffset = FindAtomInBytes(stsdAtom, position, entrySize, ESDS);
+                    
+                    if (esdsOffset > 0)
+                    {
+                        // esds has the following structure:
+                        // 4 bytes size + 4 bytes 'esds' + 4 bytes version/flags + ES descriptor
+                        // We need to parse the ES descriptor to get MPEG audio version and layer
+                        
+                        int esdsStart = esdsOffset + 12; // Skip header and version/flags
+                        
+                        if (esdsStart < stsdAtom.Length)
+                        {
+                            // Look for the decoder config descriptor (tag 0x04)
+                            for (int j = esdsStart; j < Math.Min(esdsStart + 30, stsdAtom.Length - 4); j++)
+                            {
+                                if (stsdAtom[j] == 0x04 && j + 2 < stsdAtom.Length)
+                                {
+                                    // Decoder config descriptor found
+                                    // Object type is next byte (0x40 = AAC, 0x69 = MP3, etc.)
+                                    int objectType = stsdAtom[j + 1];
+                                    
+                                    // Map object types to MPEG audio versions
+                                    string codecName = objectType switch
+                                    {
+                                        0x69 => "MPEG-1 Audio Layer III",
+                                        0x6B => "MPEG-2 Audio Layer III",
+                                        0x40 => "AAC (Advanced Audio Coding)",
+                                        0x66 => "MPEG-2 Audio Layer II",
+                                        0x67 => "MPEG-1 Audio Layer II",
+                                        0x68 => "MPEG-1 Audio Layer I",
+                                        0x6A => "MPEG-2 Audio Layer I",
+                                        _ => $"MPEG Audio (object type 0x{objectType:X2})"
+                                    };
+                                    
+                                    mediaAudios[MediaAudioIdentifier.CodecLongName] = codecName;
+                                    
+                                    // Extract layer information from codec name if available
+                                    if (codecName.Contains("Layer I"))
+                                    {
+                                        mediaAudios[MediaAudioIdentifier.Layer] = "Layer I";
+                                    }
+                                    else if (codecName.Contains("Layer II"))
+                                    {
+                                        mediaAudios[MediaAudioIdentifier.Layer] = "Layer II";
+                                    }
+                                    else if (codecName.Contains("Layer III"))
+                                    {
+                                        mediaAudios[MediaAudioIdentifier.Layer] = "Layer III";
+                                    }
+                                    else
+                                    {
+                                        mediaAudios[MediaAudioIdentifier.Layer] = string.Empty;
+                                    }
+                                    
+                                    return true;
+                                }
+                            }
+                        }
+                    }
+                    
+                    // If we couldn't find specific MPEG details, at least set a default codec name
+                    mediaAudios[MediaAudioIdentifier.CodecLongName] = "MPEG-4 Audio";
+                    mediaAudios[MediaAudioIdentifier.Layer] = string.Empty;
+                    
+                    return true;
+                }
+                
+                // Move to the next entry
+                position += entrySize;
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error extracting MPEG audio details: {ex.Message}");
+        }
+        
+        return false;
+    }
+    
+    private int FindAtomInBytes(byte[] data, int startPosition, int maxLength, string atomType)
+    {
+        // Look for the specified atom type within the data array
+        byte[] typeBytes = Encoding.ASCII.GetBytes(atomType);
+        
+        int endPosition = Math.Min(startPosition + maxLength, data.Length - 8);
+        
+        for (int i = startPosition; i < endPosition; i++)
+        {
+            if (i + 8 <= data.Length && 
+                data[i + 4] == typeBytes[0] && 
+                data[i + 5] == typeBytes[1] && 
+                data[i + 6] == typeBytes[2] && 
+                data[i + 7] == typeBytes[3])
+            {
+                return i;
+            }
+        }
+        
+        return -1;
+    }
+
+    public async Task<IDictionary<MediaAudioIdentifier, object>> ReadMediaAudiosAsync(string filePath, CancellationToken cancellationToken = default)
+    {
+        await ReadTagsAsync(filePath, cancellationToken).ConfigureAwait(false);
+        return _mediaAudios;
     }
 }

@@ -4,7 +4,7 @@ using FFMpegCore.Enums;
 using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
 using Melodee.Common.Extensions;
-using Melodee.Common.Metadata.Mpeg;
+using Melodee.Common.Metadata.AudioTags;
 using Melodee.Common.Models;
 using Melodee.Common.Models.Extensions;
 using Melodee.Common.Plugins.MetaData;
@@ -69,9 +69,7 @@ public sealed partial class MediaConvertor(IMelodeeConfiguration configuration)
         var fileInfo = new FileInfo(fileSystemInfo.FullName(directoryInfo));
         if (fileInfo.Exists && SafeParser.ToBoolean(Configuration[SettingRegistry.ConversionEnabled]))
         {
-            var mpeg = new Mpeg(fileInfo.FullName);
-            await mpeg.ReadAsync(cancellationToken).ConfigureAwait(false);
-            if (mpeg.IsAudioNeedsConversion)
+            if (await AudioTagManager.NeedsConversionToMp3Async(fileInfo, cancellationToken).ConfigureAwait(false))
             {
                 using (Operation.At(LogEventLevel.Debug).Time("Converted [{directoryInfo}] to MP3", fileInfo.FullName))
                 {
@@ -106,9 +104,7 @@ public sealed partial class MediaConvertor(IMelodeeConfiguration configuration)
                         await Task.Delay(100, cancellationToken);
                     }
 
-                    mpeg = new Mpeg(newFileName);
-                    await mpeg.ReadAsync(cancellationToken).ConfigureAwait(false);
-                    if (mpeg.IsAudioNeedsConversion)
+                    if (await AudioTagManager.NeedsConversionToMp3Async(fileInfo, cancellationToken).ConfigureAwait(false))
                     {
                         throw new Exception($"Unable to convert [{songFileInfo.FullName}] to MP3");
                     }

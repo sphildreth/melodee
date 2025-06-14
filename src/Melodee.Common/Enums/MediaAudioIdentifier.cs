@@ -30,5 +30,7 @@ public enum MediaAudioIdentifier
 
     AudioDataSize,
 
-    FormatName
+    FormatName,
+    
+    Layer
 }
