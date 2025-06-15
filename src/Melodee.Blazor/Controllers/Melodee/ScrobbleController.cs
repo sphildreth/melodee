@@ -24,7 +24,6 @@ public class ScrobbleController(
     SongService songService,
     ScrobbleService scrobbleService,
     IConfiguration configuration,
-    IBlacklistService blacklistService,
     IMelodeeConfigurationFactory configurationFactory) : ControllerBase(
     etagRepository,
     serializer,

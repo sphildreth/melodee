@@ -8,13 +8,8 @@ public class SpotifyClientBuilder(IHttpContextAccessor httpContextAccessor, Spot
 {
     public SpotifyClientConfig Config => spotifyClientConfig;
 
-    public async Task<SpotifyClient?> BuildClient(string token)
+    public SpotifyClient? BuildClient(string token)
     {
-        if (httpContextAccessor.HttpContext != null)
-        {
-            return new SpotifyClient(spotifyClientConfig.WithToken(token));
-        }
-
-        return null;
+        return httpContextAccessor.HttpContext != null ? new SpotifyClient(spotifyClientConfig.WithToken(token)) : null;
     }
 }

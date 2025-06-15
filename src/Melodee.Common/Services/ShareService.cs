@@ -1,12 +1,10 @@
 using Ardalis.GuardClauses;
 using Dapper;
-using Melodee.Common.Configuration;
 using Melodee.Common.Data;
 using Melodee.Common.Data.Models;
 using Melodee.Common.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using NodaTime;
-using Rebus.Bus;
 using Serilog;
 using SmartFormat;
 using Sqids;
@@ -17,9 +15,7 @@ namespace Melodee.Common.Services;
 public class ShareService(
     ILogger logger,
     ICacheManager cacheManager,
-    IMelodeeConfigurationFactory configurationFactory,
-    IDbContextFactory<MelodeeDbContext> contextFactory,
-    IBus bus)
+    IDbContextFactory<MelodeeDbContext> contextFactory)
     : ServiceBase(logger, cacheManager, contextFactory)
 {
     private const string CacheKeyDetailByApiKeyTemplate = "urn:share:apikey:{0}";

@@ -28,7 +28,7 @@
     <RadzenBreadCrumbItem Icon="@_library.LibraryTypeIconAndTitle().Item1" Text="@_library.Name"/>
 </RadzenBreadCrumb>
 
-@if (CurrentUser.IsAdmin())
+@if (CurrentUser!.IsAdmin())
 {
     <RadzenStack>
         <RadzenMenu>

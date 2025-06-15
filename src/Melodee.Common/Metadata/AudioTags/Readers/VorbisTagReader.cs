@@ -20,7 +20,7 @@ public class VorbisTagReader : ITagReader
             await using var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, true);
 
             // First try to read stream information
-            var foundTrackNumber = await ReadStreamInfoAsync(stream, tags, cancellationToken);
+            await ReadStreamInfoAsync(stream, tags, cancellationToken);
 
             // Then read Vorbis comments as usual
             await ReadVorbisCommentsAsync(stream, tags, cancellationToken);
@@ -59,11 +59,11 @@ public class VorbisTagReader : ITagReader
         return tags.TryGetValue(tagId, out var value) ? value : null;
     }
 
-    public async Task<IReadOnlyList<AudioImage>> ReadImagesAsync(string filePath, CancellationToken cancellationToken = default)
+    public Task<IReadOnlyList<AudioImage>> ReadImagesAsync(string filePath, CancellationToken cancellationToken = default)
     {
         // Standard Vorbis comments don't support embedded images directly
         // FLAC in Ogg containers might use METADATA_BLOCK_PICTURE, but not implemented here
-        return new List<AudioImage>();
+        return Task.FromResult<IReadOnlyList<AudioImage>>(new List<AudioImage>());
     }
 
     private async Task<bool> ReadStreamInfoAsync(Stream stream, IDictionary<MetaTagIdentifier, object> tags, CancellationToken cancellationToken)
@@ -74,7 +74,6 @@ public class VorbisTagReader : ITagReader
         try
         {
             var buffer = new byte[8192];
-            var headerSize = 27; // OGG page header size
 
             // Read enough of the file to find stream headers
             var bytesRead = await stream.ReadAsync(buffer, 0, Math.Min(buffer.Length, 32768), cancellationToken);
@@ -151,18 +150,18 @@ public class VorbisTagReader : ITagReader
         // Find the Vorbis comment packet (usually in the second or third Ogg page)
         // We need to navigate the OGG container structure
         var packetData = await FindVorbisCommentPacket(stream, cancellationToken);
-        if (packetData == null || packetData.Length == 0)
+        if (packetData is { Length: 0 })
         {
             Debug.WriteLine("No Vorbis comment packet found");
             return;
         }
 
-        Debug.WriteLine($"Found Vorbis comment packet with length: {packetData.Length}");
+        Debug.WriteLine($"Found Vorbis comment packet with length: {packetData?.Length}");
 
         try
         {
             // First 7 bytes should be: [3, v, o, r, b, i, s]
-            if (packetData.Length < 7)
+            if (packetData!.Length < 7)
             {
                 Debug.WriteLine("Packet too short to be a valid Vorbis comment packet");
                 return;
@@ -383,7 +382,7 @@ public class VorbisTagReader : ITagReader
         }
     }
 
-    private async Task<byte[]> FindVorbisCommentPacket(Stream stream, CancellationToken cancellationToken)
+    private async Task<byte[]?> FindVorbisCommentPacket(Stream stream, CancellationToken cancellationToken)
     {
         stream.Position = 0;
         var buffer = new byte[8192]; // Larger buffer to hold full Ogg pages
@@ -411,7 +410,6 @@ public class VorbisTagReader : ITagReader
                     break;
                 }
 
-                var version = buffer[4];
                 var headerType = buffer[5];
                 var segmentCount = buffer[26];
 

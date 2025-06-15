@@ -17,7 +17,9 @@ public sealed record ArtistDataInfo(
     int SongCount,
     Instant CreatedAt,
     string Tags,
+#pragma warning disable CS8907 // Parameter is unread. Did you forget to use it to initialize the property with that name?
     Instant? LastUpdatedAt)
+#pragma warning restore CS8907 // Parameter is unread. Did you forget to use it to initialize the property with that name?
 {
     public bool UserStarred { get; set; }
 

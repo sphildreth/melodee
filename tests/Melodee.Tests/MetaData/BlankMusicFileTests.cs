@@ -92,7 +92,7 @@ public class BlankMusicFileTests
         };
 
         // Generate a minimal Vorbis file
-        var filePath = await BlankMusicFileGenerator.CreateMinimalVorbisFileAsync(_testOutputPath, metadata);
+        var filePath = BlankMusicFileGenerator.CreateMinimalVorbisFile(_testOutputPath, metadata);
 
         // Make sure the file exists
         Assert.True(File.Exists(filePath), "Generated Vorbis file should exist");

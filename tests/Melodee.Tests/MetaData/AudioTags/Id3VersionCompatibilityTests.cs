@@ -546,7 +546,7 @@ public class Id3VersionCompatibilityTests
         {
             var tags = await AudioTagManager.ReadAllTagsAsync(filePath, CancellationToken.None);
             // Album art may be stored under different MetaTagIdentifiers
-            object readImage = null;
+            object? readImage = null;
             if (tags.Tags.ContainsKey(MetaTagIdentifier.CoverArt))
             {
                 readImage = tags.Tags[MetaTagIdentifier.CoverArt];

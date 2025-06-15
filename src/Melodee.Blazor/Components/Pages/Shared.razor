@@ -30,8 +30,6 @@
 
     private IAuralizerTrack[] _songInfos = [new AuralizerTrack(string.Empty, string.Empty, string.Empty)];
 
-    private Auralizer _vis = null!;
-
     protected override async Task OnParametersSetAsync()
     {
         var configuration = await ConfigurationFactory.GetConfigurationAsync();

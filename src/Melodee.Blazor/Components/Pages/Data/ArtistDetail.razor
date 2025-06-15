@@ -441,7 +441,7 @@
     readonly short _pageSize = 50;
 
     private readonly List<string> _alertMessages = [];
-    private string _debounceAlbumFilterValue;
+    private string _debounceAlbumFilterValue = string.Empty;
 
     async Task PageChanged(PagerEventArgs args)
     {

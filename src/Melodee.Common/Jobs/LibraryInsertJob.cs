@@ -607,7 +607,7 @@ public class LibraryInsertJob(
                             foreach (var contributor in dbContributorsToAdd.Where(x =>
                                          x.AlbumId == dbAlbum.Id && x.ContributorTypeValue.RestrictToOnePerAlbum()))
                             {
-                                var key = (contributor.ContributorName, contributor.ContributorTypeValue);
+                                var key = (contributor.ContributorName ?? string.Empty, contributor.ContributorTypeValue);
 
                                 if (!uniqueContributors.Add(key))
                                 {

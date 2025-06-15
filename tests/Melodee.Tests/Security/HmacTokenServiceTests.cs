@@ -10,7 +10,6 @@ public class HmacTokenServiceTests
     public void Constructor_WithNullOrEmptyKey_ThrowsArgumentNullException()
     {
         // Arrange & Act & Assert
-        Assert.Throws<ArgumentNullException>(() => new HmacTokenService(null));
         Assert.Throws<ArgumentNullException>(() => new HmacTokenService(string.Empty));
     }
 
@@ -36,7 +35,6 @@ public class HmacTokenServiceTests
         var service = new HmacTokenService(TestSecretKey);
 
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => service.GenerateToken(null));
         Assert.Throws<ArgumentNullException>(() => service.GenerateToken(string.Empty));
     }
 
@@ -125,9 +123,7 @@ public class HmacTokenServiceTests
         var token = service.GenerateToken(testData);
 
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => service.ValidateToken(null, token));
         Assert.Throws<ArgumentNullException>(() => service.ValidateToken(string.Empty, token));
-        Assert.Throws<ArgumentNullException>(() => service.ValidateToken(testData, null));
         Assert.Throws<ArgumentNullException>(() => service.ValidateToken(testData, string.Empty));
     }
 

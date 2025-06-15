@@ -50,7 +50,7 @@ public class Spotify(
                     cancellationToken);
             }
 
-            var spotify = await spotifyClientBuilder.BuildClient(apiAccessToken);
+            var spotify = spotifyClientBuilder.BuildClient(apiAccessToken);
             SearchResponse? searchResult = null;
             try
             {

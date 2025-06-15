@@ -104,7 +104,7 @@ public static class AlbumExtensions
         var genre = songs.Select(x => x.Genre().Nullify()).Distinct().ToArray();
         if (genre.Length > 0)
         {
-            if (genre.Any(x => album.Artist.IsVariousArtist() || album.Artist.IsCastRecording()))
+            if (genre.Any(_ => album.Artist.IsVariousArtist() || album.Artist.IsCastRecording()))
             {
                 return true;
             }
@@ -216,9 +216,9 @@ public static class AlbumExtensions
 
     public static string ToDirectoryName(this Album album)
     {
-        var artistSortName = album.Artist?.SortName?.ToAlphanumericName(false, false).ToTitleCase().Nullify();
+        var artistSortName = album.Artist.SortName?.ToAlphanumericName(false, false).ToTitleCase().Nullify();
         var artist =
-            (artistSortName ?? album.Artist?.ToAlphanumericName(false, false).ToTitleCase().Nullify())
+            (artistSortName ?? album.Artist.ToAlphanumericName(false, false).ToTitleCase().Nullify())
             ?.ToFileNameFriendly() ?? throw new Exception($"[{album}] Artist not set on Album.");
         var albumTitle =
             album.AlbumTitle()?.ToAlphanumericName(false, false).ToTitleCase(false).Nullify()?.ToFileNameFriendly() ??
@@ -618,7 +618,7 @@ public static class AlbumExtensions
 
             var newFilename =
                 $"{ImageInfo.ImageFilePrefix}{(ii.i + 1).ToStringPadLeft(MelodeeConfiguration.ImageNameNumberPadding)}-{ii.x.PictureIdentifier.ToString()}.jpg";
-            if (ii.x.FileInfo.Exists(album.Directory))
+            if (ii.x.FileInfo?.Exists(album.Directory) ?? false)
             {
                 File.Move(ii.x.FileInfo.FullName(album.Directory),
                     Path.Combine(album.Directory.FullName(), newFilename), true);
@@ -757,29 +757,37 @@ public static class AlbumExtensions
             var seenImageBytes = new List<byte[]>();
             foreach (var imageInfo in imageInfos.OrderBy(x => x.SortOrder))
             {
-                var imageFullname = imageInfo.FileInfo.FullName(imageInfo.DirectoryInfo ?? album.Directory);
+                var imageFullname = imageInfo.FileInfo?.FullName(imageInfo.DirectoryInfo ?? album.Directory);
                 if (imageInfosByCrc.TryGetValue(imageInfo.CrcHash, out var existingImageInfo))
                 {
                     if (imageInfo != existingImageInfo && existingImageInfo.Width == imageInfo.Width &&
                         existingImageInfo.Height == imageInfo.Height)
                     {
                         Trace.WriteLine(
-                            $"Album find images is skipping duplicate image [{imageInfo.FileInfo.Name}] with crc32 [{imageInfo.CrcHash}]");
-                        File.Delete(imageFullname);
+                            $"Album find images is skipping duplicate image [{imageInfo.FileInfo?.Name}] with crc32 [{imageInfo.CrcHash}]");
+                        if (imageFullname != null)
+                        {
+                            File.Delete(imageFullname);
+                        }
+
                         continue;
                     }
                 }
 
-                var imageBytes = await File.ReadAllBytesAsync(imageFullname, cancellationToken).ConfigureAwait(false);
-                if (seenImageBytes.Any(x => ImageHasher.Similarity(x, imageBytes) > duplicateThreshold))
+                if (imageFullname != null)
                 {
-                    Trace.WriteLine(
-                        $"Album find images is skipping duplicate image [{imageInfo.FileInfo.Name}] with crc32 [{imageInfo.CrcHash}]");
-                    File.Delete(imageFullname);
-                    continue;
+                    var imageBytes = await File.ReadAllBytesAsync(imageFullname, cancellationToken).ConfigureAwait(false);
+                    if (seenImageBytes.Any(x => ImageHasher.Similarity(x, imageBytes) > duplicateThreshold))
+                    {
+                        Trace.WriteLine(
+                            $"Album find images is skipping duplicate image [{imageInfo.FileInfo?.Name}] with crc32 [{imageInfo.CrcHash}]");
+                        File.Delete(imageFullname);
+                        continue;
+                    }
+
+                    seenImageBytes.Add(imageBytes);
                 }
 
-                seenImageBytes.Add(imageBytes);
                 newImageInfos.Add(imageInfo);
             }
 

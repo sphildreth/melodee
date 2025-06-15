@@ -11,14 +11,14 @@ public class AlbumModelTest
     public void ValidateMergeDuplicateIsNotDuplicated()
     {
         var album1 = AlbumValidatorTests.TestAlbum;
-        var album1SongCount = album1.Songs.Count();
+        var album1SongCount = album1.Songs?.Count();
 
         var album2 = AlbumValidatorTests.TestAlbum;
 
         var merged = album1.Merge(album2);
-        Assert.Equal(album1SongCount, merged.Songs.Count());
+        Assert.Equal(album1SongCount, merged.Songs?.Count());
 
-        var songIds = merged.Songs.Select(x => x.SongUniqueId()).ToList();
+        var songIds = merged.Songs?.Select(x => x.SongUniqueId()).ToList() ?? [];
         Assert.Equal(album1SongCount, songIds.Count());
     }
 
@@ -27,7 +27,7 @@ public class AlbumModelTest
     {
         var album1 = AlbumValidatorTests.TestAlbum;
 
-        var album2Songs = album1.Songs.ToList();
+        var album2Songs = album1.Songs?.ToList() ?? [];
         album2Songs.Add(new Song
         {
             CrcHash = "TestValue3",
@@ -80,9 +80,9 @@ public class AlbumModelTest
         };
 
         var merged = album1.Merge(album2);
-        Assert.Equal(3, merged.Songs.Count());
+        Assert.Equal(3, merged.Songs?.Count());
 
-        Assert.Contains(merged.Songs, x => x.CrcHash == "TestValue3");
+        Assert.Contains(merged.Songs ?? [], x => x.CrcHash == "TestValue3");
         Assert.Equal(3, merged.SongTotalValue());
     }
 }

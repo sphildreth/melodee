@@ -118,7 +118,7 @@ public class Mp4TagReader : ITagReader, IMediaAudioReader
                     if (atomInfo.AtomType == TRAK)
                     {
                         var trakData = new byte[atomInfo.AtomSize - 8];
-                        await moovStream.ReadAsync(trakData, 0, trakData.Length, cancellationToken);
+                        await moovStream.ReadExactlyAsync(trakData, 0, trakData.Length, cancellationToken);
 
                         await using var trakStream = new MemoryStream(trakData);
 
@@ -206,7 +206,7 @@ public class Mp4TagReader : ITagReader, IMediaAudioReader
                                 if (atomInfo.AtomType == COVER_ART)
                                 {
                                     var covrData = new byte[atomInfo.AtomSize - 8];
-                                    await ilstStream.ReadAsync(covrData, 0, covrData.Length, cancellationToken);
+                                    await ilstStream.ReadExactlyAsync(covrData, 0, covrData.Length, cancellationToken);
 
                                     // Process cover art data
                                     if (covrData.Length > 16) // Minimum data header plus some image data
@@ -303,7 +303,7 @@ public class Mp4TagReader : ITagReader, IMediaAudioReader
                 if (atomInfo.AtomType == TRAK)
                 {
                     var trakData = new byte[atomInfo.AtomSize - 8];
-                    await moovStream.ReadAsync(trakData, 0, trakData.Length, cancellationToken);
+                    await moovStream.ReadExactlyAsync(trakData, 0, trakData.Length, cancellationToken);
 
                     await using var trakStream = new MemoryStream(trakData);
                     var mdiaAtom = await FindAtom(trakStream, MDIA, cancellationToken);
@@ -388,7 +388,7 @@ public class Mp4TagReader : ITagReader, IMediaAudioReader
 
                 // Read the atom data
                 var atomData = new byte[atomInfo.AtomSize - 8];
-                await ilstStream.ReadAsync(atomData, 0, atomData.Length, cancellationToken);
+                await ilstStream.ReadExactlyAsync(atomData, 0, atomData.Length, cancellationToken);
 
                 switch (atomInfo.AtomType)
                 {
@@ -621,7 +621,7 @@ public class Mp4TagReader : ITagReader, IMediaAudioReader
         }
 
         var header = new byte[8];
-        await stream.ReadAsync(header, 0, 8, cancellationToken);
+        await stream.ReadExactlyAsync(header, 0, 8, cancellationToken);
 
         long atomSize = (header[0] << 24) | (header[1] << 16) | (header[2] << 8) | header[3];
         var atomType = Encoding.ASCII.GetString(header, 4, 4);
@@ -630,7 +630,7 @@ public class Mp4TagReader : ITagReader, IMediaAudioReader
         if (atomSize == 1 && stream.Length >= stream.Position + 8)
         {
             var extendedSize = new byte[8];
-            await stream.ReadAsync(extendedSize, 0, 8, cancellationToken);
+            await stream.ReadExactlyAsync(extendedSize, 0, 8, cancellationToken);
 
             atomSize = (long)(((ulong)extendedSize[0] << 56) | ((ulong)extendedSize[1] << 48) |
                               ((ulong)extendedSize[2] << 40) | ((ulong)extendedSize[3] << 32) |

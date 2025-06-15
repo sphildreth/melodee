@@ -30,8 +30,6 @@ public class Id3TagReader : ITagReader
                     if (read == id3v2HeaderSize && buffer[0] == 'I' && buffer[1] == 'D' && buffer[2] == '3')
                     {
                         int majorVersion = buffer[3];
-                        // int minorVersion = buffer[4]; // Not used currently
-                        int flags = buffer[5];
 
                         // Calculate size from syncsafe integer
                         var tagSize = ((buffer[6] & 0x7F) << 21) |
@@ -64,7 +62,7 @@ public class Id3TagReader : ITagReader
 
                             if (totalBytesRead == tagSize)
                             {
-                                ProcessId3v2Frames(tagData, majorVersion, flags, tags);
+                                ProcessId3v2Frames(tagData, majorVersion, tags);
                             }
                             else
                             {
@@ -92,27 +90,27 @@ public class Id3TagReader : ITagReader
                     if (read == id3v1TagSize && buffer[0] == 'T' && buffer[1] == 'A' && buffer[2] == 'G')
                     {
                         // Only add ID3v1 tags if we don't already have them from ID3v2
-                        if (!tags.ContainsKey(MetaTagIdentifier.Title) || string.IsNullOrEmpty(tags[MetaTagIdentifier.Title]?.ToString()))
+                        if (!tags.ContainsKey(MetaTagIdentifier.Title) || string.IsNullOrEmpty(tags[MetaTagIdentifier.Title].ToString()))
                         {
                             tags[MetaTagIdentifier.Title] = Encoding.ASCII.GetString(buffer, 3, 30).TrimEnd('\0', ' ');
                         }
 
-                        if (!tags.ContainsKey(MetaTagIdentifier.Artist) || string.IsNullOrEmpty(tags[MetaTagIdentifier.Artist]?.ToString()))
+                        if (!tags.ContainsKey(MetaTagIdentifier.Artist) || string.IsNullOrEmpty(tags[MetaTagIdentifier.Artist].ToString()))
                         {
                             tags[MetaTagIdentifier.Artist] = Encoding.ASCII.GetString(buffer, 33, 30).TrimEnd('\0', ' ');
                         }
 
-                        if (!tags.ContainsKey(MetaTagIdentifier.Album) || string.IsNullOrEmpty(tags[MetaTagIdentifier.Album]?.ToString()))
+                        if (!tags.ContainsKey(MetaTagIdentifier.Album) || string.IsNullOrEmpty(tags[MetaTagIdentifier.Album].ToString()))
                         {
                             tags[MetaTagIdentifier.Album] = Encoding.ASCII.GetString(buffer, 63, 30).TrimEnd('\0', ' ');
                         }
 
-                        if (!tags.ContainsKey(MetaTagIdentifier.RecordingYear) || string.IsNullOrEmpty(tags[MetaTagIdentifier.RecordingYear]?.ToString()))
+                        if (!tags.ContainsKey(MetaTagIdentifier.RecordingYear) || string.IsNullOrEmpty(tags[MetaTagIdentifier.RecordingYear].ToString()))
                         {
                             tags[MetaTagIdentifier.RecordingYear] = Encoding.ASCII.GetString(buffer, 93, 4).TrimEnd('\0', ' ');
                         }
 
-                        if (!tags.ContainsKey(MetaTagIdentifier.Comment) || string.IsNullOrEmpty(tags[MetaTagIdentifier.Comment]?.ToString()))
+                        if (!tags.ContainsKey(MetaTagIdentifier.Comment) || string.IsNullOrEmpty(tags[MetaTagIdentifier.Comment].ToString()))
                         {
                             // Check for ID3v1.1 format (track number in byte 125)
                             if (buffer[125] == 0 && buffer[126] != 0)
@@ -120,7 +118,7 @@ public class Id3TagReader : ITagReader
                                 tags[MetaTagIdentifier.Comment] = Encoding.ASCII.GetString(buffer, 97, 28).TrimEnd('\0', ' ');
 
                                 if (!tags.ContainsKey(MetaTagIdentifier.TrackNumber) ||
-                                    string.IsNullOrEmpty(tags[MetaTagIdentifier.TrackNumber]?.ToString()) ||
+                                    string.IsNullOrEmpty(tags[MetaTagIdentifier.TrackNumber].ToString()) ||
                                     Convert.ToInt32(tags[MetaTagIdentifier.TrackNumber]) == 0)
                                 {
                                     tags[MetaTagIdentifier.TrackNumber] = buffer[126].ToString();
@@ -175,7 +173,7 @@ public class Id3TagReader : ITagReader
         return images;
     }
 
-    private void ProcessId3v2Frames(byte[] tagData, int majorVersion, int flags, Dictionary<MetaTagIdentifier, object> tags)
+    private void ProcessId3v2Frames(byte[] tagData, int majorVersion, Dictionary<MetaTagIdentifier, object> tags)
     {
         var pos = 0;
         var frameHeaderSize = majorVersion >= 3 ? 10 : 6; // ID3v2.3+ uses 10-byte frame headers, ID3v2.2 uses 6-byte
@@ -295,8 +293,6 @@ public class Id3TagReader : ITagReader
                             throw new Exception("APIC frame truncated after MIME type");
                         }
 
-                        // Picture type (1 byte)
-                        var pictureType = frameData[offset];
                         offset++;
                         if (offset >= frameData.Length)
                         {
@@ -411,7 +407,7 @@ public class Id3TagReader : ITagReader
 
     private void ProcessCommentFrame(byte[] frameData, Dictionary<MetaTagIdentifier, object> tags)
     {
-        if (frameData == null || frameData.Length < 5) // Need at least encoding byte + language (3 bytes) + 1 byte
+        if (frameData.Length < 5) // Need at least encoding byte + language (3 bytes) + 1 byte
         {
             return;
         }
@@ -420,9 +416,6 @@ public class Id3TagReader : ITagReader
         {
             // First byte is encoding
             var encoding = frameData[0];
-
-            // Next 3 bytes are language
-            var language = Encoding.ASCII.GetString(frameData, 1, 3);
 
             // After language comes the content description (short), terminated by 00 or 00 00 depending on encoding
             // Then comes the actual comment text
@@ -544,7 +537,7 @@ public class Id3TagReader : ITagReader
 
     private static string ReadId3v2TextFrame(byte[] frameData)
     {
-        if (frameData == null || frameData.Length == 0)
+        if (frameData.Length == 0)
         {
             return string.Empty;
         }
@@ -709,7 +702,7 @@ public class Id3TagReader : ITagReader
             {
                 tags[tag] = string.Empty;
             }
-            else if (tags[tag] == null || string.IsNullOrWhiteSpace(tags[tag].ToString()))
+            else if (string.IsNullOrWhiteSpace(tags[tag].ToString()))
             {
                 // Replace null or whitespace-only values with empty string
                 tags[tag] = string.Empty;
@@ -717,7 +710,7 @@ public class Id3TagReader : ITagReader
             else if (tag == MetaTagIdentifier.TrackNumber || tag == MetaTagIdentifier.DiscNumber)
             {
                 // Ensure numeric tags are strings
-                tags[tag] = tags[tag].ToString();
+                tags[tag] = tags[tag].ToString() ?? string.Empty;
             }
         }
     }

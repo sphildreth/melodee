@@ -113,7 +113,7 @@ public static class BlankMusicFileGenerator
     /// <summary>
     ///     Creates a minimal OGG Vorbis file with metadata but no actual audio data.
     /// </summary>
-    public static async Task<string> CreateMinimalVorbisFileAsync(string outputPath, MusicMetadata? metadata = null)
+    public static string CreateMinimalVorbisFile(string outputPath, MusicMetadata? metadata = null)
     {
         metadata ??= new MusicMetadata();
         var filePath = Path.Combine(outputPath, $"test_minimal_{Guid.NewGuid():N}.ogg");
@@ -348,7 +348,7 @@ public static class BlankMusicFileGenerator
         metadata ??= new MusicMetadata();
 
         files.Add(await CreateMinimalMp3FileAsync(outputPath, metadata));
-        files.Add(await CreateMinimalVorbisFileAsync(outputPath, metadata));
+        files.Add(CreateMinimalVorbisFile(outputPath, metadata));
 
         return files;
     }
@@ -375,12 +375,12 @@ public static class BlankMusicFileGenerator
     /// </summary>
     private static async Task AddId3v1TagsAsync(string filePath, MusicMetadata metadata)
     {
-        using (var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.ReadWrite))
+        await using (var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.ReadWrite))
         {
             // Seek to the end of the file to append ID3v1 tag
             fileStream.Seek(0, SeekOrigin.End);
 
-            using (var writer = new BinaryWriter(fileStream, Encoding.UTF8, true))
+            await using (var writer = new BinaryWriter(fileStream, Encoding.UTF8, true))
             {
                 // TAG marker for ID3v1
                 writer.Write(Encoding.ASCII.GetBytes("TAG"));

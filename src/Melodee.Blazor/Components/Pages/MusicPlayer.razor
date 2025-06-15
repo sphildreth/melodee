@@ -74,9 +74,8 @@
 
     private const double MinimumForNowPlaying = 10.0;
 
-    private ElementReference _audioElement;
-    private DotNetObjectReference<MusicPlayer> _objRef;
-    private IJSObjectReference _module;
+    private DotNetObjectReference<MusicPlayer> _objRef = null!;
+    private IJSObjectReference _module = null!;
 
     [Parameter] public List<SongDataInfo> Songs { get; set; } = [];
 

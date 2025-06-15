@@ -1,6 +1,6 @@
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
-using sl = SixLabors.ImageSharp;
+using sixLablorsImageSharp = SixLabors.ImageSharp;
 
 namespace Melodee.Common.Imaging;
 
@@ -68,7 +68,7 @@ public static class ImageHasher
     public static ulong AverageHash(byte[] bytes)
     {
         _averageHash = 0;
-        using var image = sl.Image.Load<Rgba32>(bytes);
+        using var image = sixLablorsImageSharp.Image.Load<Rgba32>(bytes);
         {
             image.Mutate(ctx => ctx.Resize(8, 8).Grayscale());
             image.ProcessPixelRows(static pixelAccessor =>

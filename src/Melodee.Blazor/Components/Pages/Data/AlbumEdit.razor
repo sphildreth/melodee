@@ -298,7 +298,6 @@
 
     DateOnly _releaseDate = DateOnly.FromDateTime(DateTime.Now);
 
-    string? _musicBrainzId;
     string _libraryName = string.Empty;
 
     Album _album = new()
@@ -353,11 +352,6 @@
 
         try
         {
-            // if (_musicBrainzId != null)
-            // {
-            //     _album.MusicBrainzId = SafeParser.ToGuid(_musicBrainzArtists.FirstOrDefault(x => x.Value == _musicBrainzId)?.Key);
-            // }
-
             _album.AlternateNames = "".AddTags(_alternateNames, doNormalize: true);
             _album.Tags = "".AddTags(_tags);
             _album.Genres = _genres.ToArray();

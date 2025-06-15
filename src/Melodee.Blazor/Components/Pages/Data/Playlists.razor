@@ -200,7 +200,7 @@
         var confirm = await DialogService.Confirm("Are you sure?", "Delete confirmation", new ConfirmOptions { OkButtonText = "Yes", CancelButtonText = "No" });
         if (confirm ?? false)
         {
-            var deleteResult = await PlaylistService.DeleteAsync(CurrentUser.UserId(), _selectedPlaylists.Select(x => x.Id).ToArray());
+            var deleteResult = await PlaylistService.DeleteAsync(CurrentUser!.UserId(), _selectedPlaylists.Select(x => x.Id).ToArray());
             if (deleteResult.IsSuccess)
             {
                 NotificationService.Notify(NotificationMessageForResult(deleteResult, "Deleting Shares", ToastTime));

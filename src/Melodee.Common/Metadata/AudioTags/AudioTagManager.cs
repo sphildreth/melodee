@@ -111,7 +111,7 @@ public static class AudioTagManager
     public static async Task<bool> NeedsConversionToMp3Async(FileInfo? fileInfo, CancellationToken cancellationToken = default)
     {
         // Check for null fileInfo to prevent NullReferenceException
-        if (!fileInfo?.Exists ?? false || fileInfo?.Length == 0)
+        if ((!fileInfo?.Exists ?? false) || fileInfo?.Length == 0)
         {
             // If the file doesn't exist or is empty, it can't be converted
             return false;
@@ -120,7 +120,7 @@ public static class AudioTagManager
         try
         {
             // First check if the file extension is already .mp3
-            if (fileInfo.Extension.Equals(".mp3", StringComparison.OrdinalIgnoreCase))
+            if (fileInfo!.Extension.Equals(".mp3", StringComparison.OrdinalIgnoreCase))
             {
                 // Verify it's actually a valid MP3 file
                 var format = await FileFormatDetector.DetectFormatAsync(fileInfo.FullName, cancellationToken);

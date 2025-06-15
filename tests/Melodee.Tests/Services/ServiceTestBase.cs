@@ -262,7 +262,7 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
 
     protected ShareService GetShareService()
     {
-        return new ShareService(Logger, CacheManager, MockConfigurationFactory(), MockFactory(), MockBus());
+        return new ShareService(Logger, CacheManager, MockFactory());
     }
 
     protected SongService GetSongService()

@@ -385,7 +385,7 @@ public class WmaTagReader : ITagReader
                     {
                         if (!tags.ContainsKey((MetaTagIdentifier)name.GetHashCode()))
                         {
-                            tags[(MetaTagIdentifier)name.GetHashCode()] = value;
+                            tags[(MetaTagIdentifier)name.GetHashCode()] = value ?? string.Empty;
                         }
                     }
 

@@ -192,8 +192,6 @@
 
 @code {
 
-    bool _isLoading = true;
-
     List<string> _alternateNames = [];
 
     [Parameter] public int ArtistId { get; set; }
@@ -216,8 +214,6 @@
                 _alternateNames = artistResult.Data.AlternateNames?.ToTags()?.ToList() ?? [];
                 _artist.MusicBrainzIdValue = _artist.MusicBrainzId?.ToString();
             }
-
-            _isLoading = false;
         }
     }
 
