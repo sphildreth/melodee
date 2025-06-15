@@ -108,11 +108,12 @@ public static class AudioTagManager
     ///     True if the file is in a format other than MP3 and needs conversion, false if it's already an MP3 or not a
     ///     valid audio file
     /// </returns>
-    public static async Task<bool> NeedsConversionToMp3Async(FileInfo fileInfo, CancellationToken cancellationToken = default)
+    public static async Task<bool> NeedsConversionToMp3Async(FileInfo? fileInfo, CancellationToken cancellationToken = default)
     {
         // Check for null fileInfo to prevent NullReferenceException
-        if (!fileInfo.Exists)
+        if (!fileInfo?.Exists ?? false || fileInfo?.Length == 0)
         {
+            // If the file doesn't exist or is empty, it can't be converted
             return false;
         }
 

@@ -18,6 +18,7 @@ using Melodee.Common.Models.Importing;
 using Melodee.Common.Plugins.Conversion.Image;
 using Melodee.Common.Services.Interfaces;
 using Melodee.Common.Utility;
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using NodaTime;
 using Rebus.Bus;
@@ -68,6 +69,10 @@ public sealed class UserService(
             {
                 var listSqlParts = pagedRequest.FilterByParts("SELECT * FROM \"Users\"");
                 var listSql = $"{listSqlParts.Item1} ORDER BY {orderBy} OFFSET {pagedRequest.SkipValue} ROWS FETCH NEXT {pagedRequest.TakeValue} ROWS ONLY;";
+                if (dbConn is SqliteConnection)
+                {
+                    listSql = $"{listSqlParts.Item1} ORDER BY {orderBy} LIMIT {pagedRequest.TakeValue} OFFSET {pagedRequest.SkipValue};";
+                }                
                 users = (await dbConn
                     .QueryAsync<User>(listSql, listSqlParts.Item2)
                     .ConfigureAwait(false)).ToArray();

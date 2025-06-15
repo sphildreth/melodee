@@ -5,6 +5,7 @@ using Melodee.Common.Data;
 using Melodee.Common.Data.Models;
 using Melodee.Common.Extensions;
 using Melodee.Common.Services.Interfaces;
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using NodaTime;
 using Serilog;
@@ -71,6 +72,11 @@ public class SettingService : ServiceBase
                 {
                     var listSqlParts = pagedRequest.FilterByParts("SELECT * FROM \"Settings\"");
                     var listSql = $"{listSqlParts.Item1} ORDER BY {orderBy} OFFSET {pagedRequest.SkipValue} ROWS FETCH NEXT {pagedRequest.TakeValue} ROWS ONLY;";
+                    if (dbConn is SqliteConnection)
+                    {
+                        listSql =
+                            $"{listSqlParts.Item1} ORDER BY {orderBy} LIMIT {pagedRequest.TakeValue} OFFSET {pagedRequest.SkipValue};";
+                    }                    
                     settings = (await dbConn
                         .QueryAsync<Setting>(listSql, listSqlParts.Item2)
                         .ConfigureAwait(false)).ToArray();

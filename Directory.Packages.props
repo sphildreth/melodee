@@ -46,6 +46,7 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageVersion>
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.InMemory" Version="9.0.6" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.0.6" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.10">
       <PrivateAssets>all</PrivateAssets>
