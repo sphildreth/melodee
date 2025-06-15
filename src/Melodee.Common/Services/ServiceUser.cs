@@ -18,7 +18,7 @@ public sealed class ServiceUser : User
         Id = ServiceUserId;
     }
 
-    private static ServiceUser NewServiceUser()
+    public static ServiceUser NewServiceUser()
     {
         return new ServiceUser
         {

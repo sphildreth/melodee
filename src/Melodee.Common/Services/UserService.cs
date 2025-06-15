@@ -193,7 +193,7 @@ public sealed class UserService(
                 }
             }, cancellationToken).ConfigureAwait(false);
         return id == null
-            ? new MelodeeModels.OperationResult<User?>
+            ? new MelodeeModels.OperationResult<User?>("User not found")
             {
                 Data = null
             }
@@ -352,7 +352,7 @@ public sealed class UserService(
         var user = await GetByEmailAddressAsync(emailAddress, cancellationToken).ConfigureAwait(false);
         if (!user.IsSuccess || user.Data == null)
         {
-            return new MelodeeModels.OperationResult<User?>
+            return new MelodeeModels.OperationResult<User?>("User not found")
             {
                 Data = null,
                 Type = MelodeeModels.OperationResponseType.NotFound
@@ -606,7 +606,7 @@ public sealed class UserService(
         {
             return new MelodeeModels.OperationResult<User?>(["User exists with Email address."])
             {
-                Data = dbUserByEmailAddress.Data,
+                Data = null,
                 Type = MelodeeModels.OperationResponseType.ValidationFailure
             };
         }
@@ -617,7 +617,7 @@ public sealed class UserService(
         {
             return new MelodeeModels.OperationResult<User?>(["User exists with Username."])
             {
-                Data = dbUserByUserName.Data,
+                Data = null,
                 Type = MelodeeModels.OperationResponseType.ValidationFailure
             };
         }
