@@ -17,7 +17,7 @@ using Melodee.Common.Plugins.SearchEngine;
 using Melodee.Common.Plugins.SearchEngine.MusicBrainz;
 using Melodee.Common.Plugins.SearchEngine.MusicBrainz.Data;
 using Melodee.Common.Plugins.SearchEngine.Spotify;
-using Melodee.Common.Services.Interfaces;
+using Melodee.Common.Services.Caching;
 using Melodee.Common.Utility;
 using Microsoft.EntityFrameworkCore;
 using Serilog;

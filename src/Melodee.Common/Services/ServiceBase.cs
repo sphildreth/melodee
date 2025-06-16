@@ -16,7 +16,7 @@ using Melodee.Common.Plugins.MetaData.Song;
 using Melodee.Common.Plugins.Processor;
 using Melodee.Common.Plugins.Validation;
 using Melodee.Common.Serialization;
-using Melodee.Common.Services.Interfaces;
+using Melodee.Common.Services.Caching;
 using Melodee.Common.Utility;
 using Microsoft.EntityFrameworkCore;
 using Serilog;

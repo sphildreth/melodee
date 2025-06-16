@@ -9,7 +9,7 @@ using Melodee.Common.Models.Collection;
 using Melodee.Common.Models.Extensions;
 using Melodee.Common.Plugins.Validation;
 using Melodee.Common.Serialization;
-using Melodee.Common.Services.Interfaces;
+using Melodee.Common.Services.Caching;
 using Melodee.Common.Utility;
 using Microsoft.EntityFrameworkCore;
 using NodaTime;

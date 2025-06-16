@@ -2,7 +2,7 @@ using Ardalis.GuardClauses;
 using Dapper;
 using Melodee.Common.Data;
 using Melodee.Common.Data.Models;
-using Melodee.Common.Services.Interfaces;
+using Melodee.Common.Services.Caching;
 using Microsoft.EntityFrameworkCore;
 using NodaTime;
 using Serilog;

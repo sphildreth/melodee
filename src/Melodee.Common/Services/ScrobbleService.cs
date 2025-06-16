@@ -5,7 +5,7 @@ using Melodee.Common.Extensions;
 using Melodee.Common.Models;
 using Melodee.Common.Models.Scrobbling;
 using Melodee.Common.Plugins.Scrobbling;
-using Melodee.Common.Services.Interfaces;
+using Melodee.Common.Services.Caching;
 using Microsoft.EntityFrameworkCore;
 using NodaTime;
 using Serilog;

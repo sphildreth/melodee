@@ -1,6 +1,6 @@
 using Melodee.Common.Serialization;
 
-namespace Melodee.Common.Services.Interfaces;
+namespace Melodee.Common.Services.Caching;
 
 public interface ICacheManager
 {

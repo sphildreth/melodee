@@ -3,7 +3,7 @@ using Melodee.Common.Constants;
 using Melodee.Common.Data;
 using Melodee.Common.Models;
 using Melodee.Common.Models.SearchEngines;
-using Melodee.Common.Services.Interfaces;
+using Melodee.Common.Services.Caching;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 using Serilog.Events;

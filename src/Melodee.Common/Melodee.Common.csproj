@@ -79,6 +79,7 @@
 
   <ItemGroup>
     <Compile Remove="Constants\PropertyTypeNameRegistry.cs"/>
+    <Compile Remove="Metadata\AudioTags\Readers\Id3v2TagReader.cs" />
   </ItemGroup>
 
 </Project>

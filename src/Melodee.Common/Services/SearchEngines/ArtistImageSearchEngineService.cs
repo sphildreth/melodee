@@ -8,7 +8,7 @@ using Melodee.Common.Plugins.SearchEngine.Deezer;
 using Melodee.Common.Plugins.SearchEngine.ITunes;
 using Melodee.Common.Plugins.SearchEngine.Spotify;
 using Melodee.Common.Serialization;
-using Melodee.Common.Services.Interfaces;
+using Melodee.Common.Services.Caching;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 

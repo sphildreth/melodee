@@ -4,7 +4,7 @@ using Melodee.Common.Configuration;
 using Melodee.Common.Data;
 using Melodee.Common.Data.Models;
 using Melodee.Common.Extensions;
-using Melodee.Common.Services.Interfaces;
+using Melodee.Common.Services.Caching;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using NodaTime;

@@ -18,7 +18,7 @@ using Melodee.Common.Plugins.Processor.Models;
 using Melodee.Common.Plugins.Scripting;
 using Melodee.Common.Plugins.Validation;
 using Melodee.Common.Serialization;
-using Melodee.Common.Services.Interfaces;
+using Melodee.Common.Services.Caching;
 using Melodee.Common.Services.SearchEngines;
 using Melodee.Common.Utility;
 using Microsoft.EntityFrameworkCore;

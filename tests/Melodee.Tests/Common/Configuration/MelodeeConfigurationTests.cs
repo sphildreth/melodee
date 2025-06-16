@@ -322,7 +322,7 @@ public class MelodeeConfigurationTests
         // Assert
         Assert.Equal(2, result.Count);
         Assert.Equal(2, result["key1"].Length);
-        Assert.Equal(1, result["key2"].Length);
+        Assert.Single(result["key2"]);
         Assert.Equal("value1", result["key1"][0]);
         Assert.Equal("value3", result["key2"][0]);
     }

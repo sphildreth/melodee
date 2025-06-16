@@ -9,7 +9,7 @@ using Melodee.Common.Models.Collection;
 using Melodee.Common.Models.Search;
 using Melodee.Common.Models.SearchEngines;
 using Melodee.Common.Plugins.SearchEngine.MusicBrainz.Data;
-using Melodee.Common.Services.Interfaces;
+using Melodee.Common.Services.Caching;
 using Microsoft.EntityFrameworkCore;
 using NodaTime;
 using Rebus.Bus;

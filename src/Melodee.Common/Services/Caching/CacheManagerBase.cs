@@ -1,5 +1,4 @@
 using Melodee.Common.Serialization;
-using Melodee.Common.Services.Interfaces;
 using Serilog;
 
 namespace Melodee.Common.Services.Caching;

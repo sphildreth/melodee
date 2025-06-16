@@ -8,7 +8,7 @@ using Melodee.Common.Models.Collection;
 using Melodee.Common.Models.OpenSubsonic.DTO;
 using Melodee.Common.Models.OpenSubsonic.Responses;
 using Melodee.Common.Plugins.Scrobbling;
-using Melodee.Common.Services.Interfaces;
+using Melodee.Common.Services.Caching;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Primitives;
 using Serilog;

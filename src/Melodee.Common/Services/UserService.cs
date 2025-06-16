@@ -16,7 +16,7 @@ using Melodee.Common.Extensions;
 using Melodee.Common.MessageBus.Events;
 using Melodee.Common.Models.Importing;
 using Melodee.Common.Plugins.Conversion.Image;
-using Melodee.Common.Services.Interfaces;
+using Melodee.Common.Services.Caching;
 using Melodee.Common.Utility;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
