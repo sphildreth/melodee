@@ -98,24 +98,19 @@ public record MelodeeConfiguration(Dictionary<string, object?> Configuration) : 
     {
         return GetValue<int?>(SettingRegistry.DefaultsBatchSize, i =>
         {
-            if (i is null or < 1)
+            return i switch
             {
-                return BatchSizeDefault;
-            }
-
-            if (i > BatchSizeMaximum)
-            {
-                return BatchSizeMaximum;
-            }
-
-            return BatchSizeDefault;
+                null or < 1 => BatchSizeDefault,
+                > BatchSizeMaximum => BatchSizeMaximum,
+                _ => i
+            };
         }) ?? BatchSizeDefault;
     }
 
     /// <summary>
     ///     This return all known settings in the SettingsRegistry with the option to set up given values.
     /// </summary>
-    /// <param name="settings">Optional collection of settings to set for result</param>
+    /// <param name="settings">Optional collection of settings to return</param>
     /// <returns>All known Settings in SettingsRegistry</returns>
     public static Dictionary<string, object?> AllSettings(Dictionary<string, object?>? settings = null)
     {
@@ -139,7 +134,7 @@ public record MelodeeConfiguration(Dictionary<string, object?> Configuration) : 
         return result;
     }
 
-    public static T? GetSettingValue<T>(Dictionary<string, object?> settings, string settingName, T? defaultValue = default)
+    private static T? GetSettingValue<T>(Dictionary<string, object?> settings, string settingName, T? defaultValue = default)
     {
         if (settings.TryGetValue(settingName, out var setting))
         {

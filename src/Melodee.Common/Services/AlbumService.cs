@@ -515,7 +515,7 @@ public class AlbumService(
             var dbConn = scopedContext.Database.GetDbConnection();
             try
             {
-                var sql = string.Empty;
+                string sql;
 
                 if (melodeeAlbum.AlbumDbId.HasValue)
                 {
@@ -639,7 +639,7 @@ public class AlbumService(
         }
 
         artistResult.Data!.IsLocked = doLock;
-        var result = (await UpdateAsync(artistResult.Data, cancellationToken).ConfigureAwait(false))?.Data ?? false;
+        var result = (await UpdateAsync(artistResult.Data, cancellationToken).ConfigureAwait(false)).Data;
         return new MelodeeModels.OperationResult<bool>
         {
             Data = result
