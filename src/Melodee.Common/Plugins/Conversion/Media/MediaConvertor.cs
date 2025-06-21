@@ -104,7 +104,7 @@ public sealed partial class MediaConvertor(IMelodeeConfiguration configuration)
                         await Task.Delay(100, cancellationToken);
                     }
 
-                    if (await AudioTagManager.NeedsConversionToMp3Async(fileInfo, cancellationToken).ConfigureAwait(false))
+                    if (await AudioTagManager.NeedsConversionToMp3Async(newFileInfo, cancellationToken).ConfigureAwait(false))
                     {
                         throw new Exception($"Unable to convert [{songFileInfo.FullName}] to MP3");
                     }
