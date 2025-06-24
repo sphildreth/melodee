@@ -178,7 +178,8 @@
             {
                 filters =
                 [
-                    new FilterOperatorInfo(nameof(Artist.NameNormalized), FilterOperator.Contains, _debounceInputValue.ToNormalizedString() ?? _debounceInputValue)
+                    new FilterOperatorInfo(nameof(Artist.NameNormalized), FilterOperator.Contains, _debounceInputValue.ToNormalizedString() ?? _debounceInputValue),
+                    new FilterOperatorInfo(nameof(Artist.AlternateNames), FilterOperator.Contains, _debounceInputValue.ToNormalizedString() ?? _debounceInputValue, FilterOperatorInfo.OrJoinOperator)
                 ];
             }
             else if (args.Filters.Any())

@@ -1,4 +1,5 @@
 ﻿@inherits LayoutComponentBase
+@using System.Drawing
 @using Melodee.Common.Enums
 @using Microsoft.AspNetCore.Components.Authorization
 @using HttpUtility = System.Web.HttpUtility
@@ -60,6 +61,8 @@
                                          class="rz-p-sm-2">
                             </RadzenStack>
                             <RadzenAppearanceToggle/>
+                            <RadzenIcon Visible="@context.User.IsAdmin()" IconColor="@Colors.Warning" title="You are an admin!" Icon="server_person" />
+                            <RadzenIcon Visible="@(!context.User.IsAdmin() && context.User.IsEditor())" IconColor="@Colors.Warning" title="You are a editor!" Icon="box_edit" />
                             <RadzenProfileMenu>
                                 <ChildContent>
                                     <RadzenProfileMenuItem Path="/account/profile" Icon="settings" Text="Profile"/>
