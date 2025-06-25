@@ -168,8 +168,12 @@
                         <RadzenText Text="@data.Duration.ToFormattedDateTimeOffset()"/>
                     </Template>
                 </RadzenDataGridColumn>
-                <RadzenDataGridColumn Property="@nameof(AlbumDataInfo.CreatedAt)" Title="Created" Filterable="false"
-                                      Width="120px">
+                <RadzenDataGridColumn
+                    Property="@nameof(AlbumDataInfo.CreatedAt)"
+                    Title="Created"
+                    Filterable="false"
+                    SortOrder="SortOrder.Descending"
+                    Width="120px">
                     <Template Context="data">
                         <RadzenText Text="@CurrentUser?.FormatInstant(data.CreatedAt)"/>
                     </Template>
