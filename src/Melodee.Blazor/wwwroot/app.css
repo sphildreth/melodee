@@ -39,3 +39,24 @@ i.filled-icon {
   color: white;
   margin: auto;
 }
+
+/* Hide for screens smaller than 1024px */
+@media (max-width: 1023px) {
+  .hide-below-1024 {
+    display: none !important;
+  }
+}
+
+/* Hide for screens smaller than 768px */
+@media (max-width: 767px) {
+  .hide-below-768 {
+    display: none !important;
+  }
+}
+
+/* Hide for screens smaller than 480px */
+@media (max-width: 479px) {
+  .hide-below-480 {
+    display: none !important;
+  }
+}

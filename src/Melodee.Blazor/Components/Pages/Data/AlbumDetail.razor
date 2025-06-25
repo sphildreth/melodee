@@ -35,7 +35,7 @@
                         Size="ButtonSize.Small"
                         Click="@(() => NavigationManager.NavigateTo(FromUrl, true))"/>
                 }
-                <RadzenBreadCrumb>
+                <RadzenBreadCrumb class="hide-below-480">
                     <RadzenBreadCrumbItem Path="/" Text="Dashboard"/>
                     <RadzenBreadCrumbItem Path="@($"/data/artist/{_album.Artist.ApiKey}")" Text="@_album.Artist.Name"/>
                     <RadzenBreadCrumbItem Path="@($"/data/albums?filterToArtistApiKey={_album.Artist.ApiKey}")"
@@ -120,7 +120,7 @@
     <RadzenRow>
         <RadzenColumn Size="4" SizeMD="2">
             <RadzenStack>
-                <RadzenCard>
+                <RadzenCard class="hide-below-480">
                     <RadzenTree Change="@OnShowItemChange">
                         <RadzenTreeItem Text="Overview" Selected="true">
                             <Template>
