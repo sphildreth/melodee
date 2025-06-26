@@ -191,6 +191,181 @@ public class AudioTagManagerTests
         }
     }
 
+    [Theory]
+    [InlineData(".mp4")]
+    [InlineData(".avi")]
+    [InlineData(".mkv")]
+    [InlineData(".mov")]
+    [InlineData(".flv")]
+    [InlineData(".webm")]
+    [InlineData(".m4v")]
+    public async Task NeedsConversionToMp3Async_WithVideoFiles_ReturnsFalse(string extension)
+    {
+        // Arrange
+        var tempFile = Path.GetTempFileName();
+        File.Move(tempFile, tempFile + extension);
+        var videoFile = tempFile + extension;
+
+        try
+        {
+            // Create minimal video file signatures
+            using (var fs = File.OpenWrite(videoFile))
+            {
+                switch (extension)
+                {
+                    case ".mp4":
+                    case ".mov":
+                    case ".m4v":
+                        // Write MP4/MOV signature with video ftyp
+                        fs.Write(new byte[] { 0, 0, 0, 0x20 }, 0, 4); // Box size
+                        fs.Write(Encoding.ASCII.GetBytes("ftyp"), 0, 4);
+                        fs.Write(Encoding.ASCII.GetBytes("mp42"), 0, 4); // Video brand
+                        fs.Write(new byte[16], 0, 16); // Padding
+                        fs.Write(Encoding.ASCII.GetBytes("vide"), 0, 4); // Video track identifier
+                        break;
+                    case ".avi":
+                        // Write AVI signature
+                        fs.Write(Encoding.ASCII.GetBytes("RIFF"), 0, 4);
+                        fs.Write(new byte[] { 0xFF, 0xFF, 0xFF, 0xFF }, 0, 4);
+                        fs.Write(Encoding.ASCII.GetBytes("AVI "), 0, 4);
+                        break;
+                    case ".mkv":
+                    case ".webm":
+                        // Write EBML/Matroska signature
+                        fs.Write(new byte[] { 0x1A, 0x45, 0xDF, 0xA3 }, 0, 4);
+                        break;
+                    case ".flv":
+                        // Write FLV signature
+                        fs.Write(Encoding.ASCII.GetBytes("FLV"), 0, 3);
+                        fs.WriteByte(0x01); // Version
+                        break;
+                }
+            }
+
+            var fileInfo = new FileInfo(videoFile);
+
+            // Act
+            var result = await AudioTagManager.NeedsConversionToMp3Async(fileInfo, CancellationToken.None);
+
+            // Assert
+            Assert.False(result, $"Video file with extension {extension} should not need conversion to MP3");
+        }
+        finally
+        {
+            if (File.Exists(videoFile))
+            {
+                File.Delete(videoFile);
+            }
+        }
+    }
+
+    [Fact]
+    public async Task NeedsConversionToMp3Async_WithMp4VideoFile_ReturnsFalse()
+    {
+        // Arrange
+        var tempFile = Path.GetTempFileName();
+        File.Move(tempFile, tempFile + ".mp4");
+        var mp4VideoFile = tempFile + ".mp4";
+
+        try
+        {
+            // Create MP4 video file with video codec signature
+            using (var fs = File.OpenWrite(mp4VideoFile))
+            {
+                fs.Write(new byte[] { 0, 0, 0, 0x20 }, 0, 4); // Box size
+                fs.Write(Encoding.ASCII.GetBytes("ftyp"), 0, 4);
+                fs.Write(Encoding.ASCII.GetBytes("avc1"), 0, 4); // H.264 video codec brand
+                fs.Write(new byte[16], 0, 16); // Padding
+                fs.Write(Encoding.ASCII.GetBytes("avc1"), 0, 4); // Video codec identifier
+            }
+
+            var fileInfo = new FileInfo(mp4VideoFile);
+
+            // Act
+            var result = await AudioTagManager.NeedsConversionToMp3Async(fileInfo, CancellationToken.None);
+
+            // Assert
+            Assert.False(result, "MP4 video file should not need conversion to MP3 even though MP4 is also an audio container");
+        }
+        finally
+        {
+            if (File.Exists(mp4VideoFile))
+            {
+                File.Delete(mp4VideoFile);
+            }
+        }
+    }
+
+    [Fact]
+    public async Task NeedsConversionToMp3Async_WithM4AAudioFile_ReturnsTrue()
+    {
+        // Arrange
+        var tempFile = Path.GetTempFileName();
+        File.Move(tempFile, tempFile + ".m4a");
+        var m4aAudioFile = tempFile + ".m4a";
+
+        try
+        {
+            // Create M4A audio file signature (should be converted to MP3)
+            using (var fs = File.OpenWrite(m4aAudioFile))
+            {
+                fs.Write(new byte[] { 0, 0, 0, 0x20 }, 0, 4); // Box size
+                fs.Write(Encoding.ASCII.GetBytes("ftyp"), 0, 4);
+                fs.Write(Encoding.ASCII.GetBytes("M4A "), 0, 4); // Audio-only brand
+            }
+
+            var fileInfo = new FileInfo(m4aAudioFile);
+
+            // Act
+            var result = await AudioTagManager.NeedsConversionToMp3Async(fileInfo, CancellationToken.None);
+
+            // Assert
+            Assert.True(result, "M4A audio file should need conversion to MP3");
+        }
+        finally
+        {
+            if (File.Exists(m4aAudioFile))
+            {
+                File.Delete(m4aAudioFile);
+            }
+        }
+    }
+
+    [Fact]
+    public async Task NeedsConversionToMp3Async_WithVideoFileHavingAudioExtension_ReturnsFalse()
+    {
+        // Arrange - Edge case: video content with misleading audio extension
+        var tempFile = Path.GetTempFileName();
+        File.Move(tempFile, tempFile + ".mp3");
+        var misleadingFile = tempFile + ".mp3";
+
+        try
+        {
+            // Create a file with .mp3 extension but AVI video content
+            using (var fs = File.OpenWrite(misleadingFile))
+            {
+                fs.Write(Encoding.ASCII.GetBytes("RIFF"), 0, 4);
+                fs.Write(new byte[] { 0xFF, 0xFF, 0xFF, 0xFF }, 0, 4);
+                fs.Write(Encoding.ASCII.GetBytes("AVI "), 0, 4);
+            }
+
+            var fileInfo = new FileInfo(misleadingFile);
+
+            // Act
+            var result = await AudioTagManager.NeedsConversionToMp3Async(fileInfo, CancellationToken.None);
+
+            // Assert
+            Assert.False(result, "File with video content should not be converted regardless of extension");
+        }
+        finally
+        {
+            if (File.Exists(misleadingFile))
+            {
+                File.Delete(misleadingFile);
+            }
+        }
+    }
+
     [Fact]
     public async Task NeedsConversionToMp3Async_WithNullFileInfo_ReturnsFalse()
     {
@@ -198,6 +373,63 @@ public class AudioTagManagerTests
         var result = await AudioTagManager.NeedsConversionToMp3Async(null, CancellationToken.None);
 
         // Assert
-        Assert.False(result);
+        Assert.False(result, "Null FileInfo should return false");
+    }
+
+    [Fact]
+    public async Task NeedsConversionToMp3Async_WithEmptyFile_ReturnsFalse()
+    {
+        // Arrange
+        var tempFile = Path.GetTempFileName();
+        File.Move(tempFile, tempFile + ".flac");
+        var emptyFile = tempFile + ".flac";
+
+        try
+        {
+            // File exists but is empty (0 bytes)
+            var fileInfo = new FileInfo(emptyFile);
+
+            // Act
+            var result = await AudioTagManager.NeedsConversionToMp3Async(fileInfo, CancellationToken.None);
+
+            // Assert
+            Assert.False(result, "Empty file should not need conversion");
+        }
+        finally
+        {
+            if (File.Exists(emptyFile))
+            {
+                File.Delete(emptyFile);
+            }
+        }
+    }
+
+    [Fact]
+    public async Task NeedsConversionToMp3Async_WithUnknownFormatFile_ReturnsFalse()
+    {
+        // Arrange
+        var tempFile = Path.GetTempFileName();
+        File.Move(tempFile, tempFile + ".txt");
+        var unknownFile = tempFile + ".txt";
+
+        try
+        {
+            // Create a text file that won't be detected as audio or video
+            File.WriteAllText(unknownFile, "This is just a text file");
+            var fileInfo = new FileInfo(unknownFile);
+
+            // Act
+            var result = await AudioTagManager.NeedsConversionToMp3Async(fileInfo, CancellationToken.None);
+
+            // Assert
+            Assert.False(result, "Unknown format file should not need conversion");
+        }
+        finally
+        {
+            if (File.Exists(unknownFile))
+            {
+                File.Delete(unknownFile);
+            }
+        }
     }
 }

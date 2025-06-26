@@ -105,8 +105,8 @@ public static class AudioTagManager
     /// <param name="fileInfo">The file to check</param>
     /// <param name="cancellationToken">Optional cancellation token</param>
     /// <returns>
-    ///     True if the file is in a format other than MP3 and needs conversion, false if it's already an MP3 or not a
-    ///     valid audio file
+    ///     True if the file is in a format other than MP3 and needs conversion, false if it's already an MP3, 
+    ///     a video file, or not a valid audio file
     /// </returns>
     public static async Task<bool> NeedsConversionToMp3Async(FileInfo? fileInfo, CancellationToken cancellationToken = default)
     {
@@ -119,6 +119,13 @@ public static class AudioTagManager
 
         try
         {
+            // Check if the file is a video file - we don't want to convert video files
+            if (await VideoFormatDetector.IsVideoFileAsync(fileInfo!.FullName, cancellationToken))
+            {
+                // This is a video file, so we shouldn't convert it to MP3
+                return false;
+            }
+
             // First check if the file extension is already .mp3
             if (fileInfo!.Extension.Equals(".mp3", StringComparison.OrdinalIgnoreCase))
             {
