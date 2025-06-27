@@ -377,7 +377,6 @@ public sealed class AlbumDiscoveryService(
             var dirInfo = new DirectoryInfo(fileSystemDirectoryInfo.Path);
             if (dirInfo.Exists)
             {
-                //   foreach (var jsonFile in dirInfo.EnumerateFiles($"*{Album.JsonFileName}", SearchOption.AllDirectories))
                 await Parallel.ForEachAsync(
                     dirInfo.EnumerateFiles($"*{Album.JsonFileName}", SearchOption.AllDirectories), cancellationToken,
                     async (jsonFile, token) =>

@@ -9,7 +9,9 @@ using Melodee.Common.Extensions;
 using Melodee.Common.MessageBus.Events;
 using Melodee.Common.Models.Collection;
 using Melodee.Common.Models.Extensions;
+using Melodee.Common.Serialization;
 using Melodee.Common.Services.Caching;
+using Melodee.Common.Services.Scanning;
 using Microsoft.EntityFrameworkCore;
 using NodaTime;
 using Rebus.Bus;
@@ -24,7 +26,9 @@ public class AlbumService(
     ICacheManager cacheManager,
     IMelodeeConfigurationFactory configurationFactory,
     IDbContextFactory<MelodeeDbContext> contextFactory,
-    IBus bus)
+    IBus bus,
+    ISerializer serializer,
+    MediaEditService mediaEditService)
     : ServiceBase(logger, cacheManager, contextFactory)
 {
     private const string CacheKeyDetailByApiKeyTemplate = "urn:album:apikey:{0}";
@@ -433,6 +437,8 @@ public class AlbumService(
                     Type = MelodeeModels.OperationResponseType.NotFound
                 };
             }
+            
+            var didChangeName = dbDetail.Name != album.Name;
 
             var configuration = await configurationFactory.GetConfigurationAsync(cancellationToken);
 
@@ -448,14 +454,9 @@ public class AlbumService(
                 {
                     Directory.Move(existingAlbumDirectory, newAlbumDirectory);
                 }
-
-                dbDetail.Directory = albumDirectory;
             }
-            else
-            {
-                dbDetail.Directory = album.Directory;
-            }
-
+            dbDetail.Directory = album.Directory;
+            
             dbDetail.AlbumStatus = album.AlbumStatus;
             dbDetail.AlbumType = album.AlbumType;
             dbDetail.AlternateNames = album.AlternateNames;
@@ -490,6 +491,26 @@ public class AlbumService(
             if (result)
             {
                 ClearCache(dbDetail);
+
+                if (didChangeName)
+                {
+                    await mediaEditService.InitializeAsync(token: cancellationToken);
+                    var newAlbumPath = Path.Combine(dbDetail.Artist.Library.Path, dbDetail.Artist.Directory, dbDetail.Directory);
+                    var melodeeAlbum = await MelodeeModels.Album.DeserializeAndInitializeAlbumAsync(serializer, Path.Combine(newAlbumPath, "melodee.json"), cancellationToken).ConfigureAwait(false);
+                    if (melodeeAlbum != null)
+                    {
+                        melodeeAlbum.AlbumDbId = dbDetail.Id;
+                        melodeeAlbum.Directory = newAlbumPath.ToFileSystemDirectoryInfo();
+                        melodeeAlbum.MusicBrainzId = dbDetail.MusicBrainzId;
+                        melodeeAlbum.SpotifyId = dbDetail.SpotifyId;
+                        melodeeAlbum.SetTagValue(MetaTagIdentifier.Album, dbDetail.Name);
+                        foreach(var song in melodeeAlbum.Songs ?? [])
+                        {
+                            melodeeAlbum.SetSongTagValue(song.Id, MetaTagIdentifier.Album, dbDetail.Name);
+                        }
+                        await mediaEditService.SaveMelodeeAlbum(melodeeAlbum, true, cancellationToken).ConfigureAwait(false);
+                    }
+                }
             }
         }
 
