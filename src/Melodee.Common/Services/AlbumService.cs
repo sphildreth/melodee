@@ -454,6 +454,7 @@ public class AlbumService(
                 {
                     Directory.Move(existingAlbumDirectory, newAlbumDirectory);
                 }
+                album.Directory = albumDirectory;
             }
             dbDetail.Directory = album.Directory;
             
