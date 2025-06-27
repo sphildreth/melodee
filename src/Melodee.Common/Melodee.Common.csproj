@@ -31,6 +31,7 @@
     <PackageReference Include="IdGen"/>
     <PackageReference Include="IdSharp.Common"/>
     <PackageReference Include="IdSharp.Tagging"/>
+    <PackageReference Include="JetBrains.Annotations" />
     <PackageReference Include="K4os.Hash.xxHash"/>
     <PackageReference Include="LiteDB"/>
     <PackageReference Include="Lucene.Net"/>

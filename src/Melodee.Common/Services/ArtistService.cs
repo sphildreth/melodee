@@ -299,8 +299,7 @@ public class ArtistService(
         await ClearCacheAsync(artist.Data!, cancellationToken);
     }
 
-    public async Task<MelodeeModels.OperationResult<bool>> RescanAsync(int[] artistIds,
-        CancellationToken cancellationToken = default)
+    public async Task<MelodeeModels.OperationResult<bool>> RescanAsync(int[] artistIds, CancellationToken cancellationToken = default)
     {
         Guard.Against.NullOrEmpty(artistIds, nameof(artistIds));
 
@@ -316,7 +315,9 @@ public class ArtistService(
             }
 
             await bus.SendLocal(new ArtistRescanEvent(artistResult.Data.Id,
-                Path.Combine(artistResult.Data.Library.Path, artistResult.Data.Directory))).ConfigureAwait(false);
+                    Path.Combine(artistResult.Data.Library.Path,
+                        artistResult.Data.Directory)))
+                .ConfigureAwait(false);
         }
 
         return new MelodeeModels.OperationResult<bool>
