@@ -747,7 +747,6 @@ public class OpenSubsonicApiService(
                 var dpWhere = dp.PrepareSongSelectionWhere(authResponse.UserInfo);
                 var dpOrderBy = dp.SongSelectionOrder ?? "RANDOM()";
 
-                // TODO is this paged somehow? I dont see anything in documentation about clients paging playlists.
                 var offset = 0;
                 var fetch = dp.SongLimit ?? 100;
 

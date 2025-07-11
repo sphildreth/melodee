@@ -48,7 +48,7 @@ public class LyricPlugin(ISerializer serializer, IMelodeeConfigurationFactory co
             if (fileSystemInfo.Exists(directoryInfo))
             {
                 var fileAtl = new Track(fileSystemInfo.FullName(directoryInfo));
-                var ult = fileAtl.Lyrics.UnsynchronizedLyrics.NormalizeLineEndings();
+                var ult = fileAtl.Lyrics.FirstOrDefault()?.UnsynchronizedLyrics.NormalizeLineEndings();
                 if (ult.Nullify() != null)
                 {
                     result = new Lyrics
@@ -88,8 +88,8 @@ public class LyricPlugin(ISerializer serializer, IMelodeeConfigurationFactory co
             if (fileSystemInfo.Exists(directoryInfo))
             {
                 var fileAtl = new Track(fileSystemInfo.FullName(directoryInfo));
-                var slt = fileAtl.Lyrics.SynchronizedLyrics;
-                if (slt.Count > 0)
+                var slt = fileAtl.Lyrics.FirstOrDefault()?.SynchronizedLyrics;
+                if (slt?.Count > 0)
                 {
                     result = new LyricsList
                     {
@@ -97,7 +97,7 @@ public class LyricPlugin(ISerializer serializer, IMelodeeConfigurationFactory co
                         DisplayTitle = fileAtl.Title,
                         Lang = "xxx",
                         Synced = true,
-                        Line = slt.Select(x => new LyricsListLine(x.Text, x.TimestampMs)).ToArray()
+                        Line = slt.Select(x => new LyricsListLine(x.Text, x.TimestampStart)).ToArray()
                     };
                 }
             }

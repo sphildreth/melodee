@@ -67,7 +67,7 @@ public static class SongExtensions
             album.ReleaseDate.Year,
             song.ToCoverArtId(),
             song.FileSize,
-            "audio/mpeg", //TODO this should be the right type for the song media, what if no conversion and flac
+            song.ContentType,
             Path.GetExtension(song.FileName),
             userSong?.IsStarred ?? false ? userSong.LastUpdatedAt.ToString() : null,
             song.Duration.ToSeconds(),

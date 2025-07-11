@@ -130,13 +130,13 @@ public class UsersController(
             return StatusCode(StatusCodes.Status403Forbidden, new { error = "User is blacklisted" });
         }
 
-        // TODO this should be paginated
-        var userLastPlayedResult = await userService.UserLastPlayedSongsAsync(userResult.Data.Id, 3, cancellationToken).ConfigureAwait(false);
+        short numberOfLastPlayedSongs = 3;
+        var userLastPlayedResult = await userService.UserLastPlayedSongsAsync(userResult.Data.Id, numberOfLastPlayedSongs, cancellationToken).ConfigureAwait(false);
         return Ok(new
         {
             meta = new PaginationMetadata(
-                10,
-                10,
+                numberOfLastPlayedSongs,
+                numberOfLastPlayedSongs,
                 1,
                 1
             ),

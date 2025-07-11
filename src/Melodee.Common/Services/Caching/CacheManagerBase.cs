@@ -5,10 +5,9 @@ namespace Melodee.Common.Services.Caching;
 
 public abstract class CacheManagerBase(ILogger logger, TimeSpan defaultTimeSpan, ISerializer serializer) : ICacheManager
 {
-    protected ILogger Logger { get; } = logger;
+    protected ILogger Logger { get; } = logger ?? throw new ArgumentNullException(nameof(logger));
     protected TimeSpan DefaultTimeSpan { get; } = defaultTimeSpan;
-
-    public ISerializer Serializer { get; } = serializer;
+    public ISerializer Serializer { get; } = serializer ?? throw new ArgumentNullException(nameof(serializer));
     public abstract void Clear();
     public abstract void ClearRegion(string region);
 
