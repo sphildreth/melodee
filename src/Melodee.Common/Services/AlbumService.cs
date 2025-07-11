@@ -392,7 +392,6 @@ public class AlbumService(
 
     public void ClearCache(Album album)
     {
-        OpenSubsonicApiService.ClearImageCacheForApiId(album.ToApiKey(), CacheManager);
         CacheManager.Remove(CacheKeyDetailByApiKeyTemplate.FormatSmart(album.ApiKey));
         CacheManager.Remove(CacheKeyDetailByNameNormalizedTemplate.FormatSmart(album.NameNormalized));
         CacheManager.Remove(CacheKeyDetailTemplate.FormatSmart(album.Id));

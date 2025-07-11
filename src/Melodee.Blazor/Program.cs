@@ -205,7 +205,6 @@ builder.Services.AddRebus((configurer, provider) =>
 });
 builder.Services.AddRebusHandler<AlbumAddEventHandler>();
 builder.Services.AddRebusHandler<AlbumRescanEventHandler>();
-builder.Services.AddRebusHandler<AlbumUpdatedEventHandler>();
 builder.Services.AddRebusHandler<ArtistRescanEventHandler>();
 builder.Services.AddRebusHandler<MelodeeAlbumReprocessEventHandler>();
 builder.Services.AddRebusHandler<SearchHistoryEventHandler>();

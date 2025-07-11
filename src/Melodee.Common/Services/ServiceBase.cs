@@ -55,7 +55,7 @@ public abstract class ServiceBase
     protected ICacheManager CacheManager { get; } = null!;
     protected IDbContextFactory<MelodeeDbContext> ContextFactory { get; } = null!;
 
-    protected async Task<AlbumUpdatedEvent?> ProcessExistingDirectoryMoveMergeAsync(IMelodeeConfiguration configuration,
+    protected async Task ProcessExistingDirectoryMoveMergeAsync(IMelodeeConfiguration configuration,
         ISerializer serializer, Album albumToMove, string existingAlbumPath,
         CancellationToken cancellationToken = default)
     {
@@ -217,14 +217,8 @@ public abstract class ServiceBase
 
         // Delete directory to merge as what is wanted has been moved 
         Directory.Delete(albumToMove.Directory.FullName(), true);
-        Logger.Debug("[{ServiceName}] :\u2558: deleting directory [{FileName}]", nameof(LibraryService),
-            albumToMove.Directory);
-        if (modifiedExistingDirectory)
-        {
-            return new AlbumUpdatedEvent(null, existingAlbumPath);
-        }
+        Logger.Debug("[{ServiceName}] :\u2558: deleting directory [{FileName}]", nameof(LibraryService), albumToMove.Directory);
 
-        return null;
     }
 
 

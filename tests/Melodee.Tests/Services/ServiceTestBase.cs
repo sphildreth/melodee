@@ -288,7 +288,6 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
             MockFactory(),
             MockConfigurationFactory(),
             Serializer,
-            MockBus(),
             GetMelodeeMetadataMaker()
         );
     }

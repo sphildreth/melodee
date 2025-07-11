@@ -1364,12 +1364,6 @@ public class OpenSubsonicApiService(
         return $"urn:openSubsonic:imageForApikey:{apiId}:{size}";
     }
 
-    public static void ClearImageCacheForApiId(string apiId, ICacheManager cacheManager)
-    {
-        // TODO this seems really inefficient as this clears all images in the region
-        cacheManager.ClearRegion(ImageCacheRegion);
-    }
-
     /// <summary>
     ///     Returns an artist, album, or song art image.
     /// </summary>
@@ -1810,7 +1804,6 @@ public class OpenSubsonicApiService(
 
                     if (apiRequest.Jwt.Nullify() != null)
                     {
-                        // TODO is this something used by systems other than Navidrome?
                         // see https://github.com/navidrome/navidrome/blob/acce3c97d5dcf22a005a46d855bb1763a8bb8b66/server/subsonic/middlewares.go#L132
                         throw new NotImplementedException();
                     }
@@ -2177,9 +2170,9 @@ public class OpenSubsonicApiService(
 
         if (request is { IsDownloadingRequest: false, TimeOffset: not null })
         {
-            // TODO If specified, start streaming at the given offset (in seconds) into the media. 
             Logger.Warning("[{ServiceName}] Stream request has TimeOffset. Request [{Request}",
                 nameof(OpenSubsonicApiService), request);
+            throw new NotImplementedException();
         }
 
         var sql = """
@@ -2223,13 +2216,13 @@ public class OpenSubsonicApiService(
             {
                 if (request.MaxBitRate != songStreamInfo.BitRate)
                 {
-                    //TODO transcoding for the format and maxBitRate as needed
                     Logger.Warning(
                         "[{ServiceName}] Stream request has MaxBitRate [{MaxBitRate}] different than song BitRate [{SongRate}] has TimeOffset. Request [{Request}",
                         nameof(OpenSubsonicApiService),
                         request.MaxBitRate,
                         songStreamInfo.BitRate,
                         request);
+                    throw new NotImplementedException();
                 }
             }
 
@@ -3322,8 +3315,11 @@ public class OpenSubsonicApiService(
         };
     }
 
-    public async Task<ResponseModel> GetArtistInfoAsync(string id, int? count, bool isArtistInfo2,
-        ApiRequest apiRequest, CancellationToken cancellationToken)
+    public async Task<ResponseModel> GetArtistInfoAsync(string id,
+        int? numberOfSimilarArtistsToReturn,
+        bool isArtistInfo2,
+        ApiRequest apiRequest,
+        CancellationToken cancellationToken)
     {
         var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
         if (!authResponse.IsSuccess)
@@ -3343,8 +3339,23 @@ public class OpenSubsonicApiService(
             {
                 var configuration = await Configuration.Value;
 
-                // TODO How to get similar artists?
                 Artist[]? similarArtists = null;
+                if (numberOfSimilarArtistsToReturn > 0)
+                {
+                    var similarArtistRelationType = SafeParser.ToNumber<int>(ArtistRelationType.Similar);
+                    var similarDbArtists = await scopedContext.ArtistRelation
+                        .Include(x => x.RelatedArtist)
+                        .Where(x => x.ArtistId == artist.Id)
+                        .Where(x => x.ArtistRelationType == similarArtistRelationType)
+                        .OrderBy(x => x.Artist.SortName)
+                        .Take(numberOfSimilarArtistsToReturn.Value)
+                        .ToArrayAsync(cancellationToken)
+                        .ConfigureAwait(false);
+                    if (similarDbArtists.Any())
+                    {
+                        similarArtists = similarDbArtists.Select(x => x.RelatedArtist.ToApiArtist(null)).ToArray();
+                    }
+                }
 
                 data = new ArtistInfo(artist.ToApiKey(),
                     artist.Name,

@@ -585,7 +585,6 @@ public class ArtistService(
         }
 
         await ClearCacheAsync(artist, cancellationToken);
-        OpenSubsonicApiService.ClearImageCacheForApiId(artist.ToApiKey(), CacheManager);
         return true;
     }
 

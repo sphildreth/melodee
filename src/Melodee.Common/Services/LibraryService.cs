@@ -10,7 +10,6 @@ using Melodee.Common.Data.Models;
 using Melodee.Common.Data.Models.Extensions;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
-using Melodee.Common.MessageBus.Events;
 using Melodee.Common.Metadata;
 using Melodee.Common.Models.Collection;
 using Melodee.Common.Models.Extensions;
@@ -21,7 +20,6 @@ using Melodee.Common.Services.Models;
 using Melodee.Common.Utility;
 using Microsoft.EntityFrameworkCore;
 using NodaTime;
-using Rebus.Bus;
 using Serilog;
 using Serilog.Events;
 using SerilogTimings;
@@ -38,7 +36,6 @@ public class LibraryService(
     IDbContextFactory<MelodeeDbContext> contextFactory,
     IMelodeeConfigurationFactory configurationFactory,
     ISerializer serializer,
-    IBus bus,
     MelodeeMetadataMaker melodeeMetadataMaker)
     : ServiceBase(logger, cacheManager, contextFactory)
 {
@@ -384,15 +381,12 @@ public class LibraryService(
                 }
                 else
                 {
-                    var processExistingDirectoryResult =
-                        await ProcessExistingDirectoryMoveMergeAsync(configuration, serializer, album, libraryAlbumPath,
-                            cancellationToken).ConfigureAwait(false);
-                    if (processExistingDirectoryResult != null)
-                    {
-                        await bus.SendLocal(new AlbumUpdatedEvent(processExistingDirectoryResult.AlbumId,
-                            processExistingDirectoryResult.AlbumPath)).ConfigureAwait(false);
-                    }
-
+                    await ProcessExistingDirectoryMoveMergeAsync(configuration,
+                            serializer,
+                            album,
+                            libraryAlbumPath,
+                            cancellationToken)
+                        .ConfigureAwait(false);
                     continue;
                 }
 
@@ -1239,19 +1233,6 @@ public class LibraryService(
         var libDir = library.ToFileSystemDirectoryInfo();
 
         var configuration = await configurationFactory.GetConfigurationAsync(cancellationToken);
-
-        var maxNumberOfArtistImagesAllowed =
-            configuration.GetValue<short>(SettingRegistry.ImagingMaximumNumberOfArtistImages);
-        if (maxNumberOfArtistImagesAllowed == 0)
-        {
-            maxNumberOfArtistImagesAllowed = short.MaxValue;
-        }
-
-        var maxNumberOfAlbumImagesAllowed = configuration.GetValue<short>(SettingRegistry.ImagingMaximumNumberOfAlbumImages);
-        if (maxNumberOfAlbumImagesAllowed == 0)
-        {
-            maxNumberOfAlbumImagesAllowed = short.MaxValue;
-        }
 
         var messages = new List<string>();
         var allDirectoriesInLibrary = libDir.AllDirectoryInfos(searchOption: SearchOption.TopDirectoryOnly).ToArray();
