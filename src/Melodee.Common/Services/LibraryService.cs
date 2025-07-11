@@ -30,15 +30,29 @@ using SearchOption = System.IO.SearchOption;
 namespace Melodee.Common.Services;
 
 // ReSharper disable once ClassWithVirtualMembersNeverInherited.Global
-public class LibraryService(
-    ILogger logger,
-    ICacheManager cacheManager,
-    IDbContextFactory<MelodeeDbContext> contextFactory,
-    IMelodeeConfigurationFactory configurationFactory,
-    ISerializer serializer,
-    MelodeeMetadataMaker melodeeMetadataMaker)
-    : ServiceBase(logger, cacheManager, contextFactory)
+public class LibraryService : ServiceBase
 {
+    private readonly IMelodeeConfigurationFactory _configurationFactory;
+    private readonly ISerializer _serializer;
+    private readonly MelodeeMetadataMaker _melodeeMetadataMaker;
+
+    // This is used by Moq to create a mock instance of this class.
+#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
+    public LibraryService() {}
+#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
+    
+    public LibraryService(ILogger logger,
+        ICacheManager cacheManager,
+        IDbContextFactory<MelodeeDbContext> contextFactory,
+        IMelodeeConfigurationFactory configurationFactory,
+        ISerializer serializer,
+        MelodeeMetadataMaker melodeeMetadataMaker) : base(logger, cacheManager, contextFactory)
+    {
+        _configurationFactory = configurationFactory;
+        _serializer = serializer;
+        _melodeeMetadataMaker = melodeeMetadataMaker;
+    }
+
     private const string CacheKeyDetailByApiKeyTemplate = "urn:library:apikey:{0}";
     private const string CacheKeyDetailLibraryByType = "urn:library_by_type:{0}";
     private const string CacheKeyDetailTemplate = "urn:library:{0}";
@@ -361,7 +375,7 @@ public class LibraryService(
 
     private async Task<MelodeeModels.OperationResult<bool>> MoveAlbumsToLibrary(Library library, MelodeeModels.Album[] albums, CancellationToken cancellationToken = default)
     {
-        var configuration = await configurationFactory.GetConfigurationAsync(cancellationToken);
+        var configuration = await _configurationFactory.GetConfigurationAsync(cancellationToken);
         configuration.GetValue<short>(SettingRegistry.ImagingMaximumNumberOfArtistImages);
 
         MelodeeModels.Album? currentAlbum = null;
@@ -382,7 +396,7 @@ public class LibraryService(
                 else
                 {
                     await ProcessExistingDirectoryMoveMergeAsync(configuration,
-                            serializer,
+                            _serializer,
                             album,
                             libraryAlbumPath,
                             cancellationToken)
@@ -396,7 +410,7 @@ public class LibraryService(
                 album.Directory.MoveToDirectory(libraryAlbumPath);
                 var melodeeFileName = Path.Combine(libraryAlbumPath, "melodee.json");
                 var melodeeFile = await MelodeeModels.Album
-                    .DeserializeAndInitializeAlbumAsync(serializer, melodeeFileName, cancellationToken)
+                    .DeserializeAndInitializeAlbumAsync(_serializer, melodeeFileName, cancellationToken)
                     .ConfigureAwait(false);
                 melodeeFile!.Directory.Path = libraryAlbumPath;
                 if (album.Artist.Images?.Any() ?? false)
@@ -454,7 +468,7 @@ public class LibraryService(
                     melodeeFile.Artist = melodeeFile.Artist with { Images = null };
                 }
 
-                await File.WriteAllTextAsync(melodeeFileName, serializer.Serialize(melodeeFile), cancellationToken);
+                await File.WriteAllTextAsync(melodeeFileName, _serializer.Serialize(melodeeFile), cancellationToken);
 
                 movedCount++;
 
@@ -709,7 +723,7 @@ public class LibraryService(
             };
         }
 
-        var configuration = await configurationFactory.GetConfigurationAsync(cancellationToken);
+        var configuration = await _configurationFactory.GetConfigurationAsync(cancellationToken);
         var maxAlbumProcessingCount = configuration.GetValue<int>(SettingRegistry.ProcessingMaximumProcessingCount,
             value => value < 1 ? int.MaxValue : value);
 
@@ -754,7 +768,7 @@ public class LibraryService(
                 continue;
             }
 
-            var processResult = await melodeeMetadataMaker
+            var processResult = await _melodeeMetadataMaker
                 .MakeMetadataFileAsync(directoryInfo.FullName(), doCreateOnlyMissing, cancellationToken)
                 .ConfigureAwait(false);
             if (processResult.IsSuccess)
@@ -764,7 +778,7 @@ public class LibraryService(
             else
             {
                 Logger.Warning("[{Name}] Unable to rebuild media in directory [{DirName}]. [{Result}]", nameof(Rebuild),
-                    directoryInfo.FullName(), serializer.Serialize(processResult));
+                    directoryInfo.FullName(), _serializer.Serialize(processResult));
             }
 
             directoriesProcessed++;
@@ -848,7 +862,7 @@ public class LibraryService(
             };
         }
 
-        var configuration = await configurationFactory.GetConfigurationAsync(cancellationToken);
+        var configuration = await _configurationFactory.GetConfigurationAsync(cancellationToken);
 
         var duplicateDirPrefix = configuration.GetValue<string>(SettingRegistry.ProcessingDuplicateAlbumPrefix);
         var maxAlbumProcessingCount = configuration.GetValue<int>(SettingRegistry.ProcessingMaximumProcessingCount,
@@ -875,7 +889,7 @@ public class LibraryService(
             try
             {
                 var album = await MelodeeModels.Album
-                    .DeserializeAndInitializeAlbumAsync(serializer, albumFile, cancellationToken).ConfigureAwait(false);
+                    .DeserializeAndInitializeAlbumAsync(_serializer, albumFile, cancellationToken).ConfigureAwait(false);
                 if (album != null)
                 {
                     if (condition(album))
@@ -966,7 +980,7 @@ public class LibraryService(
         foreach (var melodeeFileSystemInfo in melodeeFileSystemInfosForLibrary)
         {
             var melodeeFile = await MelodeeModels.Album
-                .DeserializeAndInitializeAlbumAsync(serializer, melodeeFileSystemInfo.FullName, cancellationToken)
+                .DeserializeAndInitializeAlbumAsync(_serializer, melodeeFileSystemInfo.FullName, cancellationToken)
                 .ConfigureAwait(false);
             if (melodeeFile != null)
             {
@@ -982,7 +996,7 @@ public class LibraryService(
         {
             result.Add(new MelodeeModels.Statistic(StatisticType.Information, melodeeFilesGroupedOk.Key.ToString(),
                 melodeeFilesGroupedOk.Count(), StatisticColorRegistry.Ok, "Album with `Ok` status."));
-            var configuration = await configurationFactory.GetConfigurationAsync(cancellationToken);
+            var configuration = await _configurationFactory.GetConfigurationAsync(cancellationToken);
             var albumValidator = new AlbumValidator(configuration);
             foreach (var album in melodeeFilesGroupedOk)
             {
@@ -991,7 +1005,7 @@ public class LibraryService(
                 {
                     result.Add(new MelodeeModels.Statistic(StatisticType.Warning,
                         $"Album with `Ok` status [{album}], is invalid",
-                        serializer.Serialize(validateResults.Data) ?? string.Empty, StatisticColorRegistry.Warning));
+                        _serializer.Serialize(validateResults.Data) ?? string.Empty, StatisticColorRegistry.Warning));
                 }
             }
         }
@@ -1025,7 +1039,7 @@ public class LibraryService(
             };
         }
 
-        var configuration = await configurationFactory.GetConfigurationAsync(cancellationToken);
+        var configuration = await _configurationFactory.GetConfigurationAsync(cancellationToken);
         var duplicateDirPrefix = configuration.GetValue<string>(SettingRegistry.ProcessingDuplicateAlbumPrefix);
 
         var result = new List<MelodeeModels.Statistic>
@@ -1232,7 +1246,7 @@ public class LibraryService(
 
         var libDir = library.ToFileSystemDirectoryInfo();
 
-        var configuration = await configurationFactory.GetConfigurationAsync(cancellationToken);
+        var configuration = await _configurationFactory.GetConfigurationAsync(cancellationToken);
 
         var messages = new List<string>();
         var allDirectoriesInLibrary = libDir.AllDirectoryInfos(searchOption: SearchOption.TopDirectoryOnly).ToArray();
@@ -1466,7 +1480,7 @@ public class LibraryService(
 
         foreach (var dynamicPlaylistsJsonFile in dynamicPlaylistsJsonFiles)
         {
-            var dp = serializer.Deserialize<MelodeeModels.DynamicPlaylist>(await File.ReadAllBytesAsync(dynamicPlaylistsJsonFile.FullName, cancellationToken).ConfigureAwait(false));
+            var dp = _serializer.Deserialize<MelodeeModels.DynamicPlaylist>(await File.ReadAllBytesAsync(dynamicPlaylistsJsonFile.FullName, cancellationToken).ConfigureAwait(false));
             if (dp?.Id == apiKey)
             {
                 result = dp;
