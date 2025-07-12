@@ -81,6 +81,11 @@ public record MelodeeConfiguration(Dictionary<string, object?> Configuration) : 
     {
         Configuration[key] = value;
     }
+    
+    public TimeSpan? CacheDuration()
+    {
+        return GetValue<TimeSpan?>(SettingRegistry.DefaultCacheDuration, t => t ?? TimeSpan.FromDays(1));
+    }
 
     public string ApiVersion()
     {

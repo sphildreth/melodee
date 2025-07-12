@@ -38,6 +38,7 @@ public class ArtistService(
     private const string CacheKeyDetailByNameNormalizedTemplate = "urn:artist:namenormalized:{0}";
     private const string CacheKeyDetailByMusicBrainzIdTemplate = "urn:artist:musicbrainzid:{0}";
     private const string CacheKeyDetailTemplate = "urn:artist:{0}";
+    private const string CacheKeyArtistImageBytesAndEtagTemplate = "urn:artist:imagebytesandetag:{0}:{1}";
 
     public async Task<MelodeeModels.PagedResult<ArtistDataInfo>> ListAsync(MelodeeModels.PagedRequest pagedRequest,
         CancellationToken cancellationToken = default)
@@ -286,9 +287,11 @@ public class ArtistService(
         CacheManager.Remove(CacheKeyDetailTemplate.FormatSmart(artist.Id));
         if (artist.MusicBrainzId != null)
         {
-            CacheManager.Remove(
-                CacheKeyDetailByMusicBrainzIdTemplate.FormatSmart(artist.MusicBrainzId.Value.ToString()));
+            CacheManager.Remove(CacheKeyDetailByMusicBrainzIdTemplate.FormatSmart(artist.MusicBrainzId.Value.ToString()));
         }
+        CacheManager.Remove(CacheKeyArtistImageBytesAndEtagTemplate.FormatSmart(artist.Id, ImageSizeRegistry.Small));
+        CacheManager.Remove(CacheKeyArtistImageBytesAndEtagTemplate.FormatSmart(artist.Id, ImageSizeRegistry.Medium));
+        CacheManager.Remove(CacheKeyArtistImageBytesAndEtagTemplate.FormatSmart(artist.Id, ImageSizeRegistry.Large));
 
         await albumService.ClearCacheForArtist(artist.Id, cancellationToken);
     }
@@ -849,5 +852,48 @@ public class ArtistService(
         {
             Data = result
         };
+    }
+    
+    public async Task<MelodeeModels.ImageBytesAndEtag> GetArtistImageBytesAndEtagAsync(Guid? apiKey, string? size = null, CancellationToken cancellationToken = default)
+    {
+        Guard.Against.Null(apiKey, nameof(apiKey));
+        Guard.Against.Expression(x => x == Guid.Empty, apiKey!.Value, nameof(apiKey));
+
+        var configuration = await configurationFactory.GetConfigurationAsync(cancellationToken).ConfigureAwait(false);
+        var artist = await GetByApiKeyAsync(apiKey.Value, cancellationToken).ConfigureAwait(false);
+        if (!artist.IsSuccess || artist.Data == null)
+        {
+            return new MelodeeModels.ImageBytesAndEtag(null, null);
+        }
+
+        var artistId = artist.Data.Id;
+        
+        var cacheKey = CacheKeyArtistImageBytesAndEtagTemplate.FormatSmart(artistId, size ?? ImageSizeRegistry.Large);
+        return await CacheManager.GetAsync(cacheKey, async () =>
+        {
+            var badEtag = Instant.MinValue.ToEtag();
+            var sizeValue = size ?? ImageSizeRegistry.Large;
+
+            var artistDirectory = artist.Data.ToFileSystemDirectoryInfo();
+            if (!artistDirectory.Exists())
+            {
+                Logger.Warning("Artist directory [{Directory}] does not exist for artist [{ArtistId}].", artistDirectory.FullName(), artistId);
+                return new MelodeeModels.ImageBytesAndEtag(null, badEtag);
+            }
+
+            var artistImages = artistDirectory.AllFileImageTypeFileInfos().ToArray();
+            var imageFile = artistImages
+                .FirstOrDefault(x => x.Name.Contains($"-{sizeValue}", StringComparison.OrdinalIgnoreCase) ||
+                                     x.Name.Contains($"-{sizeValue}", StringComparison.OrdinalIgnoreCase)) ?? artistImages.OrderBy(x => x.Name).FirstOrDefault();
+
+            if (imageFile is not { Exists: true })
+            {
+                Logger.Warning("No image found for artist [{ArtistId}] with size [{Size}].", artistId, sizeValue);
+                return new MelodeeModels.ImageBytesAndEtag(null, badEtag);
+            }
+
+            var imageBytes = await File.ReadAllBytesAsync(imageFile.FullName, cancellationToken).ConfigureAwait(false);
+            return new MelodeeModels.ImageBytesAndEtag(imageBytes, (artist.Data.LastUpdatedAt ?? artist.Data.CreatedAt).ToEtag());
+        }, cancellationToken, configuration.CacheDuration(),Artist.CacheRegion);
     }
 }

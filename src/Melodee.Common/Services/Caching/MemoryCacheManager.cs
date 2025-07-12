@@ -66,7 +66,8 @@ public sealed class MemoryCacheManager(ILogger logger, TimeSpan defaultTimeSpan,
         return SafeParser.ChangeType<TOut>(rawValue);
     }
 
-    public override async Task<TOut> GetAsync<TOut>(string key,
+    public override async Task<TOut> GetAsync<TOut>(
+        string key,
         Func<Task<TOut>> getItem,
         CancellationToken token,
         TimeSpan? duration = null,

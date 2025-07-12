@@ -1,6 +1,7 @@
 using Ardalis.GuardClauses;
 using Dapper;
 using Melodee.Common.Configuration;
+using Melodee.Common.Constants;
 using Melodee.Common.Data;
 using Melodee.Common.Data.Models;
 using Melodee.Common.Data.Models.Extensions;
@@ -35,6 +36,7 @@ public class AlbumService(
     private const string CacheKeyDetailByNameNormalizedTemplate = "urn:album:namenormalized:{0}";
     private const string CacheKeyDetailByMusicBrainzIdTemplate = "urn:album:musicbrainzid:{0}";
     private const string CacheKeyDetailTemplate = "urn:album:{0}";
+    private const string CacheKeyAlbumImageBytesAndEtagTemplate = "urn:album:imagebytesandetag:{0}:{1}";
 
     public async Task ClearCacheForArtist(int artistId, CancellationToken cancellationToken = default)
     {
@@ -397,12 +399,12 @@ public class AlbumService(
         CacheManager.Remove(CacheKeyDetailTemplate.FormatSmart(album.Id));
         if (album.MusicBrainzId != null)
         {
-            CacheManager.Remove(
-                CacheKeyDetailByMusicBrainzIdTemplate.FormatSmart(album.MusicBrainzId.Value.ToString()));
+            CacheManager.Remove(CacheKeyDetailByMusicBrainzIdTemplate.FormatSmart(album.MusicBrainzId.Value.ToString()));
         }
     }
 
-    public async Task<MelodeeModels.OperationResult<bool>> UpdateAsync(Album album,
+    public async Task<MelodeeModels.OperationResult<bool>> UpdateAsync(
+        Album album,
         CancellationToken cancellationToken = default)
     {
         Guard.Against.Null(album, nameof(album));
@@ -419,8 +421,7 @@ public class AlbumService(
         }
 
         bool result;
-        await using (var scopedContext =
-                     await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             var dbDetail = await scopedContext
                 .Albums
@@ -704,5 +705,47 @@ public class AlbumService(
         }
 
         return await GetAsync(album.Id, cancellationToken);
+    }
+
+    public async Task<MelodeeModels.ImageBytesAndEtag> GetAlbumImageBytesAndEtagAsync(Guid? apiKey, string? size = null, CancellationToken cancellationToken = default)
+    {
+        Guard.Against.Null(apiKey, nameof(apiKey));
+        Guard.Against.Expression(x => x == Guid.Empty, apiKey!.Value, nameof(apiKey));
+
+        var configuration = await configurationFactory.GetConfigurationAsync(cancellationToken).ConfigureAwait(false);
+        var album = await GetByApiKeyAsync(apiKey.Value, cancellationToken).ConfigureAwait(false);
+        if (!album.IsSuccess || album.Data == null)
+        {
+            return new MelodeeModels.ImageBytesAndEtag(null, null);
+        }
+
+        var albumId = album.Data.Id;
+        var cacheKey = CacheKeyAlbumImageBytesAndEtagTemplate.FormatSmart(albumId, size ?? ImageSizeRegistry.Large);
+        return await CacheManager.GetAsync(cacheKey, async () =>
+        {
+            var badEtag = Instant.MinValue.ToEtag();
+            var sizeValue = size ?? ImageSizeRegistry.Large;
+
+            var albumDirectory = album.Data.ToFileSystemDirectoryInfo();
+            if (!albumDirectory.Exists())
+            {
+                Logger.Warning("Album directory [{Directory}] does not exist for album [{AlbumId}].", albumDirectory.FullName(), albumId);
+                return new MelodeeModels.ImageBytesAndEtag(null, badEtag);
+            }
+
+            var albumImages = albumDirectory.AllFileImageTypeFileInfos().ToArray();
+            var imageFile = albumImages
+                .FirstOrDefault(x => x.Name.Contains($"-{sizeValue}", StringComparison.OrdinalIgnoreCase) ||
+                                     x.Name.Contains($"-{sizeValue}", StringComparison.OrdinalIgnoreCase)) ?? albumImages.OrderBy(x => x.Name).FirstOrDefault();
+
+            if (imageFile is not { Exists: true })
+            {
+                Logger.Warning("No image found for album [{ArtistId}] with size [{Size}].", albumId, sizeValue);
+                return new MelodeeModels.ImageBytesAndEtag(null, badEtag);
+            }
+
+            var imageBytes = await File.ReadAllBytesAsync(imageFile.FullName, cancellationToken).ConfigureAwait(false);
+            return new MelodeeModels.ImageBytesAndEtag(imageBytes, (album.Data.LastUpdatedAt ?? album.Data.CreatedAt).ToEtag());
+        }, cancellationToken, configuration.CacheDuration(),Artist.CacheRegion);
     }
 }

@@ -9,6 +9,7 @@ public static class SettingRegistry
     public const string ConversionVbrLevel = "conversion.vbrLevel";
     public const string DefaultsBatchSize = "defaults.batchSize";
     public const string DefaultsPageSize = "defaults.pagesize";
+    public const string DefaultCacheDuration = "defaults.cacheDuration";
     public const string DefaultsDashboardLatestPageSize = "defaults.dashboard.latestPageSize";
     public const string EncryptionPrivateKey = "encryption.privateKey";
     public const string FilteringLessThanDuration = "filtering.lessThanDuration";

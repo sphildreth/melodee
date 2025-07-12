@@ -327,8 +327,7 @@ public abstract class ServiceBase
     protected async Task<DatabaseDirectoryInfo?> DatabaseArtistInfoForArtistApiKey(Guid apiKeyId, int userId,
         CancellationToken cancellationToken = default)
     {
-        await using (var scopedContext =
-                     await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             var dbConn = scopedContext.Database.GetDbConnection();
             var sql = """

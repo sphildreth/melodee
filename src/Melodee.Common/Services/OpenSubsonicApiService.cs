@@ -1400,43 +1400,9 @@ public class OpenSubsonicApiService(
 
                     if (IsApiIdForArtist(apiId))
                     {
-                        var artistInfo =
-                            await DatabaseArtistInfoForArtistApiKey(apiKey.Value, authResponse.UserInfo.Id,
-                                cancellationToken).ConfigureAwait(false);
-                        if (artistInfo?.Directory != null)
-                        {
-                            var artistImageForRequestSize =
-                                Path.Combine(artistInfo.Directory, $"_i-01-Artist-{sizeValue}.jpg");
-                            if (File.Exists(artistImageForRequestSize))
-                            {
-                                result = await File.ReadAllBytesAsync(artistImageForRequestSize, cancellationToken)
-                                    .ConfigureAwait(false);
-                                eTag = (artistInfo.LastUpdatedAt ?? artistInfo.CreatedAt).ToEtag();
-                                doCheckResize = false;
-                            }
-                            else
-                            {
-                                var artistDirectoryInfo = new FileSystemDirectoryInfo
-                                {
-                                    Path = artistInfo.Directory,
-                                    Name = artistInfo.Directory
-                                };
-                                var firstArtistImage = artistDirectoryInfo.AllFileImageTypeFileInfos()
-                                    .OrderBy(x => x.Name).FirstOrDefault();
-                                if (firstArtistImage != null)
-                                {
-                                    result = await File.ReadAllBytesAsync(firstArtistImage.FullName, cancellationToken)
-                                        .ConfigureAwait(false);
-                                    eTag = (artistInfo.LastUpdatedAt ?? artistInfo.CreatedAt).ToEtag();
-                                }
-                            }
-                        }
-
-                        if (result == null)
-                        {
-                            result = defaultImages.ArtistBytes;
-                            eTag = badEtag;
-                        }
+                        var artistImageBytesAndEtag = await artistService.GetArtistImageBytesAndEtagAsync(apiKey, size, cancellationToken);
+                        result = artistImageBytesAndEtag.Bytes;
+                        eTag = artistImageBytesAndEtag.Etag ?? badEtag;
                     }
                     else if (IsApiIdForDynamicPlaylist(apiId))
                     {
@@ -1508,57 +1474,9 @@ public class OpenSubsonicApiService(
                                 apiKey = songInfo.AlbumApiKey;
                             }
                         }
-
-                        var albumResponse = await albumService.GetByApiKeyAsync(apiKey.Value, cancellationToken);
-                        if (albumResponse.IsSuccess)
-                        {
-                            var sql = """
-                                      select l."Path" || aa."Directory" || a."Directory"
-                                      from "Albums" a
-                                      join "Artists" aa on (aa."Id" = a."ArtistId")
-                                      join "Libraries" l on (l."Id" = aa."LibraryId")
-                                      where a."ApiKey" = '{0}'
-                                      limit 1;
-                                      """;
-                            await using (var scopedContext = await ContextFactory
-                                             .CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
-                            {
-                                var dbConn = scopedContext.Database.GetDbConnection();
-                                var pathToAlbum =
-                                    dbConn.ExecuteScalar<string>(sql.FormatSmart(apiKey.Value.ToString())) ??
-                                    string.Empty;
-                                var albumDirInfo = pathToAlbum.ToFileSystemDirectoryInfo();
-
-                                var albumImageForRequestSize =
-                                    Path.Combine(pathToAlbum, $"_i-01-Front-{sizeValue}.jpg");
-                                if (File.Exists(albumImageForRequestSize))
-                                {
-                                    result = await File.ReadAllBytesAsync(albumImageForRequestSize, cancellationToken)
-                                        .ConfigureAwait(false);
-                                    eTag = (albumResponse.Data!.LastUpdatedAt ?? albumResponse.Data!.CreatedAt)
-                                        .ToEtag();
-                                    doCheckResize = false;
-                                }
-                                else
-                                {
-                                    var firstFrontImage = albumDirInfo.AllFileImageTypeFileInfos().OrderBy(x => x.Name)
-                                        .FirstOrDefault();
-                                    if (firstFrontImage != null)
-                                    {
-                                        result = await File
-                                            .ReadAllBytesAsync(firstFrontImage.FullName, cancellationToken)
-                                            .ConfigureAwait(false);
-                                        eTag = firstFrontImage.LastWriteTimeUtc.Ticks.ToString();
-                                    }
-                                }
-                            }
-                        }
-
-                        if (result == null)
-                        {
-                            result = defaultImages.AlbumCoverBytes;
-                            eTag = badEtag;
-                        }
+                        var albumImageBytesAndEtag = await albumService.GetAlbumImageBytesAndEtagAsync(apiKey, size, cancellationToken);
+                        result = albumImageBytesAndEtag.Bytes;
+                        eTag = albumImageBytesAndEtag.Etag ?? badEtag;
                     }
 
                     if (result != null && !isForPlaylist && doCheckResize)
@@ -3844,5 +3762,5 @@ public class OpenSubsonicApiService(
         };
     }
 
-    private record ImageBytesAndEtag(byte[]? Bytes, string? Etag);
+
 }

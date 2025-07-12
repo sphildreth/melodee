@@ -253,11 +253,11 @@
                 </RadzenPanel>
             </RadzenStack>
         </RadzenColumn>
-        <RadzenColumn Size="8" SizeMD="9">
+        <RadzenColumn Size="8" SizeMD="10">
             @if (_showItem == ShowItem.Overview)
             {
                 <RadzenRow class="rz-pb-3">
-                    <RadzenColumn Size="12" SizeMD="8">
+                    <RadzenColumn Size="12" SizeMD="6" SizeXL="8">
                         <RadzenPanel>
                             <HeaderTemplate>
 
@@ -329,7 +329,7 @@
                             </ChildContent>
                         </RadzenPanel>
                     </RadzenColumn>
-                    <RadzenColumn Size="12" SizeMD="4">
+                    <RadzenColumn Size="12" SizeMD="6" SizeXL="4">
                         <RadzenStack orientation="Orientation.Vertical">
                             @if (_artistImagesInByteBase64.Length < 2)
                             {

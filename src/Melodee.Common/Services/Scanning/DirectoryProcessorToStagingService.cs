@@ -766,7 +766,7 @@ public sealed class DirectoryProcessorToStagingService(
                 if (filesToCopy.Count > 0)
                 {
                     using (Operation.At(LogEventLevel.Debug)
-                        .Time("Copying [{FileCount}] files for album [{AlbumName}]", filesToCopy.Count, album.AlbumTitle()))
+                        .Time("Copying [{FileCount}] files for album [{AlbumName}]", filesToCopy.Count, album.AlbumTitle() ?? string.Empty))
                     {
                         var copiedCount = await OptimizedFileOperations.CopyFilesAsync(
                             filesToCopy, 
@@ -775,7 +775,7 @@ public sealed class DirectoryProcessorToStagingService(
                             cancellationToken).ConfigureAwait(false);
                         
                         LogAndRaiseEvent(LogEventLevel.Debug, "Copied [{0}] files for album [{1}]", null, 
-                            copiedCount, album.AlbumTitle());
+                            copiedCount, album.AlbumTitle() ?? string.Empty);
                     }
                 }
 

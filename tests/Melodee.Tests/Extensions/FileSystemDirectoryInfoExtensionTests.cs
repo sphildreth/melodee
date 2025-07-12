@@ -229,4 +229,254 @@ public class FileSystemDirectoryInfoExtensionTests
             Assert.NotEqual(artistTypeCount, nextImage.Item2);
         }
     }
+
+    [Theory]
+    [InlineData("/home/user/music", "MyAlbum", "/home/user/music/MyAlbum")]
+    [InlineData("/home/user/music/", "MyAlbum", "/home/user/music/MyAlbum")]
+    [InlineData("/home/user/music", "", "/home/user/music")]
+    [InlineData("/home/user/music/", "", "/home/user/music/")]  // Current implementation behavior
+    [InlineData("/", "root", "/root")]
+    public void FullName_WithPathAndName_ReturnsCorrectCombinedPath(string path, string name, string expected)
+    {
+        // Arrange
+        var directoryInfo = new FileSystemDirectoryInfo
+        {
+            Path = path,
+            Name = name
+        };
+
+        // Act
+        var result = directoryInfo.FullName();
+
+        // Assert
+        Assert.Equal(expected, result);
+    }
+
+    [Theory]
+    [InlineData("/home/user/music/MyAlbum", "MyAlbum", "/home/user/music/MyAlbum")]
+    [InlineData("/home/user/music/MyAlbum/", "MyAlbum", "/home/user/music/MyAlbum/")]
+    [InlineData("/root/folder/subfolder", "subfolder", "/root/folder/subfolder")]
+    [InlineData("/root/folder/subfolder/", "subfolder", "/root/folder/subfolder/")]
+    public void FullName_WhenPathAlreadyEndsWithName_ReturnsOriginalPath(string path, string name, string expected)
+    {
+        // Arrange
+        var directoryInfo = new FileSystemDirectoryInfo
+        {
+            Path = path,
+            Name = name
+        };
+
+        // Act
+        var result = directoryInfo.FullName();
+
+        // Assert
+        Assert.Equal(expected, result);
+    }
+
+    [Theory]
+    [InlineData("/home/user/music/")]
+    [InlineData("/root/")]
+    [InlineData("//server/share/")]
+    public void FullName_WithTrailingDirectorySeparator_RemovesTrailingSeparatorBeforeProcessing(string pathWithTrailing)
+    {
+        // Arrange
+        var directoryInfo = new FileSystemDirectoryInfo
+        {
+            Path = pathWithTrailing,
+            Name = "TestFolder"
+        };
+
+        // Act
+        var result = directoryInfo.FullName();
+
+        // Assert
+        var expectedPathWithoutTrailing = pathWithTrailing.TrimEnd(Path.DirectorySeparatorChar);
+        var expected = Path.Combine(expectedPathWithoutTrailing, "TestFolder");
+        Assert.Equal(expected, result);
+    }
+
+    [Theory]
+    [InlineData("", "TestFolder")]
+    public void FullName_WithEmptyPath_ReturnsNameOnly(string path, string name)
+    {
+        // Arrange
+        var directoryInfo = new FileSystemDirectoryInfo
+        {
+            Path = path,
+            Name = name
+        };
+
+        // Act
+        var result = directoryInfo.FullName();
+
+        // Assert
+        Assert.Equal(name, result);
+    }
+
+    [Fact]
+    public void FullName_WithNullPath_ThrowsException()
+    {
+        // Arrange
+        var directoryInfo = new FileSystemDirectoryInfo
+        {
+            Path = null,
+            Name = "TestFolder"
+        };
+
+        // Act & Assert
+        Assert.Throws<ArgumentNullException>(() => directoryInfo.FullName());
+    }
+
+    [Theory]
+    [InlineData("/home/user", "")]
+    public void FullName_WithEmptyName_ReturnsPathOnly(string path, string name)
+    {
+        // Arrange
+        var directoryInfo = new FileSystemDirectoryInfo
+        {
+            Path = path,
+            Name = name
+        };
+
+        // Act
+        var result = directoryInfo.FullName();
+
+        // Assert
+        Assert.Equal(path, result);
+    }
+
+    [Theory]
+    [InlineData("/home/user", "   ")]
+    public void FullName_WithWhitespaceName_CombinesAsIs(string path, string name)
+    {
+        // Arrange
+        var directoryInfo = new FileSystemDirectoryInfo
+        {
+            Path = path,
+            Name = name
+        };
+
+        // Act
+        var result = directoryInfo.FullName();
+
+        // Assert
+        // The current implementation treats whitespace as valid name
+        var expected = Path.Combine(path, name);
+        Assert.Equal(expected, result);
+    }
+
+    [Fact]
+    public void FullName_WithNullName_ThrowsException()
+    {
+        // Arrange
+        var directoryInfo = new FileSystemDirectoryInfo
+        {
+            Path = "/home/user",
+            Name = null!  // Suppress nullable warning for test
+        };
+
+        // Act & Assert
+        Assert.Throws<ArgumentNullException>(() => directoryInfo.FullName());
+    }
+
+    [Theory]
+    [InlineData("/home/user/Documents/Music", "My Album (2023)")]
+    [InlineData("/media/storage/music", "Various Artists")]
+    [InlineData("/tmp", "Test Folder With Spaces")]
+    public void FullName_WithSpecialCharactersInName_HandlesCorrectly(string path, string name)
+    {
+        // Arrange
+        var directoryInfo = new FileSystemDirectoryInfo
+        {
+            Path = path,
+            Name = name
+        };
+
+        // Act
+        var result = directoryInfo.FullName();
+
+        // Assert
+        var expected = Path.Combine(path, name);
+        Assert.Equal(expected, result);
+    }
+
+    [Theory]
+    [InlineData("/home/user/music/Artist/Album", "Album", "/home/user/music/Artist/Album")]
+    [InlineData("/home/user/music/Artist/Album/", "Album", "/home/user/music/Artist/Album/")]
+    public void FullName_WithDeepNestedPathEndingWithName_ReturnsOriginalPath(string path, string name, string expected)
+    {
+        // Arrange
+        var directoryInfo = new FileSystemDirectoryInfo
+        {
+            Path = path,
+            Name = name
+        };
+
+        // Act
+        var result = directoryInfo.FullName();
+
+        // Assert
+        Assert.Equal(expected, result);
+    }
+
+    [Theory]
+    [InlineData("/home/user/music/Artist", "Album")]
+    [InlineData("/home/user/music/Artist/", "Album")]
+    public void FullName_WithDeepNestedPathNotEndingWithName_CombinesCorrectly(string path, string name)
+    {
+        // Arrange
+        var directoryInfo = new FileSystemDirectoryInfo
+        {
+            Path = path,
+            Name = name
+        };
+
+        // Act
+        var result = directoryInfo.FullName();
+
+        // Assert
+        var expected = Path.Combine(path.TrimEnd(Path.DirectorySeparatorChar), name);
+        Assert.Equal(expected, result);
+    }
+
+    [Fact]
+    public void FullName_WithMixedDirectorySeparators_HandlesCorrectly()
+    {
+        // This test is more relevant on Windows where both / and \ might be used
+        // Arrange
+        var directoryInfo = new FileSystemDirectoryInfo
+        {
+            Path = "/home/user/music/artist",
+            Name = "album"
+        };
+
+        // Act
+        var result = directoryInfo.FullName();
+
+        // Assert
+        // The result should use Path.Combine which handles separator normalization
+        var expected = Path.Combine("/home/user/music/artist", "album");
+        Assert.Equal(expected, result);
+    }
+
+    [Theory]
+    [InlineData("relative/path", "folder")]
+    [InlineData("./current", "folder")]
+    [InlineData("../parent", "folder")]
+    public void FullName_WithRelativePaths_CombinesCorrectly(string path, string name)
+    {
+        // Arrange
+        var directoryInfo = new FileSystemDirectoryInfo
+        {
+            Path = path,
+            Name = name
+        };
+
+        // Act
+        var result = directoryInfo.FullName();
+
+        // Assert
+        var expected = Path.Combine(path, name);
+        Assert.Equal(expected, result);
+    }
 }

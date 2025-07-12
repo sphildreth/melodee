@@ -17,6 +17,7 @@ public sealed class Artist : MetaDataModelBase
 {
     public const string ImageType = "Artist";
     public const string PrimaryImageFileName = "01-Band.jpg";
+    public const string CacheRegion = "urn:region:artist";
 
     [MaxLength(MaxLengthDefinitions.MaxGeneralInputLength)]
     [Required]

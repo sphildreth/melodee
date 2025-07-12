@@ -369,12 +369,12 @@ public static class FileSystemDirectoryInfoExtensions
     public static IEnumerable<FileInfo> AllFileInfos(this FileSystemDirectoryInfo fileSystemDirectoryInfo,
         string? searchPattern = null, SearchOption? searchOption = null)
     {
-        var dirInfo = new DirectoryInfo(fileSystemDirectoryInfo.Path);
+        var dirInfo = new DirectoryInfo(fileSystemDirectoryInfo.FullName());
         if (!dirInfo.Exists)
         {
+            Trace.WriteLine($"Directory does not exist [{fileSystemDirectoryInfo.Path}]", TraceLevel.Warning.ToString());
             return [];
         }
-
         return dirInfo.EnumerateFiles(searchPattern ?? "*.*", searchOption ?? SearchOption.TopDirectoryOnly);
     }
 

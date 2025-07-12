@@ -100,7 +100,7 @@ public static class ArtistExtensions
     {
         return new FileSystemDirectoryInfo
         {
-            Path = Path.Combine(libraryPath ?? artist.Library.Path, artist.Directory),
+            Path = Path.Combine(libraryPath ?? artist.Library.Path),
             Name = artist.Directory
         };
     }
