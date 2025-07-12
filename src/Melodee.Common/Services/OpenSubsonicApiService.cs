@@ -1401,7 +1401,7 @@ public class OpenSubsonicApiService(
                     if (IsApiIdForArtist(apiId))
                     {
                         var artistImageBytesAndEtag = await artistService.GetArtistImageBytesAndEtagAsync(apiKey, size, cancellationToken);
-                        result = artistImageBytesAndEtag.Bytes;
+                        result = artistImageBytesAndEtag.Bytes ?? defaultImages.ArtistBytes;
                         eTag = artistImageBytesAndEtag.Etag ?? badEtag;
                     }
                     else if (IsApiIdForDynamicPlaylist(apiId))
@@ -1475,7 +1475,7 @@ public class OpenSubsonicApiService(
                             }
                         }
                         var albumImageBytesAndEtag = await albumService.GetAlbumImageBytesAndEtagAsync(apiKey, size, cancellationToken);
-                        result = albumImageBytesAndEtag.Bytes;
+                        result = albumImageBytesAndEtag.Bytes ?? defaultImages.AlbumCoverBytes;
                         eTag = albumImageBytesAndEtag.Etag ?? badEtag;
                     }
 

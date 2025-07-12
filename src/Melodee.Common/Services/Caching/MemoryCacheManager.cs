@@ -8,6 +8,8 @@ using Melodee.Common.Models;
 using Melodee.Common.Utility;
 using System.Reflection;
 using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace Melodee.Common.Services.Caching;
 
@@ -408,9 +410,33 @@ public sealed class MemoryCacheManager(ILogger logger, TimeSpan defaultTimeSpan,
                 };
             }
 
-            // For complex objects, try serialization to get approximate size
-            var serialized = Serializer.Serialize(obj);
-            return string.IsNullOrEmpty(serialized) ? 0 : Encoding.UTF8.GetByteCount(serialized);
+            // For complex objects, try serialization with cycle handling
+            try
+            {
+                var options = new JsonSerializerOptions
+                {
+                    ReferenceHandler = ReferenceHandler.IgnoreCycles,
+                    MaxDepth = 32, // Reduced depth to avoid deep recursion
+                    DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+                };
+                
+                var serialized = JsonSerializer.Serialize(obj, options);
+                return string.IsNullOrEmpty(serialized) ? EstimateObjectSize(obj) : Encoding.UTF8.GetByteCount(serialized);
+            }
+            catch (JsonException)
+            {
+                // If JSON serialization fails due to cycles or other issues, fall back to our custom serializer
+                try
+                {
+                    var serialized = Serializer.Serialize(obj);
+                    return string.IsNullOrEmpty(serialized) ? EstimateObjectSize(obj) : Encoding.UTF8.GetByteCount(serialized);
+                }
+                catch
+                {
+                    // If both serializers fail, use estimation
+                    return EstimateObjectSize(obj);
+                }
+            }
         }
         catch (Exception ex)
         {
