@@ -1,19 +1,19 @@
 using System.Collections.Concurrent;
-using System.IO.Hashing;
+using System.Runtime.CompilerServices;
 using Serilog;
 
 namespace Melodee.Common.Services.Scanning;
 
 /// <summary>
-/// Optimized file operations for high-performance directory processing
+///     Optimized file operations for high-performance directory processing
 /// </summary>
 public static class OptimizedFileOperations
 {
     private static readonly SemaphoreSlim FileOperationSemaphore = new(Environment.ProcessorCount * 2);
     private static readonly ConcurrentDictionary<string, DateTime> FileHashCache = new();
-    
+
     /// <summary>
-    /// Asynchronously copy files in batches with optimized performance
+    ///     Asynchronously copy files in batches with optimized performance
     /// </summary>
     public static async Task<int> CopyFilesAsync(
         IEnumerable<(string sourcePath, string destinationPath)> filePairs,
@@ -23,15 +23,17 @@ public static class OptimizedFileOperations
     {
         var copiedCount = 0;
         var tasks = new List<Task>();
-        
+
         foreach (var (sourcePath, destinationPath) in filePairs)
         {
             if (cancellationToken.IsCancellationRequested)
+            {
                 break;
-                
+            }
+
             var task = CopyFileWithThrottleAsync(sourcePath, destinationPath, deleteOriginal, bufferSize, cancellationToken);
             tasks.Add(task);
-            
+
             // Process in batches to avoid overwhelming the system
             if (tasks.Count >= Environment.ProcessorCount)
             {
@@ -40,23 +42,23 @@ public static class OptimizedFileOperations
                 tasks.Clear();
             }
         }
-        
+
         // Process remaining tasks
         if (tasks.Count > 0)
         {
             await Task.WhenAll(tasks).ConfigureAwait(false);
             copiedCount += tasks.Count;
         }
-        
+
         return copiedCount;
     }
-    
+
     /// <summary>
-    /// Copy a single file with throttling and optimized buffering
+    ///     Copy a single file with throttling and optimized buffering
     /// </summary>
     private static async Task CopyFileWithThrottleAsync(
-        string sourcePath, 
-        string destinationPath, 
+        string sourcePath,
+        string destinationPath,
         bool deleteOriginal,
         int bufferSize,
         CancellationToken cancellationToken)
@@ -65,7 +67,7 @@ public static class OptimizedFileOperations
         try
         {
             await CopyFileOptimizedAsync(sourcePath, destinationPath, bufferSize, cancellationToken).ConfigureAwait(false);
-            
+
             if (deleteOriginal)
             {
                 try
@@ -83,13 +85,13 @@ public static class OptimizedFileOperations
             FileOperationSemaphore.Release();
         }
     }
-    
+
     /// <summary>
-    /// Optimized file copy using streams with large buffers
+    ///     Optimized file copy using streams with large buffers
     /// </summary>
     private static async Task CopyFileOptimizedAsync(
-        string sourcePath, 
-        string destinationPath, 
+        string sourcePath,
+        string destinationPath,
         int bufferSize,
         CancellationToken cancellationToken)
     {
@@ -99,36 +101,40 @@ public static class OptimizedFileOperations
         {
             Directory.CreateDirectory(destinationDir);
         }
-        
+
         // Skip if files are identical
         if (string.Equals(sourcePath, destinationPath, StringComparison.OrdinalIgnoreCase))
+        {
             return;
-            
+        }
+
         var sourceInfo = new FileInfo(sourcePath);
         if (!sourceInfo.Exists)
+        {
             return;
-            
+        }
+
         // Check if destination exists and has same size/date (quick duplicate check)
         var destInfo = new FileInfo(destinationPath);
-        if (destInfo.Exists && destInfo.Length == sourceInfo.Length && 
+        if (destInfo.Exists && destInfo.Length == sourceInfo.Length &&
             Math.Abs((destInfo.LastWriteTime - sourceInfo.LastWriteTime).TotalSeconds) < 2)
         {
             return; // Files appear to be identical
         }
-        
+
         // Use optimized async file copy
         await using var sourceStream = new FileStream(sourcePath, FileMode.Open, FileAccess.Read, FileShare.Read, bufferSize, FileOptions.SequentialScan);
         await using var destStream = new FileStream(destinationPath, FileMode.Create, FileAccess.Write, FileShare.None, bufferSize, FileOptions.SequentialScan);
-        
+
         await sourceStream.CopyToAsync(destStream, bufferSize, cancellationToken).ConfigureAwait(false);
-        
+
         // Preserve timestamps
         File.SetLastWriteTime(destinationPath, sourceInfo.LastWriteTime);
         File.SetCreationTime(destinationPath, sourceInfo.CreationTime);
     }
-    
+
     /// <summary>
-    /// Batch delete files with parallel processing
+    ///     Batch delete files with parallel processing
     /// </summary>
     public static async Task<int> DeleteFilesAsync(
         IEnumerable<string> filePaths,
@@ -140,7 +146,7 @@ public static class OptimizedFileOperations
             CancellationToken = cancellationToken,
             MaxDegreeOfParallelism = Environment.ProcessorCount / 2 // I/O bound, use fewer threads
         };
-        
+
         await Task.Run(() =>
         {
             Parallel.ForEach(filePaths, parallelOptions, filePath =>
@@ -159,45 +165,51 @@ public static class OptimizedFileOperations
                 }
             });
         }, cancellationToken).ConfigureAwait(false);
-        
+
         return deletedCount;
     }
-    
+
     /// <summary>
-    /// Check if file has changed using cached hash comparison
+    ///     Check if file has changed using cached hash comparison
     /// </summary>
     public static bool HasFileChanged(string filePath, DateTime? lastProcessDate = null)
     {
         if (!File.Exists(filePath))
+        {
             return false;
-            
+        }
+
         var fileInfo = new FileInfo(filePath);
-        
+
         // Quick date check first
         if (lastProcessDate.HasValue && fileInfo.LastWriteTime <= lastProcessDate.Value)
+        {
             return false;
-            
+        }
+
         // Use cached hash for more accurate comparison
         var cacheKey = $"{filePath}:{fileInfo.Length}:{fileInfo.LastWriteTime:yyyy-MM-dd HH:mm:ss}";
-        
+
         return !FileHashCache.ContainsKey(cacheKey);
     }
-    
+
     /// <summary>
-    /// Update file hash cache
+    ///     Update file hash cache
     /// </summary>
     public static void UpdateFileHashCache(string filePath)
     {
         try
         {
             if (!File.Exists(filePath))
+            {
                 return;
-                
+            }
+
             var fileInfo = new FileInfo(filePath);
             var cacheKey = $"{filePath}:{fileInfo.Length}:{fileInfo.LastWriteTime:yyyy-MM-dd HH:mm:ss}";
-            
+
             FileHashCache.TryAdd(cacheKey, DateTime.UtcNow);
-            
+
             // Clean old cache entries periodically
             if (FileHashCache.Count > 10000)
             {
@@ -206,7 +218,7 @@ public static class OptimizedFileOperations
                     .Where(kvp => kvp.Value < cutoff)
                     .Select(kvp => kvp.Key)
                     .ToList();
-                    
+
                 foreach (var key in keysToRemove)
                 {
                     FileHashCache.TryRemove(key, out _);
@@ -218,9 +230,9 @@ public static class OptimizedFileOperations
             Log.Warning(ex, "Failed to update file hash cache for: {FilePath}", filePath);
         }
     }
-    
+
     /// <summary>
-    /// Efficiently enumerate files with lazy loading
+    ///     Efficiently enumerate files with lazy loading
     /// </summary>
     public static IAsyncEnumerable<FileInfo> EnumerateFilesAsync(
         string directoryPath,
@@ -230,29 +242,31 @@ public static class OptimizedFileOperations
     {
         return EnumerateFilesAsyncImpl(directoryPath, searchPattern, searchOption, cancellationToken);
     }
-    
+
     private static async IAsyncEnumerable<FileInfo> EnumerateFilesAsyncImpl(
         string directoryPath,
         string searchPattern,
         SearchOption searchOption,
-        [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken)
+        [EnumeratorCancellation] CancellationToken cancellationToken)
     {
         if (!Directory.Exists(directoryPath))
+        {
             yield break;
-            
+        }
+
         await Task.Yield(); // Allow other operations to proceed
-        
+
         var enumerationOptions = new EnumerationOptions
         {
             RecurseSubdirectories = searchOption == SearchOption.AllDirectories,
             IgnoreInaccessible = true,
             ReturnSpecialDirectories = false
         };
-        
+
         foreach (var filePath in Directory.EnumerateFiles(directoryPath, searchPattern, enumerationOptions))
         {
             cancellationToken.ThrowIfCancellationRequested();
-            
+
             FileInfo fileInfo;
             try
             {
@@ -263,9 +277,9 @@ public static class OptimizedFileOperations
                 Log.Warning(ex, "Failed to get file info for: {FilePath}", filePath);
                 continue;
             }
-            
+
             yield return fileInfo;
-            
+
             // Yield periodically to allow other operations
             if (Random.Shared.Next(100) == 0)
             {
@@ -273,9 +287,9 @@ public static class OptimizedFileOperations
             }
         }
     }
-    
+
     /// <summary>
-    /// Write text to file asynchronously with retry logic
+    ///     Write text to file asynchronously with retry logic
     /// </summary>
     public static async Task WriteTextFileAsync(
         string filePath,

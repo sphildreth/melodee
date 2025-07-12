@@ -49,6 +49,7 @@ public sealed class DirectoryProcessorToStagingService(
     IHttpClientFactory httpClientFactory)
     : ServiceBase(logger, cacheManager, contextFactory), IDisposable
 {
+    private readonly SemaphoreSlim _processingThrottle = new(Environment.ProcessorCount);
     private IAlbumNamesInDirectoryPlugin _albumNamesInDirectoryPlugin = null!;
     private IAlbumValidator _albumValidator = new AlbumValidator(new MelodeeConfiguration([]));
     private IMelodeeConfiguration _configuration = new MelodeeConfiguration([]);
@@ -83,7 +84,10 @@ public sealed class DirectoryProcessorToStagingService(
 
     private bool _stopProcessingTriggered;
 
-    private readonly SemaphoreSlim _processingThrottle = new(Environment.ProcessorCount);
+    public void Dispose()
+    {
+        _processingThrottle.Dispose();
+    }
 
     public async Task InitializeAsync(IMelodeeConfiguration? configuration = null, CancellationToken token = default)
     {
@@ -313,7 +317,7 @@ public sealed class DirectoryProcessorToStagingService(
             {
                 // Check for cancellation before acquiring semaphore
                 ct.ThrowIfCancellationRequested();
-                
+
                 await _processingThrottle.WaitAsync(ct);
                 try
                 {
@@ -427,11 +431,6 @@ public sealed class DirectoryProcessorToStagingService(
         OnProcessingEvent?.Invoke(this, exception?.ToString() ?? eventMessage);
     }
 
-    public void Dispose()
-    {
-        _processingThrottle.Dispose();
-    }
-
     private async Task ProcessSingleDirectoryAsync(
         FileSystemDirectoryInfo directoryInfoToProcess,
         ConcurrentBag<string> processingMessages,
@@ -444,12 +443,12 @@ public sealed class DirectoryProcessorToStagingService(
         // Add performance monitoring
         using var operation = Operation.At(LogEventLevel.Debug)
             .Time("ProcessSingleDirectoryAsync for directory [{DirectoryName}]", directoryInfoToProcess.Name);
-        
+
         Trace.WriteLine($"DirectoryInfoToProcess: [{directoryInfoToProcess}]");
         try
         {
             var dontDeleteExistingMelodeeFiles = _configuration.GetValue<bool>(SettingRegistry.ProcessingDontDeleteExistingMelodeeDataFiles);
-            
+
             if (!dontDeleteExistingMelodeeFiles)
             {
                 // Optimized batch delete operations
@@ -470,10 +469,13 @@ public sealed class DirectoryProcessorToStagingService(
             // Use optimized file enumeration for memory efficiency
             var fileCount = 0;
             await foreach (var fileInfo in OptimizedFileOperations.EnumerateFilesAsync(
-                directoryInfoToProcess.Path, "*", SearchOption.TopDirectoryOnly, cancellationToken))
+                               directoryInfoToProcess.Path, "*", SearchOption.TopDirectoryOnly, cancellationToken))
             {
                 fileCount++;
-                if (fileCount > 10000) break; // Prevent counting very large directories
+                if (fileCount > 10000)
+                {
+                    break; // Prevent counting very large directories
+                }
             }
 
             LogAndRaiseEvent(LogEventLevel.Debug, "\u251c Processing [{0}] Number of files to process [{1}]", null,
@@ -500,6 +502,7 @@ public sealed class DirectoryProcessorToStagingService(
                             processingErrors.Add(error);
                         }
                     }
+
                     if (pluginResult.Messages != null)
                     {
                         foreach (var message in pluginResult.Messages)
@@ -507,6 +510,7 @@ public sealed class DirectoryProcessorToStagingService(
                             processingMessages.Add(message);
                         }
                     }
+
                     if (plugin.StopProcessing)
                     {
                         Logger.Debug("Received stop processing from [{PluginName}] on Directory [{DirectoryName}]",
@@ -528,7 +532,7 @@ public sealed class DirectoryProcessorToStagingService(
             // Run Enabled Conversion scripts on each file in directory
             // e.g. Convert FLAC to MP3, Convert non JPEG files into JPEGs, etc.
             await foreach (var fileInfo in OptimizedFileOperations.EnumerateFilesAsync(
-                directoryInfoToProcess.Path, "*", SearchOption.TopDirectoryOnly, cancellationToken))
+                               directoryInfoToProcess.Path, "*", SearchOption.TopDirectoryOnly, cancellationToken))
             {
                 if (cancellationToken.IsCancellationRequested || _stopProcessingTriggered)
                 {
@@ -557,6 +561,7 @@ public sealed class DirectoryProcessorToStagingService(
                                     processingErrors.Add(error);
                                 }
                             }
+
                             if (pluginResult.Messages != null)
                             {
                                 foreach (var message in pluginResult.Messages)
@@ -711,7 +716,7 @@ public sealed class DirectoryProcessorToStagingService(
                 // Prepare image file operations
                 var albumImagesToMove = album.Images?.Where(x => x.FileInfo?.OriginalName != null) ?? [];
                 var artistImageToMove = album.Artist.Images?.Where(x => x.FileInfo?.OriginalName != null) ?? [];
-                
+
                 foreach (var image in albumImagesToMove.Concat(artistImageToMove).OrderBy(x => x.SortOrder))
                 {
                     var oldImageFileName = Path.Combine((image.DirectoryInfo ?? album.Directory).FullName(),
@@ -766,15 +771,15 @@ public sealed class DirectoryProcessorToStagingService(
                 if (filesToCopy.Count > 0)
                 {
                     using (Operation.At(LogEventLevel.Debug)
-                        .Time("Copying [{FileCount}] files for album [{AlbumName}]", filesToCopy.Count, album.AlbumTitle() ?? string.Empty))
+                               .Time("Copying [{FileCount}] files for album [{AlbumName}]", filesToCopy.Count, album.AlbumTitle() ?? string.Empty))
                     {
                         var copiedCount = await OptimizedFileOperations.CopyFilesAsync(
-                            filesToCopy, 
-                            deleteOriginal, 
-                            bufferSize: 2 * 1024 * 1024, // 2MB buffer for media files
+                            filesToCopy,
+                            deleteOriginal,
+                            2 * 1024 * 1024, // 2MB buffer for media files
                             cancellationToken).ConfigureAwait(false);
-                        
-                        LogAndRaiseEvent(LogEventLevel.Debug, "Copied [{0}] files for album [{1}]", null, 
+
+                        LogAndRaiseEvent(LogEventLevel.Debug, "Copied [{0}] files for album [{1}]", null,
                             copiedCount, album.AlbumTitle() ?? string.Empty);
                     }
                 }
@@ -999,6 +1004,7 @@ public sealed class DirectoryProcessorToStagingService(
                             artistsIdsSeen.Add(artistId);
                         }
                     }
+
                     albumsIdsSeen.Add(album.ArtistAlbumUniqueId());
                     // ConcurrentBag doesn't have AddRange, so add items individually
                     if (album.Songs != null)

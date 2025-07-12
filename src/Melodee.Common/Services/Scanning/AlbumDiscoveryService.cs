@@ -1,9 +1,11 @@
 using System.Collections.Concurrent;
+using System.Runtime.CompilerServices;
 using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
 using Melodee.Common.Data;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
+using Melodee.Common.Filtering;
 using Melodee.Common.Models;
 using Melodee.Common.Models.Collection;
 using Melodee.Common.Models.Extensions;
@@ -25,11 +27,26 @@ public sealed class AlbumDiscoveryService(
     IDbContextFactory<MelodeeDbContext> contextFactory,
     IMelodeeConfigurationFactory configurationFactory,
     IFileSystemService fileSystemService)
-    : ServiceBase(logger, cacheManager, contextFactory)
+    : ServiceBase(logger, cacheManager, contextFactory), IDisposable
 {
+    private static readonly ParallelOptions DefaultParallelOptions = new()
+    {
+        MaxDegreeOfParallelism = Math.Max(1, Environment.ProcessorCount / 2)
+    };
+
+    private readonly SemaphoreSlim _cacheUpdateSemaphore = new(1, 1);
+
+    // Performance optimizations
+    private readonly ConcurrentDictionary<string, (DateTime LastWriteTime, Album[] Albums)> _directoryCache = new();
     private IAlbumValidator _albumValidator = null!;
     private IMelodeeConfiguration _configuration = new MelodeeConfiguration([]);
     private bool _initialized;
+
+    public void Dispose()
+    {
+        _cacheUpdateSemaphore.Dispose();
+        _directoryCache.Clear();
+    }
 
     public async Task InitializeAsync(IMelodeeConfiguration? configuration = null, CancellationToken token = default)
     {
@@ -76,195 +93,100 @@ public sealed class AlbumDiscoveryService(
         CancellationToken cancellationToken = default)
     {
         CheckInitialized();
+
+        // Early cancellation check
+        if (cancellationToken.IsCancellationRequested)
+        {
+            return new PagedResult<Album>
+            {
+                TotalCount = 0,
+                TotalPages = 0,
+                Data = []
+            };
+        }
+
+        // Use HashSet for O(1) duplicate detection instead of O(n) All() checks
+        var albumIds = new HashSet<Guid>();
         var albums = new List<Album>();
 
         var dataForDirectoryInfoResult =
             await AllMelodeeAlbumDataFilesForDirectoryAsync(fileSystemDirectoryInfo, cancellationToken);
-        if (dataForDirectoryInfoResult.IsSuccess)
+        if (dataForDirectoryInfoResult is { IsSuccess: true, Data: not null })
         {
-            albums.AddRange(dataForDirectoryInfoResult.Data!);
-        }
-
-        foreach (var childDir in fileSystemService.EnumerateDirectories(fileSystemDirectoryInfo.Path, "*.*", SearchOption.AllDirectories))
-        {
-            if (cancellationToken.IsCancellationRequested)
+            foreach (var album in dataForDirectoryInfoResult.Data)
             {
-                break;
-            }
-
-            var dataForChildDirResult = await AllMelodeeAlbumDataFilesForDirectoryAsync(new FileSystemDirectoryInfo
-            {
-                Path = childDir.FullName,
-                Name = childDir.Name
-            }, cancellationToken);
-
-            if (dataForChildDirResult.IsSuccess)
-            {
-                foreach (var r in dataForChildDirResult.Data!)
+                if (albumIds.Add(album.Id))
                 {
-                    if (albums.All(x => x.Id != r.Id))
-                    {
-                        albums.Add(r);
-                    }
+                    albums.Add(album);
                 }
             }
         }
 
-        if (pagedRequest.AlbumResultFilter != AlbumResultFilter.All && albums.Count != 0)
+        // Check cancellation before starting parallel operations
+        if (cancellationToken.IsCancellationRequested)
         {
-            switch (pagedRequest.AlbumResultFilter)
+            return new PagedResult<Album>
             {
-                case AlbumResultFilter.Duplicates:
-                    var duplicates = albums
-                        .GroupBy(x => x.Id)
-                        .Where(x => x.Count() > 1)
-                        .Select(x => x.Key);
-                    albums = albums.Where(x => duplicates.Contains(x.Id)).ToList();
-                    break;
-
-                case AlbumResultFilter.Incomplete:
-                    albums = albums.Where(x => x.Status == AlbumStatus.Invalid).ToList();
-                    break;
-
-                case AlbumResultFilter.LessThanConfiguredSongs:
-                    var filterLessThanSongs =
-                        SafeParser.ToNumber<int>(
-                            _configuration.Configuration[SettingRegistry.FilteringLessThanSongCount]);
-                    albums = albums.Where(x =>
-                        x.Songs?.Count() < filterLessThanSongs || x.SongTotalValue() < filterLessThanSongs).ToList();
-                    break;
-
-                case AlbumResultFilter.NeedsAttention:
-                    albums = albums.Where(x => x.Status == AlbumStatus.Invalid).ToList();
-                    break;
-
-                case AlbumResultFilter.New:
-                    albums = albums.Where(x => x.Status == AlbumStatus.New).ToList();
-                    break;
-
-                case AlbumResultFilter.ReadyToMove:
-                    albums = albums.Where(x => x.Status is AlbumStatus.Ok).ToList();
-                    break;
-
-                case AlbumResultFilter.Selected:
-                    if (pagedRequest.SelectedAlbumIds.Length > 0)
-                    {
-                        albums = albums.Where(x => pagedRequest.SelectedAlbumIds.Contains(x.Id)).ToList();
-                    }
-
-                    break;
-
-                case AlbumResultFilter.LessThanConfiguredDuration:
-                    var filterLessDuration =
-                        SafeParser.ToNumber<int>(
-                            _configuration.Configuration[SettingRegistry.FilteringLessThanDuration]);
-                    albums = albums.Where(x => x.TotalDuration() < filterLessDuration).ToList();
-                    break;
-            }
+                TotalCount = albums.Count,
+                TotalPages = 1,
+                Data = albums.Skip(pagedRequest.SkipValue).Take(pagedRequest.PageSizeValue)
+            };
         }
 
-
-        if (pagedRequest.FilterBy != null)
+        // Use parallel processing for directory enumeration with controlled concurrency
+        var childDirectories = fileSystemService.EnumerateDirectories(fileSystemDirectoryInfo.Path, "*.*", SearchOption.AllDirectories);
+        var parallelOptions = new ParallelOptions
         {
-            foreach (var filterBy in pagedRequest.FilterBy)
+            CancellationToken = cancellationToken,
+            MaxDegreeOfParallelism = Math.Max(1, Environment.ProcessorCount / 4) // Conservative for I/O operations
+        };
+
+        var additionalAlbums = new ConcurrentBag<Album>();
+
+        try
+        {
+            await Parallel.ForEachAsync(childDirectories, parallelOptions, async (childDir, token) =>
             {
-                switch (filterBy.PropertyName)
+                // Check cancellation at start of each iteration
+                if (token.IsCancellationRequested)
                 {
-                    case "ArtistName":
-                        albums = albums.Where(x =>
-                            x.Artist.NameNormalized.Contains(filterBy.Value.ToString()?.ToNormalizedString() ??
-                                                             string.Empty)).ToList();
-                        break;
-
-                    case "AlbumStatus":
-                        var filterStatusValue = SafeParser.ToEnum<AlbumStatus>(filterBy.Value);
-                        albums = albums.Where(x => x.Status == filterStatusValue).ToList();
-                        break;
-
-                    case "NameNormalized":
-                        albums = albums.Where(x =>
-                            (x.AlbumTitle() != null && x.AlbumTitle()!.Contains(
-                                filterBy.Value.ToString() ?? string.Empty,
-                                StringComparison.CurrentCultureIgnoreCase)) ||
-                            x.Artist.Name.Contains(filterBy.Value.ToString() ?? string.Empty,
-                                StringComparison.CurrentCultureIgnoreCase)).ToList();
-                        break;
-
-                    case "ReleaseDate":
-                        var filterYearValue = SafeParser.ToNumber<int>(filterBy.Value);
-                        albums = albums.Where(x => x.AlbumYear() == filterYearValue).ToList();
-                        break;
+                    return;
                 }
+
+                var dataForChildDirResult = await AllMelodeeAlbumDataFilesForDirectoryAsync(new FileSystemDirectoryInfo
+                {
+                    Path = childDir.FullName,
+                    Name = childDir.Name
+                }, token);
+
+                if (dataForChildDirResult is { IsSuccess: true, Data: not null })
+                {
+                    foreach (var album in dataForChildDirResult.Data)
+                    {
+                        additionalAlbums.Add(album);
+                    }
+                }
+            });
+        }
+        catch (OperationCanceledException)
+        {
+            // Handle cancellation gracefully - just continue with what we have
+        }
+
+        // Merge results with efficient duplicate detection
+        foreach (var album in additionalAlbums)
+        {
+            if (albumIds.Add(album.Id))
+            {
+                albums.Add(album);
             }
         }
 
-        switch (pagedRequest.OrderByValue("SortOrder"))
-        {
-            case "\"Artist\" ASC":
-                albums = albums.OrderBy(x => x.Artist.SortName).ToList();
-                break;
+        // Apply filters early to reduce memory pressure
+        albums = ApplyFilters(albums, pagedRequest);
 
-            case "\"Artist\" DESC":
-                albums = albums.OrderByDescending(x => x.Artist.SortName).ToList();
-                break;
-
-            case "\"CreatedAt\" ASC":
-                albums = albums.OrderBy(x => x.Created).ToList();
-                break;
-
-            case "\"CreatedAt\" DESC":
-                albums = albums.OrderByDescending(x => x.Created).ToList();
-                break;
-
-            case "\"Duration\" ASC":
-                albums = albums.OrderBy(x => x.Duration()).ToList();
-                break;
-
-            case "\"Duration\" DESC":
-                albums = albums.OrderByDescending(x => x.Duration()).ToList();
-                break;
-
-            case "\"NeedsAttentionReasonsValue\" ASC":
-                albums = albums.OrderBy(x => x.StatusReasons).ToList();
-                break;
-
-            case "\"NeedsAttentionReasonsValue\" DESC":
-                albums = albums.OrderByDescending(x => x.StatusReasons).ToList();
-                break;
-
-            case "\"Title\" ASC":
-                albums = albums.OrderBy(x => x.AlbumTitle()).ToList();
-                break;
-
-            case "\"Title\" DESC":
-                albums = albums.OrderByDescending(x => x.AlbumTitle()).ToList();
-                break;
-
-            case "\"Year\" ASC":
-                albums = albums.OrderBy(x => x.AlbumYear()).ToList();
-                break;
-
-            case "\"Year\" DESC":
-                albums = albums.OrderByDescending(x => x.AlbumYear()).ToList();
-                break;
-
-            case "\"Status\" ASC":
-                albums = albums.OrderBy(x => x.Status).ToList();
-                break;
-
-            case "\"Status\" DESC":
-                albums = albums.OrderByDescending(x => x.Status).ToList();
-                break;
-
-            case "\"SongCount\" ASC":
-                albums = albums.OrderBy(x => x.SongTotalValue()).ToList();
-                break;
-
-            case "\"SongCount\" DESC":
-                albums = albums.OrderByDescending(x => x.SongTotalValue()).ToList();
-                break;
-        }
-
+        // Apply sorting with optimized comparisons
+        albums = ApplySorting(albums, pagedRequest);
 
         var albumsCount = albums.Count;
         return new PagedResult<Album>
@@ -274,6 +196,124 @@ public sealed class AlbumDiscoveryService(
             Data = albums
                 .Skip(pagedRequest.SkipValue)
                 .Take(pagedRequest.PageSizeValue)
+        };
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private List<Album> ApplyFilters(List<Album> albums, PagedRequest pagedRequest)
+    {
+        if (pagedRequest.AlbumResultFilter != AlbumResultFilter.All && albums.Count != 0)
+        {
+            albums = pagedRequest.AlbumResultFilter switch
+            {
+                AlbumResultFilter.Duplicates => albums
+                    .GroupBy(x => x.Id)
+                    .Where(x => x.Count() > 1)
+                    .SelectMany(x => x)
+                    .ToList(),
+
+                AlbumResultFilter.Incomplete or AlbumResultFilter.NeedsAttention =>
+                    albums.Where(x => x.Status == AlbumStatus.Invalid).ToList(),
+
+                AlbumResultFilter.LessThanConfiguredSongs => FilterByMinSongs(albums),
+
+                AlbumResultFilter.New => albums.Where(x => x.Status == AlbumStatus.New).ToList(),
+
+                AlbumResultFilter.ReadyToMove => albums.Where(x => x.Status is AlbumStatus.Ok).ToList(),
+
+                AlbumResultFilter.Selected when pagedRequest.SelectedAlbumIds.Length > 0 =>
+                    FilterBySelectedIds(albums, pagedRequest.SelectedAlbumIds),
+
+                AlbumResultFilter.LessThanConfiguredDuration => FilterByMinDuration(albums),
+
+                _ => albums
+            };
+        }
+
+        if (pagedRequest.FilterBy != null)
+        {
+            foreach (var filterBy in pagedRequest.FilterBy)
+            {
+                albums = ApplyPropertyFilter(albums, filterBy);
+            }
+        }
+
+        return albums;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private List<Album> FilterByMinSongs(List<Album> albums)
+    {
+        var filterLessThanSongs = SafeParser.ToNumber<int>(
+            _configuration.Configuration[SettingRegistry.FilteringLessThanSongCount]);
+        return albums.Where(x => x.Songs?.Count() < filterLessThanSongs || x.SongTotalValue() < filterLessThanSongs).ToList();
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private List<Album> FilterBySelectedIds(List<Album> albums, Guid[] selectedIds)
+    {
+        var selectedSet = new HashSet<Guid>(selectedIds);
+        return albums.Where(x => selectedSet.Contains(x.Id)).ToList();
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private List<Album> FilterByMinDuration(List<Album> albums)
+    {
+        var filterLessDuration = SafeParser.ToNumber<int>(
+            _configuration.Configuration[SettingRegistry.FilteringLessThanDuration]);
+        return albums.Where(x => x.TotalDuration() < filterLessDuration).ToList();
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private List<Album> ApplyPropertyFilter(List<Album> albums, FilterOperatorInfo filterBy)
+    {
+        return filterBy.PropertyName switch
+        {
+            "ArtistName" => albums.Where(x =>
+                x.Artist.NameNormalized.Contains(filterBy.Value.ToString()?.ToNormalizedString() ?? string.Empty)).ToList(),
+
+            "AlbumStatus" => albums.Where(x =>
+                x.Status == SafeParser.ToEnum<AlbumStatus>(filterBy.Value)).ToList(),
+
+            "NameNormalized" => FilterByNameNormalized(albums, filterBy.Value.ToString() ?? string.Empty),
+
+            "ReleaseDate" => albums.Where(x =>
+                x.AlbumYear() == SafeParser.ToNumber<int>(filterBy.Value)).ToList(),
+
+            _ => albums
+        };
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private List<Album> FilterByNameNormalized(List<Album> albums, string filterValue)
+    {
+        return albums.Where(x =>
+            x.AlbumTitle()?.Contains(filterValue, StringComparison.CurrentCultureIgnoreCase) == true ||
+            x.Artist.Name.Contains(filterValue, StringComparison.CurrentCultureIgnoreCase)).ToList();
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private List<Album> ApplySorting(List<Album> albums, PagedRequest pagedRequest)
+    {
+        return pagedRequest.OrderByValue("SortOrder") switch
+        {
+            "\"Artist\" ASC" => albums.OrderBy(x => x.Artist.SortName).ToList(),
+            "\"Artist\" DESC" => albums.OrderByDescending(x => x.Artist.SortName).ToList(),
+            "\"CreatedAt\" ASC" => albums.OrderBy(x => x.Created).ToList(),
+            "\"CreatedAt\" DESC" => albums.OrderByDescending(x => x.Created).ToList(),
+            "\"Duration\" ASC" => albums.OrderBy(x => x.Duration()).ToList(),
+            "\"Duration\" DESC" => albums.OrderByDescending(x => x.Duration()).ToList(),
+            "\"NeedsAttentionReasonsValue\" ASC" => albums.OrderBy(x => x.StatusReasons).ToList(),
+            "\"NeedsAttentionReasonsValue\" DESC" => albums.OrderByDescending(x => x.StatusReasons).ToList(),
+            "\"Title\" ASC" => albums.OrderBy(x => x.AlbumTitle()).ToList(),
+            "\"Title\" DESC" => albums.OrderByDescending(x => x.AlbumTitle()).ToList(),
+            "\"Year\" ASC" => albums.OrderBy(x => x.AlbumYear()).ToList(),
+            "\"Year\" DESC" => albums.OrderByDescending(x => x.AlbumYear()).ToList(),
+            "\"Status\" ASC" => albums.OrderBy(x => x.Status).ToList(),
+            "\"Status\" DESC" => albums.OrderByDescending(x => x.Status).ToList(),
+            "\"SongCount\" ASC" => albums.OrderBy(x => x.SongTotalValue()).ToList(),
+            "\"SongCount\" DESC" => albums.OrderByDescending(x => x.SongTotalValue()).ToList(),
+            _ => albums
         };
     }
 
@@ -360,11 +400,62 @@ public sealed class AlbumDiscoveryService(
             Data = d
         };
     }
+    
+    public async Task<int> NumberOfOkAlbumsAsync(FileSystemDirectoryInfo fileSystemDirectoryInfo, CancellationToken cancellationToken = default)
+    {
+        CheckInitialized();
+
+        if (cancellationToken.IsCancellationRequested)
+        {
+            return 0;
+        }
+
+        var albumsForDirectoryInfo = await AlbumsForDirectoryAsync(
+            fileSystemDirectoryInfo,
+            new PagedRequest
+            {
+                PageSize = short.MaxValue
+            },
+            cancellationToken);
+
+        return albumsForDirectoryInfo.Data.Count(x => x.Status == AlbumStatus.Ok);
+    }
 
     public async Task<OperationResult<IEnumerable<Album>?>> AllMelodeeAlbumDataFilesForDirectoryAsync(
         FileSystemDirectoryInfo fileSystemDirectoryInfo, CancellationToken cancellationToken = default)
     {
         CheckInitialized();
+
+        // Early cancellation check
+        if (cancellationToken.IsCancellationRequested)
+        {
+            return new OperationResult<IEnumerable<Album>?>
+            {
+                Data = []
+            };
+        }
+
+        // Check cache first with simple directory existence validation
+        var cacheKey = fileSystemDirectoryInfo.Path;
+        if (_directoryCache.TryGetValue(cacheKey, out var cached))
+        {
+            try
+            {
+                // Cache for 30 seconds to balance performance vs. freshness
+                if (fileSystemService.DirectoryExists(fileSystemDirectoryInfo.Path) &&
+                    DateTime.UtcNow - cached.LastWriteTime < TimeSpan.FromSeconds(30))
+                {
+                    return new OperationResult<IEnumerable<Album>?>
+                    {
+                        Data = cached.Albums
+                    };
+                }
+            }
+            catch
+            {
+                // If we can't check timestamps, proceed with fresh scan
+            }
+        }
 
         var albums = new ConcurrentBag<Album>();
         var errors = new ConcurrentBag<Exception>();
@@ -375,31 +466,57 @@ public sealed class AlbumDiscoveryService(
             if (fileSystemService.DirectoryExists(fileSystemDirectoryInfo.Path))
             {
                 var jsonFiles = fileSystemService.EnumerateFiles(fileSystemDirectoryInfo.Path, $"*{Album.JsonFileName}", SearchOption.AllDirectories);
-                
-                await Parallel.ForEachAsync(jsonFiles, cancellationToken,
-                    async (jsonFilePath, token) =>
-                    {
-                        try
+
+                // Use optimized parallel processing with bounded concurrency
+                var parallelOptions = new ParallelOptions
+                {
+                    CancellationToken = cancellationToken,
+                    MaxDegreeOfParallelism = DefaultParallelOptions.MaxDegreeOfParallelism
+                };
+
+                try
+                {
+                    await Parallel.ForEachAsync(jsonFiles, parallelOptions,
+                        async (jsonFilePath, token) =>
                         {
-                            var r = await fileSystemService.DeserializeAlbumAsync(jsonFilePath, token).ConfigureAwait(false);
-                            if (r != null)
+                            // Check cancellation at start of each iteration
+                            if (token.IsCancellationRequested)
                             {
-                                r.Directory = new FileSystemDirectoryInfo
-                                {
-                                    Path = fileSystemService.GetDirectoryName(jsonFilePath),
-                                    Name = fileSystemService.GetFileName(fileSystemService.GetDirectoryName(jsonFilePath))
-                                };
-                                r.Created = fileSystemService.GetFileCreationTimeUtc(jsonFilePath);
-                                albums.Add(r);
+                                return;
                             }
-                        }
-                        catch (Exception e)
-                        {
-                            Log.Warning(e, "Deleting invalid Melodee Data file [{FileName}]", jsonFilePath);
-                            messages.Add($"Deleting invalid Melodee Data file [{fileSystemDirectoryInfo.FullName()}]");
-                            // Note: File deletion would need to be added to IFileSystemService interface if needed
-                        }
-                    });
+
+                            try
+                            {
+                                var album = await fileSystemService.DeserializeAlbumAsync(jsonFilePath, token).ConfigureAwait(false);
+                                if (album != null)
+                                {
+                                    album.Directory = new FileSystemDirectoryInfo
+                                    {
+                                        Path = fileSystemService.GetDirectoryName(jsonFilePath),
+                                        Name = fileSystemService.GetFileName(fileSystemService.GetDirectoryName(jsonFilePath))
+                                    };
+                                    album.Created = fileSystemService.GetFileCreationTimeUtc(jsonFilePath);
+                                    albums.Add(album);
+                                }
+                            }
+                            catch (Exception e)
+                            {
+                                Log.Warning(e, "Error processing Melodee Data file [{FileName}]", jsonFilePath);
+                                messages.Add($"Error processing Melodee Data file [{fileSystemDirectoryInfo.FullName()}]");
+                                errors.Add(e);
+                            }
+                        });
+                }
+                catch (OperationCanceledException)
+                {
+                    // Handle cancellation gracefully - just continue with what we have
+                }
+
+                // Update cache with results if not canceled
+                if (!cancellationToken.IsCancellationRequested)
+                {
+                    await UpdateCacheAsync(cacheKey, albums.ToArray(), cancellationToken);
+                }
             }
         }
         catch (Exception e)
@@ -413,5 +530,49 @@ public sealed class AlbumDiscoveryService(
             Errors = errors,
             Data = albums.IsEmpty ? null : albums.ToArray()
         };
+    }
+
+    private async Task UpdateCacheAsync(string cacheKey, Album[] albums, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _cacheUpdateSemaphore.WaitAsync(cancellationToken);
+            try
+            {
+                var currentWriteTime = DateTime.UtcNow;
+
+                _directoryCache.AddOrUpdate(cacheKey,
+                    (currentWriteTime, albums),
+                    (_, _) => (currentWriteTime, albums));
+
+                // Implement cache size management to prevent memory bloat
+                if (_directoryCache.Count > 1000) // Configurable threshold
+                {
+                    var oldestEntries = _directoryCache
+                        .OrderBy(kvp => kvp.Value.LastWriteTime)
+                        .Take(_directoryCache.Count - 800) // Keep 800 most recent
+                        .Select(kvp => kvp.Key)
+                        .ToArray();
+
+                    foreach (var oldKey in oldestEntries)
+                    {
+                        _directoryCache.TryRemove(oldKey, out _);
+                    }
+                }
+            }
+            finally
+            {
+                _cacheUpdateSemaphore.Release();
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // Ignore cancellation during cache update
+        }
+    }
+
+    public void ClearCache()
+    {
+        _directoryCache.Clear();
     }
 }
