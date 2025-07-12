@@ -378,8 +378,12 @@ public sealed class MemoryCacheManager(ILogger logger, TimeSpan defaultTimeSpan,
         return totalSize;
     }
 
-    private long GetObjectSizeInBytes(object obj)
+    private long GetObjectSizeInBytes(object? obj)
     {
+        if (obj == null)
+        {
+            return 0; // Null objects have no size
+        }
         try
         {
             // For strings, calculate UTF-8 byte length
@@ -440,14 +444,17 @@ public sealed class MemoryCacheManager(ILogger logger, TimeSpan defaultTimeSpan,
         }
         catch (Exception ex)
         {
-            Logger.Debug(ex, "Failed to calculate object size for type {ObjectType}", obj.GetType().Name);
-            // Fallback: estimate based on object type
+            Logger.Debug(ex, "Failed to calculate object size for type {ObjectType}", obj?.GetType()?.Name);
             return EstimateObjectSize(obj);
         }
     }
 
-    private long EstimateObjectSize(object obj)
+    private long EstimateObjectSize(object? obj)
     {
+        if (obj == null)
+        {
+            return 0; // Null objects have no size
+        }
         // Basic estimation for common types
         return obj switch
         {
