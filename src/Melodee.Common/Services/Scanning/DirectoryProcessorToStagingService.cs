@@ -441,6 +441,10 @@ public sealed class DirectoryProcessorToStagingService(
         ConcurrentBag<Guid> songsIdsSeen,
         CancellationToken cancellationToken)
     {
+        // Add performance monitoring
+        using var operation = Operation.At(LogEventLevel.Debug)
+            .Time("ProcessSingleDirectoryAsync for directory [{DirectoryName}]", directoryInfoToProcess.Name);
+        
         Trace.WriteLine($"DirectoryInfoToProcess: [{directoryInfoToProcess}]");
         try
         {
@@ -448,14 +452,13 @@ public sealed class DirectoryProcessorToStagingService(
             
             if (!dontDeleteExistingMelodeeFiles)
             {
-                foreach (var existingMelodeeFile in directoryInfoToProcess.MelodeeJsonFiles())
+                // Optimized batch delete operations
+                var melodeeFiles = directoryInfoToProcess.MelodeeJsonFiles().Select(f => f.FullName).ToList();
+                if (melodeeFiles.Count > 0)
                 {
-                    if (cancellationToken.IsCancellationRequested || _stopProcessingTriggered)
-                    {
-                        break;
-                    }
-
-                    existingMelodeeFile.Delete();
+                    var deletedCount = await OptimizedFileOperations.DeleteFilesAsync(melodeeFiles, cancellationToken)
+                        .ConfigureAwait(false);
+                    LogAndRaiseEvent(LogEventLevel.Debug, "Deleted [{0}] existing Melodee files", null, deletedCount);
                 }
             }
 
@@ -464,10 +467,17 @@ public sealed class DirectoryProcessorToStagingService(
                 return;
             }
 
-            var allFilesInDirectory = directoryInfoToProcess.FileInfosForExtension("*").ToArray();
+            // Use optimized file enumeration for memory efficiency
+            var fileCount = 0;
+            await foreach (var fileInfo in OptimizedFileOperations.EnumerateFilesAsync(
+                directoryInfoToProcess.Path, "*", SearchOption.TopDirectoryOnly, cancellationToken))
+            {
+                fileCount++;
+                if (fileCount > 10000) break; // Prevent counting very large directories
+            }
 
             LogAndRaiseEvent(LogEventLevel.Debug, "\u251c Processing [{0}] Number of files to process [{1}]", null,
-                directoryInfoToProcess.Name, allFilesInDirectory.Length);
+                directoryInfoToProcess.Name, fileCount);
 
             // Run all enabled IDirectoryPlugins to convert MetaData files into Album json files.
             // e.g. Build Album json file for M3U or NFO or SFV, etc.
@@ -517,14 +527,15 @@ public sealed class DirectoryProcessorToStagingService(
 
             // Run Enabled Conversion scripts on each file in directory
             // e.g. Convert FLAC to MP3, Convert non JPEG files into JPEGs, etc.
-            foreach (var fileSystemInfo in allFilesInDirectory)
+            await foreach (var fileInfo in OptimizedFileOperations.EnumerateFilesAsync(
+                directoryInfoToProcess.Path, "*", SearchOption.TopDirectoryOnly, cancellationToken))
             {
                 if (cancellationToken.IsCancellationRequested || _stopProcessingTriggered)
                 {
                     break;
                 }
 
-                var fsi = fileSystemInfo.ToFileSystemInfo();
+                var fsi = fileInfo.ToFileSystemInfo();
                 foreach (var plugin in _conversionPlugins.Where(x => x.IsEnabled).OrderBy(x => x.SortOrder))
                 {
                     if (cancellationToken.IsCancellationRequested || _stopProcessingTriggered)
@@ -693,8 +704,14 @@ public sealed class DirectoryProcessorToStagingService(
                 };
                 albumDirectorySystemInfo.EnsureExists();
 
+                // Collect all file operations for batch processing
+                var filesToCopy = new List<(string source, string destination)>();
+                var deleteOriginal = _configuration.GetValue<bool>(SettingRegistry.ProcessingDoDeleteOriginal);
+
+                // Prepare image file operations
                 var albumImagesToMove = album.Images?.Where(x => x.FileInfo?.OriginalName != null) ?? [];
                 var artistImageToMove = album.Artist.Images?.Where(x => x.FileInfo?.OriginalName != null) ?? [];
+                
                 foreach (var image in albumImagesToMove.Concat(artistImageToMove).OrderBy(x => x.SortOrder))
                 {
                     var oldImageFileName = Path.Combine((image.DirectoryInfo ?? album.Directory).FullName(),
@@ -706,20 +723,15 @@ public sealed class DirectoryProcessorToStagingService(
                         continue;
                     }
 
-                    var newImageFileName =
-                        Path.Combine(albumDirectorySystemInfo.FullName(), image.FileInfo.Name);
+                    var newImageFileName = Path.Combine(albumDirectorySystemInfo.FullName(), image.FileInfo.Name);
                     if (!string.Equals(oldImageFileName, newImageFileName, StringComparison.OrdinalIgnoreCase))
                     {
-                        File.Copy(oldImageFileName, newImageFileName, true);
-                        if (_configuration.GetValue<bool>(SettingRegistry.ProcessingDoDeleteOriginal))
-                        {
-                            File.Delete(oldImageFileName);
-                        }
-
+                        filesToCopy.Add((oldImageFileName, newImageFileName));
                         image.FileInfo!.Name = Path.GetFileName(newImageFileName);
                     }
                 }
 
+                // Prepare song file operations
                 if (album.Songs != null)
                 {
                     foreach (var song in album.Songs.Where(x => x.File.OriginalName != null))
@@ -743,25 +755,32 @@ public sealed class DirectoryProcessorToStagingService(
                             if (!string.Equals(oldSongFilename, newSongFileName,
                                     StringComparison.OrdinalIgnoreCase))
                             {
-                                File.Copy(oldSongFilename, newSongFileName, true);
-                                if (_configuration.GetValue<bool>(SettingRegistry.ProcessingDoDeleteOriginal))
-                                {
-                                    try
-                                    {
-                                        File.Delete(oldSongFilename);
-                                    }
-                                    catch (Exception e)
-                                    {
-                                        Logger.Warning(e, "Error deleting original file [{0}]",
-                                            oldSongFilename);
-                                    }
-                                }
-
+                                filesToCopy.Add((oldSongFilename, newSongFileName));
                                 song.File.Name = Path.GetFileName(newSongFileName);
                             }
                         }
                     }
+                }
 
+                // Perform batch file operations if any files need to be copied
+                if (filesToCopy.Count > 0)
+                {
+                    using (Operation.At(LogEventLevel.Debug)
+                        .Time("Copying [{FileCount}] files for album [{AlbumName}]", filesToCopy.Count, album.AlbumTitle()))
+                    {
+                        var copiedCount = await OptimizedFileOperations.CopyFilesAsync(
+                            filesToCopy, 
+                            deleteOriginal, 
+                            bufferSize: 2 * 1024 * 1024, // 2MB buffer for media files
+                            cancellationToken).ConfigureAwait(false);
+                        
+                        LogAndRaiseEvent(LogEventLevel.Debug, "Copied [{0}] files for album [{1}]", null, 
+                            copiedCount, album.AlbumTitle());
+                    }
+                }
+
+                if (album.Songs != null)
+                {
                     if ((album.Tags ?? []).Any(x => x.WasModified) ||
                         album.Songs!.Any(x => (x.Tags ?? []).Any(y => y.WasModified)))
                     {
