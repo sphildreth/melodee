@@ -156,7 +156,7 @@ public class FileSystemDirectoryInfoExtensionTests
     {
         Assert.Equal(shouldBe, new FileSystemDirectoryInfo
         {
-            Path = string.Empty,
+            Path = "/melodee_test",
             Name = input
         }.IsDirectoryStudioAlbums());
     }
@@ -295,31 +295,13 @@ public class FileSystemDirectoryInfoExtensionTests
         Assert.Equal(expected, result);
     }
 
-    [Theory]
-    [InlineData("", "TestFolder")]
-    public void FullName_WithEmptyPath_ReturnsNameOnly(string path, string name)
-    {
-        // Arrange
-        var directoryInfo = new FileSystemDirectoryInfo
-        {
-            Path = path,
-            Name = name
-        };
-
-        // Act
-        var result = directoryInfo.FullName();
-
-        // Assert
-        Assert.Equal(name, result);
-    }
-
     [Fact]
     public void FullName_WithNullPath_ThrowsException()
     {
         // Arrange
         var directoryInfo = new FileSystemDirectoryInfo
         {
-            Path = null,
+            Path = string.Empty,
             Name = "TestFolder"
         };
 

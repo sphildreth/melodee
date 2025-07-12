@@ -2,6 +2,7 @@ using System.Data;
 using Dapper;
 using NodaTime;
 
+namespace Melodee.Tests.Services;
 /*
  *  These are only here for unit testing with SQlite. Melodee doesn't plan on supporting SQlite as a database.
  */

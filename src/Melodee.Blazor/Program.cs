@@ -141,6 +141,7 @@ builder.Services
     })
     .AddSingleton(SpotifyClientConfig.CreateDefault())
     .AddScoped<ISpotifyClientBuilder, SpotifyClientBuilder>()
+    .AddSingleton<IFileSystemService, FileSystemService>()
     .AddSingleton<INowPlayingRepository, NowPlayingInMemoryRepository>()
     .AddSingleton<IMelodeeConfigurationFactory, MelodeeConfigurationFactory>()
     .AddSingleton<EtagRepository>()

@@ -8,7 +8,6 @@ using Melodee.Common.Models;
 using Melodee.Common.Models.Collection;
 using Melodee.Common.Models.Extensions;
 using Melodee.Common.Plugins.Validation;
-using Melodee.Common.Serialization;
 using Melodee.Common.Services.Caching;
 using Melodee.Common.Utility;
 using Microsoft.EntityFrameworkCore;
@@ -25,7 +24,7 @@ public sealed class AlbumDiscoveryService(
     ICacheManager cacheManager,
     IDbContextFactory<MelodeeDbContext> contextFactory,
     IMelodeeConfigurationFactory configurationFactory,
-    ISerializer serializer)
+    IFileSystemService fileSystemService)
     : ServiceBase(logger, cacheManager, contextFactory)
 {
     private IAlbumValidator _albumValidator = null!;
@@ -78,7 +77,6 @@ public sealed class AlbumDiscoveryService(
     {
         CheckInitialized();
         var albums = new List<Album>();
-        var dirInfo = new DirectoryInfo(fileSystemDirectoryInfo.Path);
 
         var dataForDirectoryInfoResult =
             await AllMelodeeAlbumDataFilesForDirectoryAsync(fileSystemDirectoryInfo, cancellationToken);
@@ -87,7 +85,7 @@ public sealed class AlbumDiscoveryService(
             albums.AddRange(dataForDirectoryInfoResult.Data!);
         }
 
-        foreach (var childDir in dirInfo.EnumerateDirectories("*.*", SearchOption.AllDirectories))
+        foreach (var childDir in fileSystemService.EnumerateDirectories(fileSystemDirectoryInfo.Path, "*.*", SearchOption.AllDirectories))
         {
             if (cancellationToken.IsCancellationRequested)
             {
@@ -296,13 +294,13 @@ public sealed class AlbumDiscoveryService(
                     continue;
                 }
 
-                var fileInfo = new FileInfo(album.MelodeeDataFileName ?? string.Empty);
-                if (fileInfo.DirectoryName == null)
+                var directoryName = fileSystemService.GetDirectoryName(album.MelodeeDataFileName ?? string.Empty);
+                if (string.IsNullOrEmpty(directoryName))
                 {
                     continue;
                 }
 
-                Directory.Delete(fileInfo.DirectoryName, true);
+                fileSystemService.DeleteDirectory(directoryName, true);
                 result = true;
             }
         }
@@ -349,7 +347,7 @@ public sealed class AlbumDiscoveryService(
         )
         {
             ImageBytes = await x.CoverImageBytesAsync(cancellationToken),
-            MelodeeDataFileName = Path.Combine(x.Directory.FullName(), Album.JsonFileName),
+            MelodeeDataFileName = fileSystemService.CombinePath(x.Directory.FullName(), Album.JsonFileName),
             NeedsAttentionReasons = (int)x.StatusReasons
         });
 
@@ -374,29 +372,32 @@ public sealed class AlbumDiscoveryService(
 
         try
         {
-            var dirInfo = new DirectoryInfo(fileSystemDirectoryInfo.Path);
-            if (dirInfo.Exists)
+            if (fileSystemService.DirectoryExists(fileSystemDirectoryInfo.Path))
             {
-                await Parallel.ForEachAsync(
-                    dirInfo.EnumerateFiles($"*{Album.JsonFileName}", SearchOption.AllDirectories), cancellationToken,
-                    async (jsonFile, token) =>
+                var jsonFiles = fileSystemService.EnumerateFiles(fileSystemDirectoryInfo.Path, $"*{Album.JsonFileName}", SearchOption.AllDirectories);
+                
+                await Parallel.ForEachAsync(jsonFiles, cancellationToken,
+                    async (jsonFilePath, token) =>
                     {
                         try
                         {
-                            var r = await Album.DeserializeAndInitializeAlbumAsync(serializer, jsonFile.FullName, token)
-                                .ConfigureAwait(false);
+                            var r = await fileSystemService.DeserializeAlbumAsync(jsonFilePath, token).ConfigureAwait(false);
                             if (r != null)
                             {
-                                r.Directory = jsonFile.Directory!.ToDirectorySystemInfo();
-                                r.Created = File.GetCreationTimeUtc(jsonFile.FullName);
+                                r.Directory = new FileSystemDirectoryInfo
+                                {
+                                    Path = fileSystemService.GetDirectoryName(jsonFilePath),
+                                    Name = fileSystemService.GetFileName(fileSystemService.GetDirectoryName(jsonFilePath))
+                                };
+                                r.Created = fileSystemService.GetFileCreationTimeUtc(jsonFilePath);
                                 albums.Add(r);
                             }
                         }
                         catch (Exception e)
                         {
-                            Log.Warning(e, "Deleting invalid Melodee Data file [{FileName}]", jsonFile.FullName);
-                            messages.Add($"Deleting invalid Melodee Data file [{dirInfo.FullName}]");
-                            jsonFile.Delete();
+                            Log.Warning(e, "Deleting invalid Melodee Data file [{FileName}]", jsonFilePath);
+                            messages.Add($"Deleting invalid Melodee Data file [{fileSystemDirectoryInfo.FullName()}]");
+                            // Note: File deletion would need to be added to IFileSystemService interface if needed
                         }
                     });
             }

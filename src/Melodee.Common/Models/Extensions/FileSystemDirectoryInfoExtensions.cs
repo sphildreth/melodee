@@ -157,6 +157,10 @@ public static class FileSystemDirectoryInfoExtensions
 
     public static string FullName(this FileSystemDirectoryInfo fileSystemDirectoryInfo)
     {
+        if(fileSystemDirectoryInfo.Path.Nullify() == null)
+        {
+            throw new ArgumentNullException(nameof(fileSystemDirectoryInfo.Path), "Path cannot be null");
+        }
         var p = fileSystemDirectoryInfo.Path;
         if (p.LastOrDefault() == Path.DirectorySeparatorChar)
         {

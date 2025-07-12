@@ -92,6 +92,8 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
         _dbConnection.Dispose();
     }
 
+    protected IFileSystemService MockFileSystemService() => new MockFileSystemService();
+    
     protected AlbumDiscoveryService GetAlbumDiscoveryService()
     {
         return new AlbumDiscoveryService(
@@ -99,7 +101,7 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
             CacheManager,
             MockFactory(),
             MockConfigurationFactory(),
-            Serializer);
+            new MockFileSystemService());
     }
 
     protected MediaEditService GetMediaEditService()
