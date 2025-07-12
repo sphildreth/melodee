@@ -7,7 +7,6 @@ using Melodee.Common.Constants;
 using Melodee.Common.Data;
 using Melodee.Common.Data.Models.DTOs;
 using Melodee.Common.Enums;
-using Melodee.Common.MessageBus.Events;
 using Melodee.Common.Models;
 using Melodee.Common.Models.Extensions;
 using Melodee.Common.Models.OpenSubsonic;
@@ -59,8 +58,6 @@ public abstract class ServiceBase
         ISerializer serializer, Album albumToMove, string existingAlbumPath,
         CancellationToken cancellationToken = default)
     {
-        var modifiedExistingDirectory = false;
-
         var albumToMoveDir = albumToMove.Directory;
         var existingDir = new DirectoryInfo(existingAlbumPath);
 
@@ -95,8 +92,6 @@ public abstract class ServiceBase
                                 nameof(LibraryService), image.FileInfo.Name);
                         }
                     }
-
-                    modifiedExistingDirectory = true;
                 }
             }
             else
@@ -137,7 +132,6 @@ public abstract class ServiceBase
                         File.Move(imageToMove.ImageFileName, toFile);
                         Logger.Debug("[{ServiceName}] :\u2502: moving better image [{FileName}]",
                             nameof(LibraryService), Path.GetFileName(imageToMove.ImageFileName));
-                        modifiedExistingDirectory = true;
                     }
                 }
 
@@ -150,7 +144,6 @@ public abstract class ServiceBase
                         File.Move(imageToMove.ImageFileName, toFile);
                         Logger.Debug("[{ServiceName}] :\u2502: moving image [{FileName}]", nameof(LibraryService),
                             Path.GetFileName(imageToMove.ImageFileName));
-                        modifiedExistingDirectory = true;
                     }
                 }
             }
@@ -210,7 +203,6 @@ public abstract class ServiceBase
                     Logger.Debug("[{ServiceName}] :\u2502: moving song [{FileName}]", nameof(LibraryService),
                         songToMove.File.Name);
                     File.Move(songToMove.File.FullName(albumToMoveDir), toFile);
-                    modifiedExistingDirectory = true;
                 }
             }
         }

@@ -82,12 +82,12 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
 
     protected ICacheManager CacheManager { get; }
 
-    public async ValueTask DisposeAsync()
+    public virtual async ValueTask DisposeAsync()
     {
         await _dbConnection.DisposeAsync();
     }
 
-    public void Dispose()
+    public virtual void Dispose()
     {
         _dbConnection.Dispose();
     }
@@ -334,7 +334,7 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
         // clientHandlerMock.Protected().Verify("SendAsync", Times.Exactly(1), ItExpr.IsAny<HttpRequestMessage>(), ItExpr.IsAny<CancellationToken>());
         // return clientFactoryMock.Object;
 
-        var clientHandlerStub = new HttpHandlerStubDelegate((request, cancellationToken) =>
+        var clientHandlerStub = new HttpHandlerStubDelegate((_, _) =>
         {
             var response = new HttpResponseMessage { StatusCode = HttpStatusCode.OK };
             return Task.FromResult(response);
