@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
@@ -46,7 +47,7 @@ public sealed class DirectoryProcessorToStagingService(
     ArtistSearchEngineService artistSearchEngineService,
     AlbumImageSearchEngineService albumImageSearchEngineService,
     IHttpClientFactory httpClientFactory)
-    : ServiceBase(logger, cacheManager, contextFactory)
+    : ServiceBase(logger, cacheManager, contextFactory), IDisposable
 {
     private IAlbumNamesInDirectoryPlugin _albumNamesInDirectoryPlugin = null!;
     private IAlbumValidator _albumValidator = new AlbumValidator(new MelodeeConfiguration([]));
@@ -81,6 +82,8 @@ public sealed class DirectoryProcessorToStagingService(
     private ISongPlugin[] _songPlugins = [];
 
     private bool _stopProcessingTriggered;
+
+    private readonly SemaphoreSlim _processingThrottle = new(Environment.ProcessorCount);
 
     public async Task InitializeAsync(IMelodeeConfiguration? configuration = null, CancellationToken token = default)
     {
@@ -175,8 +178,8 @@ public sealed class DirectoryProcessorToStagingService(
     {
         CheckInitialized();
 
-        var processingMessages = new List<string>();
-        var processingErrors = new List<Exception>();
+        var processingMessages = new ConcurrentBag<string>();
+        var processingErrors = new ConcurrentBag<Exception>();
         var numberOfAlbumJsonFilesProcessed = 0;
         var numberOfValidAlbumsProcessed = 0;
         var numberOfAlbumsProcessed = 0;
@@ -185,9 +188,10 @@ public sealed class DirectoryProcessorToStagingService(
         var directoryPluginProcessedFileCount = 0;
         var numberOfAlbumFilesProcessed = 0;
 
-        var artistsIdsSeen = new List<long?>();
-        var albumsIdsSeen = new List<long?>();
-        var songsIdsSeen = new List<Guid>();
+        // Use HashSet for faster lookups and deduplication
+        var artistsIdsSeen = new ConcurrentBag<long?>();
+        var albumsIdsSeen = new ConcurrentBag<long?>();
+        var songsIdsSeen = new ConcurrentBag<Guid>();
 
         var result = new DirectoryProcessorResult
         {
@@ -296,613 +300,37 @@ public sealed class DirectoryProcessorToStagingService(
                 directoriesToProcess.Count);
         }
 
-        var httpClient = httpClientFactory.CreateClient();
-
-        var dontDeleteExistingMelodeeFiles =
-            _configuration.GetValue<bool>(SettingRegistry.ProcessingDontDeleteExistingMelodeeDataFiles);
-
-        var modifiedDirectories = false;
-        foreach (var directoryInfoToProcess in directoriesToProcess)
+        // Process directories in parallel with controlled concurrency
+        var parallelOptions = new ParallelOptions
         {
-            // Ensure directoryInfoToProcess doesn't have "extension" in name. This is because when a directory
-            // includes the file systems extension, the System.IO.DirectoryInfo doesn't parse it correctly from string
-            // as it thinks its a file not a directory.
-            if (directoryInfoToProcess.Name.Contains('.'))
+            CancellationToken = cancellationToken,
+            MaxDegreeOfParallelism = Environment.ProcessorCount // Limit parallel execution to CPU core count
+        };
+
+        try
+        {
+            await Parallel.ForEachAsync(directoriesToProcess, parallelOptions, async (directoryInfoToProcess, ct) =>
             {
-                var dd = directoryInfoToProcess.ToDirectoryInfo();
-                var oldDd = dd.Name;
-                var newDd = Path.Combine(dd.Parent!.FullName, dd.Name.Replace(".", "_"));
-                if (newDd != oldDd)
+                // Check for cancellation before acquiring semaphore
+                ct.ThrowIfCancellationRequested();
+                
+                await _processingThrottle.WaitAsync(ct);
+                try
                 {
-                    dd.MoveTo(newDd);
-                    Logger.Debug("[{Name}] renamed directory from [{Old}] to [{New}]",
-                        nameof(DirectoryProcessorToStagingService),
-                        oldDd,
-                        newDd);
-                    modifiedDirectories = true;
+                    await ProcessSingleDirectoryAsync(directoryInfoToProcess, processingMessages, processingErrors,
+                        artistsIdsSeen, albumsIdsSeen, songsIdsSeen, ct);
                 }
-            }
+                finally
+                {
+                    _processingThrottle.Release();
+                    OnDirectoryProcessed?.Invoke(this, directoryInfoToProcess);
+                }
+            });
         }
-
-        if (modifiedDirectories)
+        catch (OperationCanceledException)
         {
-            directoriesToProcess = fileSystemDirectoryInfo
-                .GetFileSystemDirectoryInfosToProcess(lastProcessDate, SearchOption.AllDirectories).ToList();
-        }
-
-        var fileExtensionsToDelete = MelodeeConfiguration.FromSerializedJsonArray(
-            _configuration.GetValue<string>(SettingRegistry.ProcessingFileExtensionsToDelete), serializer);
-        if (fileExtensionsToDelete.Length != 0)
-        {
-            foreach (var directoryInfoToProcess in directoriesToProcess)
-            {
-                foreach (var fileExtensionToDelete in fileExtensionsToDelete)
-                {
-                    directoryInfoToProcess.DeleteAllFilesForExtension(fileExtensionToDelete);
-                }
-            }
-        }
-
-        foreach (var directoryInfoToProcess in directoriesToProcess)
-        {
-            Trace.WriteLine($"DirectoryInfoToProcess: [{directoryInfoToProcess}]");
-            try
-            {
-                if (!dontDeleteExistingMelodeeFiles)
-                {
-                    foreach (var existingMelodeeFile in directoryInfoToProcess.MelodeeJsonFiles())
-                    {
-                        if (cancellationToken.IsCancellationRequested || _stopProcessingTriggered)
-                        {
-                            break;
-                        }
-
-                        existingMelodeeFile.Delete();
-                    }
-                }
-
-                if (cancellationToken.IsCancellationRequested || _stopProcessingTriggered)
-                {
-                    break;
-                }
-
-                var allFilesInDirectory = directoryInfoToProcess.FileInfosForExtension("*").ToArray();
-
-                LogAndRaiseEvent(LogEventLevel.Debug, "\u251c Processing [{0}] Number of files to process [{1}]", null,
-                    directoryInfoToProcess.Name, allFilesInDirectory.Length);
-
-                // Run all enabled IDirectoryPlugins to convert MetaData files into Album json files.
-                // e.g. Build Album json file for M3U or NFO or SFV, etc.
-                foreach (var plugin in _directoryPlugins.Where(x => x.IsEnabled).OrderBy(x => x.SortOrder))
-                {
-                    if (cancellationToken.IsCancellationRequested || _stopProcessingTriggered)
-                    {
-                        break;
-                    }
-
-                    var pluginResult = await plugin.ProcessDirectoryAsync(directoryInfoToProcess, cancellationToken)
-                        .ConfigureAwait(false);
-                    if (!pluginResult.IsSuccess && pluginResult.Type != OperationResponseType.NotFound)
-                    {
-                        processingErrors.AddRange(pluginResult.Errors ?? []);
-                        if (plugin.StopProcessing)
-                        {
-                            Logger.Debug("Received stop processing from [{PluginName}] on Directory [{DirectoryName}]",
-                                plugin.DisplayName, directoryInfoToProcess);
-                            break;
-                        }
-
-                        continue;
-                    }
-
-                    if (pluginResult.Data > 0)
-                    {
-                        directoryPluginProcessedFileCount += pluginResult.Data;
-                    }
-
-                    if (plugin.StopProcessing)
-                    {
-                        Logger.Debug("Received stop processing from [{PluginName}] on Directory [{DirectoryName}]",
-                            plugin.DisplayName, directoryInfoToProcess);
-                        break;
-                    }
-                }
-
-                // Run Enabled Conversion scripts on each file in directory
-                // e.g. Convert FLAC to MP3, Convert non JPEG files into JPEGs, etc.
-                foreach (var fileSystemInfo in allFilesInDirectory)
-                {
-                    if (cancellationToken.IsCancellationRequested || _stopProcessingTriggered)
-                    {
-                        break;
-                    }
-
-                    var fsi = fileSystemInfo.ToFileSystemInfo();
-                    foreach (var plugin in _conversionPlugins.Where(x => x.IsEnabled).OrderBy(x => x.SortOrder))
-                    {
-                        if (cancellationToken.IsCancellationRequested || _stopProcessingTriggered)
-                        {
-                            break;
-                        }
-
-                        if (plugin.DoesHandleFile(directoryInfoToProcess, fsi))
-                        {
-                            var pluginResult = await plugin
-                                .ProcessFileAsync(directoryInfoToProcess, fsi, cancellationToken).ConfigureAwait(false);
-                            if (!pluginResult.IsSuccess)
-                            {
-                                processingErrors.AddRange(pluginResult.Errors ?? []);
-                                processingMessages.AddRange(pluginResult.Messages ?? []);
-                            }
-                            else
-                            {
-                                conversionPluginsProcessedFileCount++;
-                            }
-                        }
-
-                        if (plugin.StopProcessing)
-                        {
-                            break;
-                        }
-                    }
-                }
-
-                // If no albums were created by previous plugins, create from media files
-                if (!directoryInfoToProcess.MelodeeJsonFiles().Any())
-                {
-                    foreach (var plugin in _mediaAlbumCreatorPlugins.Where(x => x.IsEnabled).OrderBy(x => x.SortOrder))
-                    {
-                        if (cancellationToken.IsCancellationRequested || _stopProcessingTriggered)
-                        {
-                            break;
-                        }
-
-                        await plugin.ProcessDirectoryAsync(directoryInfoToProcess, cancellationToken)
-                            .ConfigureAwait(false);
-                        if (plugin.StopProcessing)
-                        {
-                            Logger.Debug("Received stop processing from [{PluginName}] on Directory [{DirectoryName}]",
-                                plugin.DisplayName, directoryInfoToProcess);
-                            break;
-                        }
-                    }
-                }
-
-                var albumsForDirectory = new List<Album>();
-                foreach (var melodeeJsonFile in directoryInfoToProcess.MelodeeJsonFiles())
-                {
-                    if (cancellationToken.IsCancellationRequested || _stopProcessingTriggered)
-                    {
-                        break;
-                    }
-
-                    try
-                    {
-                        var album = await Album
-                            .DeserializeAndInitializeAlbumAsync(serializer, melodeeJsonFile.FullName, cancellationToken)
-                            .ConfigureAwait(false);
-                        if (album != null)
-                        {
-                            album.MelodeeDataFileName = melodeeJsonFile.FullName;
-                            albumsForDirectory.Add(album);
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        Logger.Error(ex, "Error loading Album json file [{0}]", melodeeJsonFile.FullName);
-                    }
-                }
-
-                // For each Album json find all image files and add to Album to be moved below to staging directory.
-                Trace.WriteLine("Loading images for album...");
-                foreach (var album in albumsForDirectory.Take(_maxAlbumProcessingCount))
-                {
-                    if (cancellationToken.IsCancellationRequested || _stopProcessingTriggered)
-                    {
-                        break;
-                    }
-
-                    try
-                    {
-                        album.Images = (await album.FindImages(_albumNamesInDirectoryPlugin, _duplicateThreshold,
-                            _imageConvertor, _imageValidator,
-                            _configuration.GetValue<bool>(SettingRegistry.ProcessingDoDeleteOriginal),
-                            cancellationToken).ConfigureAwait(false)).ToArray();
-
-                        album.Artist = new Artist(album.Artist.Name,
-                            album.Artist.NameNormalized,
-                            album.Artist.SortName,
-                            (await album.FindArtistImages(_imageConvertor,
-                                    _imageValidator,
-                                    _configuration.GetValue<bool>(SettingRegistry.ProcessingDoDeleteOriginal),
-                                    _configuration.GetValue<bool>(SettingRegistry.ProcessingDoDeleteOriginal),
-                                    cancellationToken)
-                                .ConfigureAwait(false)).ToArray());
-
-                        if (album.IsSoundTrackTypeAlbum() && album.Songs != null)
-                        {
-                            // If the album has different artists and is soundtrack then ensure artist is set to special VariousArtists
-                            var songsGroupedByArtist = album.Songs.GroupBy(x => x.AlbumArtist()).ToArray();
-                            if (songsGroupedByArtist.Length > 1)
-                            {
-                                album.Artist = new VariousArtist();
-                                foreach (var song in album.Songs)
-                                {
-                                    album.SetSongTagValue(song.Id, MetaTagIdentifier.AlbumArtist, album.Artist.Name);
-                                }
-                            }
-                        }
-                        else if (album.IsOriginalCastTypeAlbum() && album.Songs != null)
-                        {
-                            // If the album has different artists and is Original Cast type then ensure artist is set to special Theater
-                            // NOTE: Remember Original Cast Type albums with a single composer/artist is attributed to that composer/artist (e.g. Stephen Schwartz - Wicked)
-                            var songsGroupedByArtist = album.Songs.GroupBy(x => x.AlbumArtist()).ToArray();
-                            if (songsGroupedByArtist.Length > 1)
-                            {
-                                album.Artist = new Theater();
-                                foreach (var song in album.Songs)
-                                {
-                                    album.SetSongTagValue(song.Id, MetaTagIdentifier.AlbumArtist, album.Artist.Name);
-                                }
-                            }
-                        }
-
-                        var albumDirectorySystemInfo = new FileSystemDirectoryInfo
-                        {
-                            Path = Path.Combine(_directoryStaging, album.ToDirectoryName()),
-                            Name = album.ToDirectoryName()
-                        };
-                        albumDirectorySystemInfo.EnsureExists();
-
-                        var albumImagesToMove = album.Images?.Where(x => x.FileInfo?.OriginalName != null) ?? [];
-                        var artistImageToMove = album.Artist.Images?.Where(x => x.FileInfo?.OriginalName != null) ?? [];
-                        foreach (var image in albumImagesToMove.Concat(artistImageToMove).OrderBy(x => x.SortOrder))
-                        {
-                            var oldImageFileName = Path.Combine((image.DirectoryInfo ?? album.Directory).FullName(),
-                                image.FileInfo!.OriginalName!);
-                            if (!File.Exists(oldImageFileName))
-                            {
-                                Logger.Warning("Unable to find image by original name [{OriginalName}]",
-                                    oldImageFileName);
-                                continue;
-                            }
-
-                            var newImageFileName =
-                                Path.Combine(albumDirectorySystemInfo.FullName(), image.FileInfo.Name);
-                            if (!string.Equals(oldImageFileName, newImageFileName, StringComparison.OrdinalIgnoreCase))
-                            {
-                                File.Copy(oldImageFileName, newImageFileName, true);
-                                if (_configuration.GetValue<bool>(SettingRegistry.ProcessingDoDeleteOriginal))
-                                {
-                                    File.Delete(oldImageFileName);
-                                }
-
-                                image.FileInfo!.Name = Path.GetFileName(newImageFileName);
-                            }
-                        }
-
-                        if (album.Songs != null)
-                        {
-                            foreach (var song in album.Songs.Where(x => x.File.OriginalName != null))
-                            {
-                                if (cancellationToken.IsCancellationRequested || _stopProcessingTriggered)
-                                {
-                                    break;
-                                }
-
-                                if (song.File.OriginalName != null)
-                                {
-                                    var oldSongFilename = Path.Combine(album.OriginalDirectory.FullName(),
-                                        song.File.OriginalName!);
-                                    if (!File.Exists(oldSongFilename))
-                                    {
-                                        continue;
-                                    }
-
-                                    var newSongFileName = Path.Combine(albumDirectorySystemInfo.FullName(),
-                                        song.ToSongFileName(albumDirectorySystemInfo));
-                                    if (!string.Equals(oldSongFilename, newSongFileName,
-                                            StringComparison.OrdinalIgnoreCase))
-                                    {
-                                        File.Copy(oldSongFilename, newSongFileName, true);
-                                        if (_configuration.GetValue<bool>(SettingRegistry.ProcessingDoDeleteOriginal))
-                                        {
-                                            try
-                                            {
-                                                File.Delete(oldSongFilename);
-                                            }
-                                            catch (Exception e)
-                                            {
-                                                Logger.Warning(e, "Error deleting original file [{0}]",
-                                                    oldSongFilename);
-                                            }
-                                        }
-
-                                        song.File.Name = Path.GetFileName(newSongFileName);
-                                    }
-                                }
-                            }
-
-                            if ((album.Tags ?? []).Any(x => x.WasModified) ||
-                                album.Songs!.Any(x => (x.Tags ?? []).Any(y => y.WasModified)))
-                            {
-                                Trace.WriteLine("Running plugins on songs with modified tags...");
-
-                                foreach (var songPlugin in _songPlugins)
-                                {
-                                    foreach (var song in album.Songs.Where(x =>
-                                                 x.Tags?.Any(t => t.WasModified) ?? false))
-                                    {
-                                        if (cancellationToken.IsCancellationRequested || _stopProcessingTriggered)
-                                        {
-                                            break;
-                                        }
-
-                                        using (Operation.At(LogEventLevel.Debug)
-                                                   .Time(
-                                                       "ProcessDirectoryAsync :: Updating song [{Name}] with plugin [{DisplayName}]",
-                                                       song.File.Name, songPlugin.DisplayName))
-                                        {
-                                            try
-                                            {
-                                                await songPlugin
-                                                    .UpdateSongAsync(albumDirectorySystemInfo, song, cancellationToken)
-                                                    .ConfigureAwait(false);
-                                            }
-                                            catch (Exception e)
-                                            {
-                                                Logger.Error(e,
-                                                    "Error updating song [{Name}] with plugin [{DisplayName}]",
-                                                    song.File.Name, songPlugin.DisplayName);
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-
-                        album.Directory = albumDirectorySystemInfo;
-
-                        // See if artist can be found using ArtistSearchEngine to populate metadata, set UniqueId and MusicBrainzId
-                        Trace.WriteLine("Querying for artist...");
-                        var searchRequest = album.Artist.ToArtistQuery([
-                            new KeyValue((album.AlbumYear() ?? 0).ToString(),
-                                album.AlbumTitle().ToNormalizedString() ?? album.AlbumTitle())
-                        ]);
-                        var artistSearchResult = await artistSearchEngineService.DoSearchAsync(searchRequest,
-                                1,
-                                cancellationToken)
-                            .ConfigureAwait(false);
-                        if (artistSearchResult.IsSuccess)
-                        {
-                            var artistFromSearch =
-                                artistSearchResult.Data.OrderByDescending(x => x.Rank).FirstOrDefault();
-                            if (artistFromSearch != null)
-                            {
-                                album.Artist = album.Artist with
-                                {
-                                    AmgId = album.Artist.AmgId ?? artistFromSearch.AmgId,
-                                    ArtistDbId = album.Artist.ArtistDbId ?? artistFromSearch.Id,
-                                    DiscogsId = album.Artist.DiscogsId ?? artistFromSearch.DiscogsId,
-                                    ItunesId = album.Artist.ItunesId ?? artistFromSearch.ItunesId,
-                                    LastFmId = album.Artist.LastFmId ?? artistFromSearch.LastFmId,
-                                    MusicBrainzId = album.Artist.MusicBrainzId ?? artistFromSearch.MusicBrainzId,
-                                    Name = album.Artist.Name.Nullify() ?? artistFromSearch.Name,
-                                    NameNormalized = album.Artist.NameNormalized.Nullify() ??
-                                                     artistFromSearch.Name.ToNormalizedString() ??
-                                                     artistFromSearch.Name,
-                                    OriginalName =
-                                    artistFromSearch.Name != album.Artist.Name ? album.Artist.Name : null,
-                                    SearchEngineResultUniqueId = album.Artist.SearchEngineResultUniqueId is null or < 1
-                                        ? artistFromSearch.UniqueId
-                                        : album.Artist.SearchEngineResultUniqueId,
-                                    SortName = album.Artist.SortName.Nullify() ?? artistFromSearch.SortName,
-                                    SpotifyId = album.Artist.SpotifyId ?? artistFromSearch.SpotifyId,
-                                    WikiDataId = album.Artist.WikiDataId ?? artistFromSearch.WikiDataId
-                                };
-
-                                if (artistFromSearch.Releases?.FirstOrDefault() != null)
-                                {
-                                    var searchResultRelease = artistFromSearch.Releases.FirstOrDefault(x =>
-                                        x.Year == album.AlbumYear() &&
-                                        x.NameNormalized == album.AlbumTitle().ToNormalizedString());
-                                    if (searchResultRelease != null)
-                                    {
-                                        album.AlbumDbId = album.AlbumDbId ?? searchResultRelease.Id;
-                                        album.AlbumType = album.AlbumType == AlbumType.NotSet
-                                            ? searchResultRelease.AlbumType
-                                            : album.AlbumType;
-
-                                        // Artist result should override any in place for Album as its more specific and likely more accurate
-                                        album.MusicBrainzId = searchResultRelease.MusicBrainzId;
-                                        album.SpotifyId = searchResultRelease.SpotifyId;
-
-                                        if (!album.HasValidAlbumYear(_configuration.Configuration))
-                                        {
-                                            album.SetTagValue(MetaTagIdentifier.RecordingYear,
-                                                searchResultRelease.Year.ToString());
-                                        }
-                                    }
-                                }
-
-                                album.Status = AlbumStatus.Ok;
-
-                                LogAndRaiseEvent(LogEventLevel.Debug,
-                                    $"[{nameof(DirectoryProcessorToStagingService)}] Using artist from search engine query [{searchRequest}] result [{artistFromSearch}]");
-                            }
-                            else
-                            {
-                                LogAndRaiseEvent(LogEventLevel.Warning,
-                                    $"[{nameof(DirectoryProcessorToStagingService)}] No result from search engine for artist [{searchRequest}]");
-                            }
-                        }
-
-                        Trace.WriteLine("Testing for album images...");
-                        // If album has no images then see if ImageSearchEngine can find any
-                        if (album.Images?.Count() == 0)
-                        {
-                            Trace.WriteLine("Querying for album image...");
-                            var albumImageSearchRequest = album.ToAlbumQuery();
-                            var albumImageSearchResult = await albumImageSearchEngineService.DoSearchAsync(
-                                    albumImageSearchRequest,
-                                    1,
-                                    cancellationToken)
-                                .ConfigureAwait(false);
-                            if (albumImageSearchResult.IsSuccess)
-                            {
-                                var imageSearchResult = albumImageSearchResult.Data.OrderByDescending(x => x.Rank)
-                                    .FirstOrDefault();
-                                if (imageSearchResult != null)
-                                {
-                                    album.AmgId ??= imageSearchResult.AmgId;
-                                    album.DiscogsId ??= imageSearchResult.DiscogsId;
-                                    album.ItunesId ??= imageSearchResult.ItunesId;
-                                    album.LastFmId ??= imageSearchResult.LastFmId;
-                                    album.SpotifyId ??= imageSearchResult.SpotifyId;
-                                    album.WikiDataId ??= imageSearchResult.WikiDataId;
-
-                                    album.Artist.AmgId ??= imageSearchResult.ArtistAmgId;
-                                    album.Artist.DiscogsId ??= imageSearchResult.ArtistDiscogsId;
-                                    album.Artist.ItunesId ??= imageSearchResult.ArtistItunesId;
-                                    album.Artist.LastFmId ??= imageSearchResult.ArtistLastFmId;
-                                    album.Artist.SpotifyId ??= imageSearchResult.ArtistSpotifyId;
-                                    album.Artist.WikiDataId ??= imageSearchResult.ArtistWikiDataId;
-
-                                    if (!album.HasValidAlbumYear(_configuration.Configuration) &&
-                                        imageSearchResult.ReleaseDate != null)
-                                    {
-                                        album.SetTagValue(MetaTagIdentifier.RecordingYear,
-                                            imageSearchResult.ReleaseDate.ToString());
-                                    }
-
-                                    var albumImageFromSearchFileName = Path.Combine(albumDirectorySystemInfo.FullName(),
-                                        albumDirectorySystemInfo
-                                            .GetNextFileNameForType(Data.Models.Album.FrontImageType).Item1);
-                                    if (await httpClient.DownloadFileAsync(
-                                            imageSearchResult.MediaUrl,
-                                            albumImageFromSearchFileName,
-                                            async (_, newFileInfo, _) =>
-                                                (await _imageValidator.ValidateImage(newFileInfo,
-                                                    PictureIdentifier.Front, cancellationToken)).Data.IsValid,
-                                            cancellationToken).ConfigureAwait(false))
-                                    {
-                                        var newImageInfo = new FileInfo(albumImageFromSearchFileName);
-                                        var imageInfo = await Image
-                                            .IdentifyAsync(albumImageFromSearchFileName, cancellationToken)
-                                            .ConfigureAwait(false);
-                                        album.Images = new List<ImageInfo>
-                                        {
-                                            new()
-                                            {
-                                                FileInfo = newImageInfo.ToFileSystemInfo(),
-                                                PictureIdentifier = PictureIdentifier.Front,
-                                                CrcHash = Crc32.Calculate(newImageInfo),
-                                                Width = imageInfo.Width,
-                                                Height = imageInfo.Height,
-                                                SortOrder = 1,
-                                                WasEmbeddedInSong = false
-                                            }
-                                        };
-                                        LogAndRaiseEvent(LogEventLevel.Debug,
-                                            $"[{nameof(DirectoryProcessorToStagingService)}] Downloaded album image [{imageSearchResult.MediaUrl}]");
-                                    }
-                                }
-                                else
-                                {
-                                    LogAndRaiseEvent(LogEventLevel.Warning,
-                                        $"[{nameof(DirectoryProcessorToStagingService)}] No result from album search engine for album [{albumImageSearchRequest}]");
-                                }
-                            }
-                        }
-
-                        album.RenumberImages();
-
-                        var isMagicEnabled = _configuration.GetValue<bool>(SettingRegistry.MagicEnabled);
-
-                        Trace.WriteLine("Validating album...");
-                        var validationResult = _albumValidator.ValidateAlbum(album);
-                        album.ValidationMessages = validationResult.Data.Messages ?? [];
-                        album.Status = validationResult.Data.AlbumStatus;
-                        album.StatusReasons = validationResult.Data.AlbumStatusReasons;
-
-                        var serialized = serializer.Serialize(album);
-                        var jsonName = album.ToMelodeeJsonName(_configuration, true);
-                        if (jsonName.Nullify() != null)
-                        {
-                            await File.WriteAllTextAsync(Path.Combine(albumDirectorySystemInfo.FullName(), jsonName),
-                                serialized, cancellationToken).ConfigureAwait(false);
-
-                            artistsIdsSeen.Add(album.Artist.ArtistUniqueId());
-                            artistsIdsSeen.AddRange(album.Songs?.Where(x => x.SongArtistUniqueId() != null)
-                                .Select(x => x.SongArtistUniqueId()) ?? []);
-                            albumsIdsSeen.Add(album.ArtistAlbumUniqueId());
-                            songsIdsSeen.AddRange(album.Songs?.Select(x => x.Id) ?? []);
-
-                            var albumCouldBeMagicfied = album;
-                            if (isMagicEnabled)
-                            {
-                                await mediaEditService.DoMagic(album, cancellationToken).ConfigureAwait(false);
-                                albumCouldBeMagicfied = await Album.DeserializeAndInitializeAlbumAsync(serializer,
-                                        Path.Combine(albumDirectorySystemInfo.FullName(), jsonName), cancellationToken)
-                                    .ConfigureAwait(false) ?? album;
-                            }
-
-                            if (albumCouldBeMagicfied.IsValid)
-                            {
-                                numberOfValidAlbumsProcessed++;
-                                LogAndRaiseEvent(LogEventLevel.Debug,
-                                    $"[{nameof(DirectoryProcessorToStagingService)}] \ud83d\udc4d Found valid album [{albumCouldBeMagicfied}]");
-                                if (numberOfValidAlbumsProcessed >= _maxAlbumProcessingCount)
-                                {
-                                    LogAndRaiseEvent(LogEventLevel.Debug,
-                                        $"[{nameof(DirectoryProcessorToStagingService)}] \ud83d\uded1 Stopped processing directory [{fileSystemDirectoryInfo}], processing.maximumProcessingCount is set to [{_maxAlbumProcessingCount}]");
-                                    _stopProcessingTriggered = true;
-                                    break;
-                                }
-                            }
-                            else
-                            {
-                                LogAndRaiseEvent(LogEventLevel.Debug,
-                                    $"[{nameof(DirectoryProcessorToStagingService)}] \ud83d\ude3f Found invalid album [{albumCouldBeMagicfied}]");
-                            }
-
-                            if (_configuration.GetValue<bool>(SettingRegistry.ProcessingDoDeleteOriginal) &&
-                                album.MelodeeDataFileName != null)
-                            {
-                                File.Delete(album.MelodeeDataFileName);
-                            }
-                        }
-                        else
-                        {
-                            processingMessages.Add($"Unable to determine JsonName for Album [{album}]");
-                        }
-
-                        numberOfAlbumsProcessed++;
-                    }
-                    catch (Exception e)
-                    {
-                        LogAndRaiseEvent(LogEventLevel.Error,
-                            $"[{nameof(DirectoryProcessorToStagingService)}] Error processing directory [{fileSystemDirectoryInfo}]",
-                            e);
-                    }
-                }
-            }
-            catch (Exception e)
-            {
-                LogAndRaiseEvent(LogEventLevel.Error, "Processing Directory [{0}]", e,
-                    directoryInfoToProcess.ToString());
-                processingErrors.Add(e);
-                if (!_configuration.GetValue<bool>(SettingRegistry.ProcessingDoContinueOnDirectoryProcessingErrors))
-                {
-                    return new OperationResult<DirectoryProcessorResult>
-                    {
-                        Errors = processingErrors,
-                        Data = result
-                    };
-                }
-            }
-
-            OnDirectoryProcessed?.Invoke(this, directoryInfoToProcess);
+            // Handle cancellation gracefully - this is expected behavior
+            LogAndRaiseEvent(LogEventLevel.Debug, "Processing was cancelled");
         }
 
         // Run PostDiscovery script
@@ -997,5 +425,618 @@ public sealed class DirectoryProcessorToStagingService(
         }
 
         OnProcessingEvent?.Invoke(this, exception?.ToString() ?? eventMessage);
+    }
+
+    public void Dispose()
+    {
+        _processingThrottle.Dispose();
+    }
+
+    private async Task ProcessSingleDirectoryAsync(
+        FileSystemDirectoryInfo directoryInfoToProcess,
+        ConcurrentBag<string> processingMessages,
+        ConcurrentBag<Exception> processingErrors,
+        ConcurrentBag<long?> artistsIdsSeen,
+        ConcurrentBag<long?> albumsIdsSeen,
+        ConcurrentBag<Guid> songsIdsSeen,
+        CancellationToken cancellationToken)
+    {
+        Trace.WriteLine($"DirectoryInfoToProcess: [{directoryInfoToProcess}]");
+        try
+        {
+            var dontDeleteExistingMelodeeFiles = _configuration.GetValue<bool>(SettingRegistry.ProcessingDontDeleteExistingMelodeeDataFiles);
+            
+            if (!dontDeleteExistingMelodeeFiles)
+            {
+                foreach (var existingMelodeeFile in directoryInfoToProcess.MelodeeJsonFiles())
+                {
+                    if (cancellationToken.IsCancellationRequested || _stopProcessingTriggered)
+                    {
+                        break;
+                    }
+
+                    existingMelodeeFile.Delete();
+                }
+            }
+
+            if (cancellationToken.IsCancellationRequested || _stopProcessingTriggered)
+            {
+                return;
+            }
+
+            var allFilesInDirectory = directoryInfoToProcess.FileInfosForExtension("*").ToArray();
+
+            LogAndRaiseEvent(LogEventLevel.Debug, "\u251c Processing [{0}] Number of files to process [{1}]", null,
+                directoryInfoToProcess.Name, allFilesInDirectory.Length);
+
+            // Run all enabled IDirectoryPlugins to convert MetaData files into Album json files.
+            // e.g. Build Album json file for M3U or NFO or SFV, etc.
+            foreach (var plugin in _directoryPlugins.Where(x => x.IsEnabled).OrderBy(x => x.SortOrder))
+            {
+                if (cancellationToken.IsCancellationRequested || _stopProcessingTriggered)
+                {
+                    break;
+                }
+
+                var pluginResult = await plugin.ProcessDirectoryAsync(directoryInfoToProcess, cancellationToken)
+                    .ConfigureAwait(false);
+                if (!pluginResult.IsSuccess && pluginResult.Type != OperationResponseType.NotFound)
+                {
+                    // ConcurrentBag doesn't have AddRange, so add items individually
+                    if (pluginResult.Errors != null)
+                    {
+                        foreach (var error in pluginResult.Errors)
+                        {
+                            processingErrors.Add(error);
+                        }
+                    }
+                    if (pluginResult.Messages != null)
+                    {
+                        foreach (var message in pluginResult.Messages)
+                        {
+                            processingMessages.Add(message);
+                        }
+                    }
+                    if (plugin.StopProcessing)
+                    {
+                        Logger.Debug("Received stop processing from [{PluginName}] on Directory [{DirectoryName}]",
+                            plugin.DisplayName, directoryInfoToProcess);
+                        break;
+                    }
+
+                    continue;
+                }
+
+                if (plugin.StopProcessing)
+                {
+                    Logger.Debug("Received stop processing from [{PluginName}] on Directory [{DirectoryName}]",
+                        plugin.DisplayName, directoryInfoToProcess);
+                    break;
+                }
+            }
+
+            // Run Enabled Conversion scripts on each file in directory
+            // e.g. Convert FLAC to MP3, Convert non JPEG files into JPEGs, etc.
+            foreach (var fileSystemInfo in allFilesInDirectory)
+            {
+                if (cancellationToken.IsCancellationRequested || _stopProcessingTriggered)
+                {
+                    break;
+                }
+
+                var fsi = fileSystemInfo.ToFileSystemInfo();
+                foreach (var plugin in _conversionPlugins.Where(x => x.IsEnabled).OrderBy(x => x.SortOrder))
+                {
+                    if (cancellationToken.IsCancellationRequested || _stopProcessingTriggered)
+                    {
+                        break;
+                    }
+
+                    if (plugin.DoesHandleFile(directoryInfoToProcess, fsi))
+                    {
+                        var pluginResult = await plugin
+                            .ProcessFileAsync(directoryInfoToProcess, fsi, cancellationToken).ConfigureAwait(false);
+                        if (!pluginResult.IsSuccess)
+                        {
+                            // ConcurrentBag doesn't have AddRange, so add items individually
+                            if (pluginResult.Errors != null)
+                            {
+                                foreach (var error in pluginResult.Errors)
+                                {
+                                    processingErrors.Add(error);
+                                }
+                            }
+                            if (pluginResult.Messages != null)
+                            {
+                                foreach (var message in pluginResult.Messages)
+                                {
+                                    processingMessages.Add(message);
+                                }
+                            }
+                        }
+                    }
+
+                    if (plugin.StopProcessing)
+                    {
+                        break;
+                    }
+                }
+            }
+
+            // If no albums were created by previous plugins, create from media files
+            if (!directoryInfoToProcess.MelodeeJsonFiles().Any())
+            {
+                foreach (var plugin in _mediaAlbumCreatorPlugins.Where(x => x.IsEnabled).OrderBy(x => x.SortOrder))
+                {
+                    if (cancellationToken.IsCancellationRequested || _stopProcessingTriggered)
+                    {
+                        break;
+                    }
+
+                    await plugin.ProcessDirectoryAsync(directoryInfoToProcess, cancellationToken)
+                        .ConfigureAwait(false);
+                    if (plugin.StopProcessing)
+                    {
+                        Logger.Debug("Received stop processing from [{PluginName}] on Directory [{DirectoryName}]",
+                            plugin.DisplayName, directoryInfoToProcess);
+                        break;
+                    }
+                }
+            }
+
+            var albumsForDirectory = new List<Album>();
+            foreach (var melodeeJsonFile in directoryInfoToProcess.MelodeeJsonFiles())
+            {
+                if (cancellationToken.IsCancellationRequested || _stopProcessingTriggered)
+                {
+                    break;
+                }
+
+                try
+                {
+                    var album = await Album
+                        .DeserializeAndInitializeAlbumAsync(serializer, melodeeJsonFile.FullName, cancellationToken)
+                        .ConfigureAwait(false);
+                    if (album != null)
+                    {
+                        album.MelodeeDataFileName = melodeeJsonFile.FullName;
+                        albumsForDirectory.Add(album);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error(ex, "Error loading Album json file [{0}]", melodeeJsonFile.FullName);
+                }
+            }
+
+            // For each Album json find all image files and add to Album to be moved below to staging directory.
+            Trace.WriteLine("Loading images for album...");
+            await ProcessAlbumsAsync(directoryInfoToProcess, albumsForDirectory, processingMessages, artistsIdsSeen, albumsIdsSeen, songsIdsSeen, cancellationToken);
+        }
+        catch (Exception e)
+        {
+            LogAndRaiseEvent(LogEventLevel.Error, "Processing Directory [{0}]", e,
+                directoryInfoToProcess.ToString());
+            processingErrors.Add(e);
+        }
+    }
+
+    private async Task ProcessAlbumsAsync(
+        FileSystemDirectoryInfo directoryInfoToProcess,
+        List<Album> albumsForDirectory,
+        ConcurrentBag<string> processingMessages,
+        ConcurrentBag<long?> artistsIdsSeen,
+        ConcurrentBag<long?> albumsIdsSeen,
+        ConcurrentBag<Guid> songsIdsSeen,
+        CancellationToken cancellationToken)
+    {
+        var httpClient = httpClientFactory.CreateClient();
+        var numberOfValidAlbumsProcessed = 0;
+        var numberOfAlbumsProcessed = 0;
+
+        foreach (var album in albumsForDirectory.Take(_maxAlbumProcessingCount))
+        {
+            if (cancellationToken.IsCancellationRequested || _stopProcessingTriggered)
+            {
+                break;
+            }
+
+            try
+            {
+                album.Images = (await album.FindImages(_albumNamesInDirectoryPlugin, _duplicateThreshold,
+                    _imageConvertor, _imageValidator,
+                    _configuration.GetValue<bool>(SettingRegistry.ProcessingDoDeleteOriginal),
+                    cancellationToken).ConfigureAwait(false)).ToArray();
+
+                album.Artist = new Artist(album.Artist.Name,
+                    album.Artist.NameNormalized,
+                    album.Artist.SortName,
+                    (await album.FindArtistImages(_imageConvertor,
+                            _imageValidator,
+                            _configuration.GetValue<bool>(SettingRegistry.ProcessingDoDeleteOriginal),
+                            _configuration.GetValue<bool>(SettingRegistry.ProcessingDoDeleteOriginal),
+                            cancellationToken)
+                        .ConfigureAwait(false)).ToArray());
+
+                if (album.IsSoundTrackTypeAlbum() && album.Songs != null)
+                {
+                    // If the album has different artists and is soundtrack then ensure artist is set to special VariousArtists
+                    var songsGroupedByArtist = album.Songs.GroupBy(x => x.AlbumArtist()).ToArray();
+                    if (songsGroupedByArtist.Length > 1)
+                    {
+                        album.Artist = new VariousArtist();
+                        foreach (var song in album.Songs)
+                        {
+                            album.SetSongTagValue(song.Id, MetaTagIdentifier.AlbumArtist, album.Artist.Name);
+                        }
+                    }
+                }
+                else if (album.IsOriginalCastTypeAlbum() && album.Songs != null)
+                {
+                    // If the album has different artists and is Original Cast type then ensure artist is set to special Theater
+                    // NOTE: Remember Original Cast Type albums with a single composer/artist is attributed to that composer/artist (e.g. Stephen Schwartz - Wicked)
+                    var songsGroupedByArtist = album.Songs.GroupBy(x => x.AlbumArtist()).ToArray();
+                    if (songsGroupedByArtist.Length > 1)
+                    {
+                        album.Artist = new Theater();
+                        foreach (var song in album.Songs)
+                        {
+                            album.SetSongTagValue(song.Id, MetaTagIdentifier.AlbumArtist, album.Artist.Name);
+                        }
+                    }
+                }
+
+                var albumDirectorySystemInfo = new FileSystemDirectoryInfo
+                {
+                    Path = Path.Combine(_directoryStaging, album.ToDirectoryName()),
+                    Name = album.ToDirectoryName()
+                };
+                albumDirectorySystemInfo.EnsureExists();
+
+                var albumImagesToMove = album.Images?.Where(x => x.FileInfo?.OriginalName != null) ?? [];
+                var artistImageToMove = album.Artist.Images?.Where(x => x.FileInfo?.OriginalName != null) ?? [];
+                foreach (var image in albumImagesToMove.Concat(artistImageToMove).OrderBy(x => x.SortOrder))
+                {
+                    var oldImageFileName = Path.Combine((image.DirectoryInfo ?? album.Directory).FullName(),
+                        image.FileInfo!.OriginalName!);
+                    if (!File.Exists(oldImageFileName))
+                    {
+                        Logger.Warning("Unable to find image by original name [{OriginalName}]",
+                            oldImageFileName);
+                        continue;
+                    }
+
+                    var newImageFileName =
+                        Path.Combine(albumDirectorySystemInfo.FullName(), image.FileInfo.Name);
+                    if (!string.Equals(oldImageFileName, newImageFileName, StringComparison.OrdinalIgnoreCase))
+                    {
+                        File.Copy(oldImageFileName, newImageFileName, true);
+                        if (_configuration.GetValue<bool>(SettingRegistry.ProcessingDoDeleteOriginal))
+                        {
+                            File.Delete(oldImageFileName);
+                        }
+
+                        image.FileInfo!.Name = Path.GetFileName(newImageFileName);
+                    }
+                }
+
+                if (album.Songs != null)
+                {
+                    foreach (var song in album.Songs.Where(x => x.File.OriginalName != null))
+                    {
+                        if (cancellationToken.IsCancellationRequested || _stopProcessingTriggered)
+                        {
+                            break;
+                        }
+
+                        if (song.File.OriginalName != null)
+                        {
+                            var oldSongFilename = Path.Combine(album.OriginalDirectory.FullName(),
+                                song.File.OriginalName!);
+                            if (!File.Exists(oldSongFilename))
+                            {
+                                continue;
+                            }
+
+                            var newSongFileName = Path.Combine(albumDirectorySystemInfo.FullName(),
+                                song.ToSongFileName(albumDirectorySystemInfo));
+                            if (!string.Equals(oldSongFilename, newSongFileName,
+                                    StringComparison.OrdinalIgnoreCase))
+                            {
+                                File.Copy(oldSongFilename, newSongFileName, true);
+                                if (_configuration.GetValue<bool>(SettingRegistry.ProcessingDoDeleteOriginal))
+                                {
+                                    try
+                                    {
+                                        File.Delete(oldSongFilename);
+                                    }
+                                    catch (Exception e)
+                                    {
+                                        Logger.Warning(e, "Error deleting original file [{0}]",
+                                            oldSongFilename);
+                                    }
+                                }
+
+                                song.File.Name = Path.GetFileName(newSongFileName);
+                            }
+                        }
+                    }
+
+                    if ((album.Tags ?? []).Any(x => x.WasModified) ||
+                        album.Songs!.Any(x => (x.Tags ?? []).Any(y => y.WasModified)))
+                    {
+                        Trace.WriteLine("Running plugins on songs with modified tags...");
+
+                        foreach (var songPlugin in _songPlugins)
+                        {
+                            foreach (var song in album.Songs.Where(x =>
+                                         x.Tags?.Any(t => t.WasModified) ?? false))
+                            {
+                                if (cancellationToken.IsCancellationRequested || _stopProcessingTriggered)
+                                {
+                                    break;
+                                }
+
+                                using (Operation.At(LogEventLevel.Debug)
+                                           .Time(
+                                               "ProcessDirectoryAsync :: Updating song [{Name}] with plugin [{DisplayName}]",
+                                               song.File.Name, songPlugin.DisplayName))
+                                {
+                                    try
+                                    {
+                                        await songPlugin
+                                            .UpdateSongAsync(albumDirectorySystemInfo, song, cancellationToken)
+                                            .ConfigureAwait(false);
+                                    }
+                                    catch (Exception e)
+                                    {
+                                        Logger.Error(e,
+                                            "Error updating song [{Name}] with plugin [{DisplayName}]",
+                                            song.File.Name, songPlugin.DisplayName);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                album.Directory = albumDirectorySystemInfo;
+
+                // See if artist can be found using ArtistSearchEngine to populate metadata, set UniqueId and MusicBrainzId
+                Trace.WriteLine("Querying for artist...");
+                var searchRequest = album.Artist.ToArtistQuery([
+                    new KeyValue((album.AlbumYear() ?? 0).ToString(),
+                        album.AlbumTitle().ToNormalizedString() ?? album.AlbumTitle())
+                ]);
+                var artistSearchResult = await artistSearchEngineService.DoSearchAsync(searchRequest,
+                        1,
+                        cancellationToken)
+                    .ConfigureAwait(false);
+                if (artistSearchResult.IsSuccess)
+                {
+                    var artistFromSearch =
+                        artistSearchResult.Data.OrderByDescending(x => x.Rank).FirstOrDefault();
+                    if (artistFromSearch != null)
+                    {
+                        album.Artist = album.Artist with
+                        {
+                            AmgId = album.Artist.AmgId ?? artistFromSearch.AmgId,
+                            ArtistDbId = album.Artist.ArtistDbId ?? artistFromSearch.Id,
+                            DiscogsId = album.Artist.DiscogsId ?? artistFromSearch.DiscogsId,
+                            ItunesId = album.Artist.ItunesId ?? artistFromSearch.ItunesId,
+                            LastFmId = album.Artist.LastFmId ?? artistFromSearch.LastFmId,
+                            MusicBrainzId = album.Artist.MusicBrainzId ?? artistFromSearch.MusicBrainzId,
+                            Name = album.Artist.Name.Nullify() ?? artistFromSearch.Name,
+                            NameNormalized = album.Artist.NameNormalized.Nullify() ??
+                                             artistFromSearch.Name.ToNormalizedString() ??
+                                             artistFromSearch.Name,
+                            OriginalName =
+                            artistFromSearch.Name != album.Artist.Name ? album.Artist.Name : null,
+                            SearchEngineResultUniqueId = album.Artist.SearchEngineResultUniqueId is null or < 1
+                                ? artistFromSearch.UniqueId
+                                : album.Artist.SearchEngineResultUniqueId,
+                            SortName = album.Artist.SortName.Nullify() ?? artistFromSearch.SortName,
+                            SpotifyId = album.Artist.SpotifyId ?? artistFromSearch.SpotifyId,
+                            WikiDataId = album.Artist.WikiDataId ?? artistFromSearch.WikiDataId
+                        };
+
+                        if (artistFromSearch.Releases?.FirstOrDefault() != null)
+                        {
+                            var searchResultRelease = artistFromSearch.Releases.FirstOrDefault(x =>
+                                x.Year == album.AlbumYear() &&
+                                x.NameNormalized == album.AlbumTitle().ToNormalizedString());
+                            if (searchResultRelease != null)
+                            {
+                                album.AlbumDbId = album.AlbumDbId ?? searchResultRelease.Id;
+                                album.AlbumType = album.AlbumType == AlbumType.NotSet
+                                    ? searchResultRelease.AlbumType
+                                    : album.AlbumType;
+
+                                // Artist result should override any in place for Album as its more specific and likely more accurate
+                                album.MusicBrainzId = searchResultRelease.MusicBrainzId;
+                                album.SpotifyId = searchResultRelease.SpotifyId;
+
+                                if (!album.HasValidAlbumYear(_configuration.Configuration))
+                                {
+                                    album.SetTagValue(MetaTagIdentifier.RecordingYear,
+                                        searchResultRelease.Year.ToString());
+                                }
+                            }
+                        }
+
+                        album.Status = AlbumStatus.Ok;
+
+                        LogAndRaiseEvent(LogEventLevel.Debug,
+                            $"[{nameof(DirectoryProcessorToStagingService)}] Using artist from search engine query [{searchRequest}] result [{artistFromSearch}]");
+                    }
+                    else
+                    {
+                        LogAndRaiseEvent(LogEventLevel.Warning,
+                            $"[{nameof(DirectoryProcessorToStagingService)}] No result from search engine for artist [{searchRequest}]");
+                    }
+                }
+
+                Trace.WriteLine("Testing for album images...");
+                // If album has no images then see if ImageSearchEngine can find any
+                if (album.Images?.Count() == 0)
+                {
+                    Trace.WriteLine("Querying for album image...");
+                    var albumImageSearchRequest = album.ToAlbumQuery();
+                    var albumImageSearchResult = await albumImageSearchEngineService.DoSearchAsync(
+                            albumImageSearchRequest,
+                            1,
+                            cancellationToken)
+                        .ConfigureAwait(false);
+                    if (albumImageSearchResult.IsSuccess)
+                    {
+                        var imageSearchResult = albumImageSearchResult.Data.OrderByDescending(x => x.Rank)
+                            .FirstOrDefault();
+                        if (imageSearchResult != null)
+                        {
+                            album.AmgId ??= imageSearchResult.AmgId;
+                            album.DiscogsId ??= imageSearchResult.DiscogsId;
+                            album.ItunesId ??= imageSearchResult.ItunesId;
+                            album.LastFmId ??= imageSearchResult.LastFmId;
+                            album.SpotifyId ??= imageSearchResult.SpotifyId;
+                            album.WikiDataId ??= imageSearchResult.WikiDataId;
+
+                            album.Artist.AmgId ??= imageSearchResult.ArtistAmgId;
+                            album.Artist.DiscogsId ??= imageSearchResult.ArtistDiscogsId;
+                            album.Artist.ItunesId ??= imageSearchResult.ArtistItunesId;
+                            album.Artist.LastFmId ??= imageSearchResult.ArtistLastFmId;
+                            album.Artist.SpotifyId ??= imageSearchResult.ArtistSpotifyId;
+                            album.Artist.WikiDataId ??= imageSearchResult.ArtistWikiDataId;
+
+                            if (!album.HasValidAlbumYear(_configuration.Configuration) &&
+                                imageSearchResult.ReleaseDate != null)
+                            {
+                                album.SetTagValue(MetaTagIdentifier.RecordingYear,
+                                    imageSearchResult.ReleaseDate.ToString());
+                            }
+
+                            var albumImageFromSearchFileName = Path.Combine(albumDirectorySystemInfo.FullName(),
+                                albumDirectorySystemInfo
+                                    .GetNextFileNameForType(Data.Models.Album.FrontImageType).Item1);
+                            if (await httpClient.DownloadFileAsync(
+                                    imageSearchResult.MediaUrl,
+                                    albumImageFromSearchFileName,
+                                    async (_, newFileInfo, _) =>
+                                        (await _imageValidator.ValidateImage(newFileInfo,
+                                            PictureIdentifier.Front, cancellationToken)).Data.IsValid,
+                                    cancellationToken).ConfigureAwait(false))
+                            {
+                                var newImageInfo = new FileInfo(albumImageFromSearchFileName);
+                                var imageInfo = await Image
+                                    .IdentifyAsync(albumImageFromSearchFileName, cancellationToken)
+                                    .ConfigureAwait(false);
+                                album.Images = new List<ImageInfo>
+                                {
+                                    new()
+                                    {
+                                        FileInfo = newImageInfo.ToFileSystemInfo(),
+                                        PictureIdentifier = PictureIdentifier.Front,
+                                        CrcHash = Crc32.Calculate(newImageInfo),
+                                        Width = imageInfo.Width,
+                                        Height = imageInfo.Height,
+                                        SortOrder = 1,
+                                        WasEmbeddedInSong = false
+                                    }
+                                };
+                                LogAndRaiseEvent(LogEventLevel.Debug,
+                                    $"[{nameof(DirectoryProcessorToStagingService)}] Downloaded album image [{imageSearchResult.MediaUrl}]");
+                            }
+                        }
+                        else
+                        {
+                            LogAndRaiseEvent(LogEventLevel.Warning,
+                                $"[{nameof(DirectoryProcessorToStagingService)}] No result from album search engine for album [{albumImageSearchRequest}]");
+                        }
+                    }
+                }
+
+                album.RenumberImages();
+
+                var isMagicEnabled = _configuration.GetValue<bool>(SettingRegistry.MagicEnabled);
+
+                Trace.WriteLine("Validating album...");
+                var validationResult = _albumValidator.ValidateAlbum(album);
+                album.ValidationMessages = validationResult.Data.Messages ?? [];
+                album.Status = validationResult.Data.AlbumStatus;
+                album.StatusReasons = validationResult.Data.AlbumStatusReasons;
+
+                var serialized = serializer.Serialize(album);
+                var jsonName = album.ToMelodeeJsonName(_configuration, true);
+                if (jsonName.Nullify() != null)
+                {
+                    await File.WriteAllTextAsync(Path.Combine(albumDirectorySystemInfo.FullName(), jsonName),
+                        serialized, cancellationToken).ConfigureAwait(false);
+
+                    artistsIdsSeen.Add(album.Artist.ArtistUniqueId());
+                    // ConcurrentBag doesn't have AddRange, so add items individually
+                    if (album.Songs?.Where(x => x.SongArtistUniqueId() != null) != null)
+                    {
+                        foreach (var artistId in album.Songs.Where(x => x.SongArtistUniqueId() != null).Select(x => x.SongArtistUniqueId()))
+                        {
+                            artistsIdsSeen.Add(artistId);
+                        }
+                    }
+                    albumsIdsSeen.Add(album.ArtistAlbumUniqueId());
+                    // ConcurrentBag doesn't have AddRange, so add items individually
+                    if (album.Songs != null)
+                    {
+                        foreach (var songId in album.Songs.Select(x => x.Id))
+                        {
+                            songsIdsSeen.Add(songId);
+                        }
+                    }
+
+                    var albumCouldBeMagicfied = album;
+                    if (isMagicEnabled)
+                    {
+                        await mediaEditService.DoMagic(album, cancellationToken).ConfigureAwait(false);
+                        albumCouldBeMagicfied = await Album.DeserializeAndInitializeAlbumAsync(serializer,
+                                Path.Combine(albumDirectorySystemInfo.FullName(), jsonName), cancellationToken)
+                            .ConfigureAwait(false) ?? album;
+                    }
+
+                    if (albumCouldBeMagicfied.IsValid)
+                    {
+                        numberOfValidAlbumsProcessed++;
+                        LogAndRaiseEvent(LogEventLevel.Debug,
+                            $"[{nameof(DirectoryProcessorToStagingService)}] \ud83d\udc4d Found valid album [{albumCouldBeMagicfied}]");
+                        if (numberOfValidAlbumsProcessed >= _maxAlbumProcessingCount)
+                        {
+                            LogAndRaiseEvent(LogEventLevel.Debug,
+                                $"[{nameof(DirectoryProcessorToStagingService)}] \ud83d\uded1 Stopped processing directory [{directoryInfoToProcess}], processing.maximumProcessingCount is set to [{_maxAlbumProcessingCount}]");
+                            _stopProcessingTriggered = true;
+                            break;
+                        }
+                    }
+                    else
+                    {
+                        LogAndRaiseEvent(LogEventLevel.Debug,
+                            $"[{nameof(DirectoryProcessorToStagingService)}] \ud83d\ude3f Found invalid album [{albumCouldBeMagicfied}]");
+                    }
+
+                    if (_configuration.GetValue<bool>(SettingRegistry.ProcessingDoDeleteOriginal) &&
+                        album.MelodeeDataFileName != null)
+                    {
+                        File.Delete(album.MelodeeDataFileName);
+                    }
+                }
+                else
+                {
+                    processingMessages.Add($"Unable to determine JsonName for Album [{album}]");
+                }
+
+                numberOfAlbumsProcessed++;
+            }
+            catch (Exception e)
+            {
+                LogAndRaiseEvent(LogEventLevel.Error,
+                    $"[{nameof(DirectoryProcessorToStagingService)}] Error processing album in directory [{directoryInfoToProcess}]",
+                    e);
+            }
+        }
     }
 }
