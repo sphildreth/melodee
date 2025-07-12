@@ -1,3 +1,4 @@
+using Melodee.Common.Models;
 using Melodee.Common.Serialization;
 using Serilog;
 
@@ -25,4 +26,6 @@ public abstract class CacheManagerBase(ILogger logger, TimeSpan defaultTimeSpan,
     public abstract bool Remove(string key);
     
     public abstract bool Remove(string key, string? region);
+    
+    public abstract IEnumerable<Statistic> CacheStatistics();
 }

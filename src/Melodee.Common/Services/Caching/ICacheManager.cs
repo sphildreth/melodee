@@ -1,3 +1,4 @@
+using Melodee.Common.Models;
 using Melodee.Common.Serialization;
 
 namespace Melodee.Common.Services.Caching;
@@ -20,4 +21,6 @@ public interface ICacheManager
     bool Remove(string key);
 
     bool Remove(string key, string? region);
+    
+    IEnumerable<Statistic> CacheStatistics();
 }

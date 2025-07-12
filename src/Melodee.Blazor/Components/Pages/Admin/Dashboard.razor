@@ -36,7 +36,33 @@
     </RadzenRow>
 </RadzenStack>
 
+<RadzenCard Style="margin-top: 1rem;">
+    <RadzenText Size="H5">Cache Statistics</RadzenText>
+    <RadzenStack Orientation="Orientation.Horizontal" Gap="1rem">
+        @if (CacheStatistics != null)
+        {
+            foreach (var stat in CacheStatistics)
+            {
+                <RadzenCard Style="min-width: 180px;">
+                    <RadzenText Size="H6">@stat.Title</RadzenText>
+                    <div style="font-size: 22px; font-weight: bold;">@stat.Data</div>
+                </RadzenCard>
+            }
+        }
+        else
+        {
+            <RadzenProgressBar Mode="ProgressBarMode.Indeterminate" />
+        }
+    </RadzenStack>
+</RadzenCard>
+
 @code {
+    private IEnumerable<Statistic>? CacheStatistics;
+
+    protected override void OnInitialized()
+    {
+        CacheStatistics = CacheManager.CacheStatistics();
+    }
 
     private void ClearCacheClicked()
     {

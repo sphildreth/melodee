@@ -2,8 +2,12 @@ using Melodee.Common.Serialization;
 using Microsoft.Extensions.Caching.Memory;
 using Serilog;
 using System.Collections.Concurrent;
+using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
+using Melodee.Common.Models;
 using Melodee.Common.Utility;
+using System.Reflection;
+using System.Text;
 
 namespace Melodee.Common.Services.Caching;
 
@@ -18,6 +22,7 @@ public sealed class MemoryCacheManager(ILogger logger, TimeSpan defaultTimeSpan,
 {
     private readonly ConcurrentDictionary<string, MemoryCache> _regionCaches = new();
     private readonly ConcurrentDictionary<string, ConcurrentDictionary<string, Task<object>>> _pendingTasksByRegion = new();
+    private readonly ConcurrentDictionary<string, ConcurrentDictionary<string, object>> _regionCacheData = new();
     private const string DefaultRegion = "__default__";
 
     public override void Clear()
@@ -29,6 +34,7 @@ public sealed class MemoryCacheManager(ILogger logger, TimeSpan defaultTimeSpan,
         }
         _regionCaches.Clear();
         _pendingTasksByRegion.Clear();
+        _regionCacheData.Clear();
     }
 
     public override void ClearRegion(string region)
@@ -44,6 +50,9 @@ public sealed class MemoryCacheManager(ILogger logger, TimeSpan defaultTimeSpan,
 
         // Remove pending tasks for this region
         _pendingTasksByRegion.TryRemove(regionKey, out _);
+        
+        // Remove tracking data for this region
+        _regionCacheData.TryRemove(regionKey, out _);
     }
 
     private MemoryCache GetCacheForRegion(string? region)
@@ -178,6 +187,10 @@ public sealed class MemoryCacheManager(ILogger logger, TimeSpan defaultTimeSpan,
                     var cache = GetCacheForRegion(region);
                     cache.Set(key, value, effectiveDuration);
 
+                    // Track the cached object for size calculations
+                    var regionData = _regionCacheData.GetOrAdd(regionKey, _ => new ConcurrentDictionary<string, object>());
+                    regionData.AddOrUpdate(key, value!, (_, _) => value!);
+
                     // For short durations, we can remove the task immediately after caching
                     // This ensures that subsequent calls will create new tasks when items expire
                     if (isCustomShortDuration)
@@ -190,6 +203,12 @@ public sealed class MemoryCacheManager(ILogger logger, TimeSpan defaultTimeSpan,
                             if (_regionCaches.TryGetValue(regionTaskKey, out var regionCache))
                             {
                                 regionCache.Remove(key);
+                            }
+
+                            // Remove from tracking data
+                            if (_regionCacheData.TryGetValue(regionTaskKey, out var regionTrackingData))
+                            {
+                                regionTrackingData.TryRemove(key, out _);
                             }
 
                             // Remove the task as well
@@ -229,6 +248,12 @@ public sealed class MemoryCacheManager(ILogger logger, TimeSpan defaultTimeSpan,
             removed = true;
         }
 
+        // Remove from tracking data
+        if (_regionCacheData.TryGetValue(DefaultRegion, out var regionData))
+        {
+            regionData.TryRemove(key, out _);
+        }
+
         // Also clean up any pending tasks for this key
         if (_pendingTasksByRegion.TryGetValue(DefaultRegion, out var tasks))
         {
@@ -262,6 +287,12 @@ public sealed class MemoryCacheManager(ILogger logger, TimeSpan defaultTimeSpan,
             removed = true;
         }
 
+        // Remove from tracking data
+        if (_regionCacheData.TryGetValue(region, out var regionData))
+        {
+            regionData.TryRemove(key, out _);
+        }
+
         // Also clean up any pending tasks for this key in this region
         if (_pendingTasksByRegion.TryGetValue(region, out var tasks))
         {
@@ -274,5 +305,130 @@ public sealed class MemoryCacheManager(ILogger logger, TimeSpan defaultTimeSpan,
         }
 
         return removed;
+    }
+    
+    public override IEnumerable<Statistic> CacheStatistics()
+    {
+        var stats = new List<Statistic>();
+        int totalItems = 0;
+        long totalBytes = 0;
+        
+        foreach (var region in _regionCaches)
+        {
+            var count = region.Value.Count;
+            var sizeInBytes = GetCacheRegionSizeInBytes(region.Key);
+            
+            totalItems += count;
+            totalBytes += sizeInBytes;
+            
+            stats.Add(new Statistic(
+                StatisticType.Count,
+                $"Cache Items in Region '{region.Key}'",
+                count,
+                "#2196f3"
+            ));
+            
+            stats.Add(new Statistic(
+                StatisticType.Information,
+                $"Cache Size in Region '{region.Key}'",
+                $"{sizeInBytes.FormatFileSize()} [{ sizeInBytes}]",
+                "#ff9800"
+            ));
+        }
+        
+        stats.Add(new Statistic(
+            StatisticType.Count,
+            "Total Cache Items",
+            totalItems,
+            "#4caf50"
+        ));
+        
+        stats.Add(new Statistic(
+            StatisticType.Information,
+            "Total Cache Size",
+            $"{totalBytes.FormatFileSize()} [{ totalBytes}]",
+            "#e91e63"
+        ));
+        
+        stats.Add(new Statistic(
+            StatisticType.Information,
+            "Cache Regions",
+            _regionCaches.Count,
+            "#607d8b"
+        ));
+        
+        return stats;
+    }
+
+    private long GetCacheRegionSizeInBytes(string regionKey)
+    {
+        if (!_regionCacheData.TryGetValue(regionKey, out var regionData))
+        {
+            return 0;
+        }
+
+        long totalSize = 0;
+        foreach (var obj in regionData.Values)
+        {
+            totalSize += GetObjectSizeInBytes(obj);
+        }
+
+        return totalSize;
+    }
+
+    private long GetObjectSizeInBytes(object obj)
+    {
+        try
+        {
+            // For strings, calculate UTF-8 byte length
+            if (obj is string str)
+            {
+                return Encoding.UTF8.GetByteCount(str);
+            }
+
+            // For primitive types, return their size
+            if (obj.GetType().IsPrimitive)
+            {
+                return Type.GetTypeCode(obj.GetType()) switch
+                {
+                    TypeCode.Boolean => sizeof(bool),
+                    TypeCode.Byte => sizeof(byte),
+                    TypeCode.SByte => sizeof(sbyte),
+                    TypeCode.Char => sizeof(char),
+                    TypeCode.Int16 => sizeof(short),
+                    TypeCode.UInt16 => sizeof(ushort),
+                    TypeCode.Int32 => sizeof(int),
+                    TypeCode.UInt32 => sizeof(uint),
+                    TypeCode.Int64 => sizeof(long),
+                    TypeCode.UInt64 => sizeof(ulong),
+                    TypeCode.Single => sizeof(float),
+                    TypeCode.Double => sizeof(double),
+                    TypeCode.Decimal => sizeof(decimal),
+                    _ => 8 // Default fallback
+                };
+            }
+
+            // For complex objects, try serialization to get approximate size
+            var serialized = Serializer.Serialize(obj);
+            return string.IsNullOrEmpty(serialized) ? 0 : Encoding.UTF8.GetByteCount(serialized);
+        }
+        catch (Exception ex)
+        {
+            Logger.Debug(ex, "Failed to calculate object size for type {ObjectType}", obj.GetType().Name);
+            // Fallback: estimate based on object type
+            return EstimateObjectSize(obj);
+        }
+    }
+
+    private long EstimateObjectSize(object obj)
+    {
+        // Basic estimation for common types
+        return obj switch
+        {
+            string s => Encoding.UTF8.GetByteCount(s),
+            Array array => array.Length * 8, // Rough estimate
+            System.Collections.ICollection collection => collection.Count * 16, // Rough estimate
+            _ => 64 // Default estimate for complex objects
+        };
     }
 }
