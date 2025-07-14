@@ -10,8 +10,10 @@ using Melodee.Common.Extensions;
 using Melodee.Common.MessageBus.Events;
 using Melodee.Common.Models.Collection;
 using Melodee.Common.Models.Extensions;
+using Melodee.Common.Plugins.Conversion.Image;
 using Melodee.Common.Serialization;
 using Melodee.Common.Services.Caching;
+using Melodee.Common.Services.Extensions;
 using Melodee.Common.Services.Scanning;
 using Microsoft.EntityFrameworkCore;
 using NodaTime;
@@ -29,6 +31,7 @@ public class AlbumService(
     IDbContextFactory<MelodeeDbContext> contextFactory,
     IBus bus,
     ISerializer serializer,
+    IHttpClientFactory httpClientFactory,
     MediaEditService mediaEditService)
     : ServiceBase(logger, cacheManager, contextFactory)
 {
@@ -64,6 +67,10 @@ public class AlbumService(
             CacheManager.Remove(CacheKeyDetailByApiKeyTemplate.FormatSmart(album.Data.ApiKey));
             CacheManager.Remove(CacheKeyDetailByNameNormalizedTemplate.FormatSmart(album.Data.NameNormalized));
             CacheManager.Remove(CacheKeyDetailTemplate.FormatSmart(album.Data.Id));
+            CacheManager.Remove(CacheKeyAlbumImageBytesAndEtagTemplate.FormatSmart(album.Data.Id, ImageSizeRegistry.Small));
+            CacheManager.Remove(CacheKeyAlbumImageBytesAndEtagTemplate.FormatSmart(album.Data.Id, ImageSizeRegistry.Medium));
+            CacheManager.Remove(CacheKeyAlbumImageBytesAndEtagTemplate.FormatSmart(album.Data.Id, ImageSizeRegistry.Large));            
+            
             if (album.Data.MusicBrainzId != null)
             {
                 CacheManager.Remove(
@@ -207,7 +214,8 @@ public class AlbumService(
     }
 
 
-    public async Task<MelodeeModels.OperationResult<bool>> DeleteAsync(int[] albumIds,
+    public async Task<MelodeeModels.OperationResult<bool>> DeleteAsync(
+        int[] albumIds,
         CancellationToken cancellationToken = default)
     {
         Guard.Against.NullOrEmpty(albumIds, nameof(albumIds));
@@ -271,46 +279,8 @@ public class AlbumService(
         };
     }
 
-    public async Task<MelodeeModels.OperationResult<Album?>> GetByArtistIdAndNameNormalized(int artistId,
-        string nameNormalized, CancellationToken cancellationToken = default)
-    {
-        Guard.Against.NullOrEmpty(nameNormalized, nameof(nameNormalized));
-
-        int? id = null;
-        try
-        {
-            id = await CacheManager.GetAsync(CacheKeyDetailByNameNormalizedTemplate.FormatSmart(nameNormalized),
-                async () =>
-                {
-                    await using (var scopedContext =
-                                 await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
-                    {
-                        var dbConn = scopedContext.Database.GetDbConnection();
-                        return await dbConn
-                            .QuerySingleOrDefaultAsync<int?>(
-                                "SELECT \"Id\" FROM \"Albums\" WHERE \"ArtistId\" = @artistId AND \"NameNormalized\" = @nameNormalized",
-                                new { artistId, nameNormalized })
-                            .ConfigureAwait(false);
-                    }
-                }, cancellationToken);
-        }
-        catch (Exception e)
-        {
-            Logger.Error(e, "Failed to get album [{Name}] for artistId [{ArtistId}].", nameNormalized, artistId);
-        }
-
-        if (id == null)
-        {
-            return new MelodeeModels.OperationResult<Album?>("Unknown album.")
-            {
-                Data = null
-            };
-        }
-
-        return await GetAsync(id.Value, cancellationToken).ConfigureAwait(false);
-    }
-
-    public async Task<MelodeeModels.OperationResult<Album?>> GetAsync(int id,
+    public async Task<MelodeeModels.OperationResult<Album?>> GetAsync(
+        int id,
         CancellationToken cancellationToken = default)
     {
         Guard.Against.Expression(x => x < 1, id, nameof(id));
@@ -364,7 +334,8 @@ public class AlbumService(
         return await GetAsync(id.Value, cancellationToken).ConfigureAwait(false);
     }
 
-    public async Task<MelodeeModels.OperationResult<Album?>> GetByApiKeyAsync(Guid apiKey,
+    public async Task<MelodeeModels.OperationResult<Album?>> GetByApiKeyAsync(
+        Guid apiKey,
         CancellationToken cancellationToken = default)
     {
         Guard.Against.Expression(_ => apiKey == Guid.Empty, apiKey, nameof(apiKey));
@@ -747,5 +718,124 @@ public class AlbumService(
             var imageBytes = await File.ReadAllBytesAsync(imageFile.FullName, cancellationToken).ConfigureAwait(false);
             return new MelodeeModels.ImageBytesAndEtag(imageBytes, (album.Data.LastUpdatedAt ?? album.Data.CreatedAt).ToEtag());
         }, cancellationToken, configuration.CacheDuration(),Artist.CacheRegion);
+    }
+
+    public async Task<MelodeeModels.OperationResult<bool>> SaveImageAsAlbumImageAsync(
+        int albumid,
+        bool deleteAllImages, 
+        byte[] imageBytes, 
+        CancellationToken cancellationToken = default)
+    {
+        Guard.Against.Expression(x => x < 1, albumid, nameof(albumid));
+        Guard.Against.NullOrEmpty(imageBytes, nameof(imageBytes));
+
+        var album = await GetAsync(albumid, cancellationToken);
+        if (!album.IsSuccess || album.Data == null)
+        {
+            return new MelodeeModels.OperationResult<bool>("Unknown album.")
+            {
+                Data = false
+            };
+        }
+
+        return new MelodeeModels.OperationResult<bool>
+        {
+            Data = await SaveImageBytesAsAlbumImageAsync(
+                    album.Data, 
+                    deleteAllImages, 
+                    imageBytes, 
+                    cancellationToken)
+                .ConfigureAwait(false)
+        };
+    }    
+    
+    private async Task<bool> SaveImageBytesAsAlbumImageAsync(
+        Album album,
+        bool deleteAllImages,
+        byte[] imageBytes,
+        CancellationToken cancellationToken = default)
+    {
+         var configuration = await configurationFactory.GetConfigurationAsync(cancellationToken);
+         var imageConvertor = new ImageConvertor(configuration);
+
+        var albumPath = album.ToFileSystemDirectoryInfo();
+        if (deleteAllImages)
+        {
+            albumPath.DeleteAllFilesForExtension("*.jpg");
+        }
+        var newAlbumCoverFilename = Path.Combine(albumPath.FullName(), $"i-01-{Album.FrontImageType}.jpg");
+        if (File.Exists(newAlbumCoverFilename))
+        {
+            File.Delete(newAlbumCoverFilename);
+        }     
+        await File.WriteAllBytesAsync(newAlbumCoverFilename, imageBytes, cancellationToken);
+        await imageConvertor.ProcessFileAsync(
+            albumPath,
+            new MelodeeModels.FileSystemFileInfo
+            {
+                Name = newAlbumCoverFilename,
+                Size = imageBytes.Length
+            },
+            cancellationToken);
+        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        {
+            var now = Instant.FromDateTimeUtc(DateTime.UtcNow);
+            await scopedContext.Albums
+                .Where(x => x.Id == album.Id)
+                .ExecuteUpdateAsync(setters => setters
+                    .SetProperty(x => x.LastUpdatedAt, now)
+                    .SetProperty(x => x.ImageCount, albumPath.ImageFilesFound), cancellationToken)
+                .ConfigureAwait(false);
+        }
+        await ClearCacheAsync(album.Id, cancellationToken);
+        return true;        
+        
+    }
+
+    public async Task<MelodeeModels.OperationResult<bool>> SaveImageUrlAsAlbumImageAsync(
+        int albumId,
+        string imageUrl,
+        bool deleteAllImages,
+        CancellationToken cancellationToken = default)
+    {
+        Guard.Against.Expression(x => x < 1, albumId, nameof(albumId));
+        Guard.Against.NullOrEmpty(imageUrl, nameof(imageUrl));
+
+        var album = await GetAsync(albumId, cancellationToken);
+        if (!album.IsSuccess || album.Data == null)
+        {
+            return new MelodeeModels.OperationResult<bool>("Unknown album.")
+            {
+                Data = false
+            };
+        }
+
+        var result = false;
+        var configuration = await configurationFactory.GetConfigurationAsync(cancellationToken);
+        try
+        {
+            var imageBytes = await httpClientFactory.BytesForImageUrlAsync(
+                configuration.GetValue<string?>(SettingRegistry.SearchEngineUserAgent) ?? string.Empty, 
+                imageUrl,
+                cancellationToken);
+            if (imageBytes != null)
+            {
+                result = await SaveImageBytesAsAlbumImageAsync(
+                    album.Data, 
+                    deleteAllImages, 
+                    imageBytes,
+                    cancellationToken).ConfigureAwait(false);
+            }
+        }
+        catch (Exception e)
+        {
+            Logger.Error(e, "Error attempting to download mage Url [{Url}] for album [{Album}]", imageUrl,
+                album.Data.ToString());
+        }
+
+        return new MelodeeModels.OperationResult<bool>("An error has occured. OH NOES!")
+        {
+            Data = result
+        };
     }
 }

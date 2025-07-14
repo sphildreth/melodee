@@ -665,6 +665,8 @@
         }
     ];
 
+
+
     private async Task AlbumSearchImageCallback(ImageSearchResult? selectedImageSearchResult)
     {
         MainLayoutProxyService.ToggleSpinnerVisible();
@@ -675,36 +677,24 @@
         {
             if (selectedImageSearchResult != null)
             {
-                var httpClient = HttpClientFactory.CreateClient();
-                var albumPath = Path.Combine(_album.Artist.Library.Path, _album.Artist.Directory, _album.Directory).ToFileSystemDirectoryInfo();
-                var doDeleteAllOtherAlbumImages = selectedImageSearchResult.DoDeleteAllOtherArtistImages;
-                if (doDeleteAllOtherAlbumImages)
-                {
-                    albumPath.DeleteAllFilesForExtension("*.jpg");
-                }
-
-                var newAlbumCoverFilename = Path.Combine(albumPath.FullName(), $"i-01-{Album.FrontImageType}.jpg");
-                if (File.Exists(newAlbumCoverFilename))
-                {
-                    File.Delete(newAlbumCoverFilename);
-                }
-
+                OperationResult<bool>? saveResult = null;
                 if (selectedImageSearchResult.ImageBytes != null)
                 {
-                    await File.WriteAllBytesAsync(newAlbumCoverFilename, selectedImageSearchResult.ImageBytes);
+                    saveResult = await AlbumService.SaveImageAsAlbumImageAsync(_album.Id, selectedImageSearchResult.DoDeleteAllOtherArtistImages, selectedImageSearchResult.ImageBytes);
                 }
                 else
                 {
-                    await httpClient.DownloadFileAsync(selectedImageSearchResult.Url, newAlbumCoverFilename);
+                    saveResult = await AlbumService.SaveImageUrlAsAlbumImageAsync(_album.Id, selectedImageSearchResult.Url, selectedImageSearchResult.DoDeleteAllOtherArtistImages);
                 }
 
-                var result = await AlbumService.UpdateAsync(_album);
-                if (result.Data)
+                if (saveResult.IsSuccess)
                 {
-                    NotificationService.Notify(NotificationMessageForResult(result, "set cover image", ToastTime));
+                    NavigationManager.Refresh(true);
                 }
-
-                NavigationManager.Refresh(true);
+                else
+                {
+                    NotificationService.Notify(NotificationMessageForResult(saveResult, "Saving Artist image", ToastTime));
+                }
             }
         }
         finally
@@ -712,7 +702,6 @@
             MainLayoutProxyService.ToggleSpinnerVisible();
         }
     }
-
 
     private async Task SetCoverImageButtonClick()
     {

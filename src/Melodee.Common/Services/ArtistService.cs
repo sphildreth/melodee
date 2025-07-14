@@ -522,8 +522,11 @@ public class ArtistService(
         return await GetAsync(artist.Id, cancellationToken);
     }
 
-    public async Task<MelodeeModels.OperationResult<bool>> SaveImageAsArtistImageAsync(int artistId,
-        bool deleteAllImages, byte[] imageBytes, CancellationToken cancellationToken = default)
+    public async Task<MelodeeModels.OperationResult<bool>> SaveImageAsArtistImageAsync(
+        int artistId,
+        bool deleteAllImages, 
+        byte[] imageBytes, 
+        CancellationToken cancellationToken = default)
     {
         Guard.Against.Expression(x => x < 1, artistId, nameof(artistId));
         Guard.Against.NullOrEmpty(imageBytes, nameof(imageBytes));
@@ -539,12 +542,19 @@ public class ArtistService(
 
         return new MelodeeModels.OperationResult<bool>
         {
-            Data = await SaveImageBytesAsArtistImageAsync(artist.Data, deleteAllImages, imageBytes, cancellationToken)
+            Data = await SaveImageBytesAsArtistImageAsync(
+                    artist.Data, 
+                    deleteAllImages, 
+                    imageBytes, 
+                    cancellationToken)
                 .ConfigureAwait(false)
         };
     }
 
-    private async Task<bool> SaveImageBytesAsArtistImageAsync(Artist artist, bool deleteAllImages, byte[] imageBytes,
+    private async Task<bool> SaveImageBytesAsArtistImageAsync(
+        Artist artist, 
+        bool deleteAllImages, 
+        byte[] imageBytes,
         CancellationToken cancellationToken = default)
     {
         var configuration = await configurationFactory.GetConfigurationAsync(cancellationToken);
@@ -555,10 +565,8 @@ public class ArtistService(
         {
             foreach (var fileInAlbumDirectory in artistImages)
             {
-                if (fileInAlbumDirectory.Name.Contains(nameof(PictureIdentifier.Artist),
-                        StringComparison.OrdinalIgnoreCase) ||
-                    fileInAlbumDirectory.Name.Contains(nameof(PictureIdentifier.ArtistSecondary),
-                        StringComparison.OrdinalIgnoreCase))
+                if (fileInAlbumDirectory.Name.Contains(nameof(PictureIdentifier.Artist), StringComparison.OrdinalIgnoreCase) ||
+                    fileInAlbumDirectory.Name.Contains(nameof(PictureIdentifier.ArtistSecondary), StringComparison.OrdinalIgnoreCase))
                 {
                     fileInAlbumDirectory.Delete();
                 }
@@ -567,16 +575,14 @@ public class ArtistService(
             artistImages = artistDirectory.FileInfosForExtension("jpg").ToArray();
         }
 
-        var artistImageFileName = Path.Combine(artistDirectory.Path,
-            deleteAllImages ? "01-Band.image" : $"{artistImages.Length + 1}-Band.image");
+        var artistImageFileName = Path.Combine(artistDirectory.Path, deleteAllImages ? "01-Band.image" : $"{artistImages.Length + 1}-Band.image");
         var artistImageFileInfo = new FileInfo(artistImageFileName).ToFileSystemInfo();
         await File.WriteAllBytesAsync(artistImageFileInfo.FullName(artistDirectory), imageBytes, cancellationToken);
         await imageConvertor.ProcessFileAsync(
             artistDirectory,
             artistImageFileInfo,
             cancellationToken);
-        await using (var scopedContext =
-                     await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             var now = Instant.FromDateTimeUtc(DateTime.UtcNow);
             await scopedContext.Artists
@@ -586,13 +592,15 @@ public class ArtistService(
                     .SetProperty(x => x.ImageCount, artistImages.Length + 1), cancellationToken)
                 .ConfigureAwait(false);
         }
-
         await ClearCacheAsync(artist, cancellationToken);
         return true;
     }
 
-    public async Task<MelodeeModels.OperationResult<bool>> SaveImageUrlAsArtistImageAsync(int artistId, string imageUrl,
-        bool deleteAllImages, CancellationToken cancellationToken = default)
+    public async Task<MelodeeModels.OperationResult<bool>> SaveImageUrlAsArtistImageAsync(
+        int artistId, 
+        string imageUrl,
+        bool deleteAllImages, 
+        CancellationToken cancellationToken = default)
     {
         Guard.Against.Expression(x => x < 1, artistId, nameof(artistId));
         Guard.Against.NullOrEmpty(imageUrl, nameof(imageUrl));
@@ -611,11 +619,15 @@ public class ArtistService(
         try
         {
             var imageBytes = await httpClientFactory.BytesForImageUrlAsync(
-                configuration.GetValue<string?>(SettingRegistry.SearchEngineUserAgent) ?? string.Empty, imageUrl,
+                configuration.GetValue<string?>(SettingRegistry.SearchEngineUserAgent) ?? string.Empty, 
+                imageUrl,
                 cancellationToken);
             if (imageBytes != null)
             {
-                result = await SaveImageBytesAsArtistImageAsync(artist.Data, deleteAllImages, imageBytes,
+                result = await SaveImageBytesAsArtistImageAsync(
+                    artist.Data, 
+                    deleteAllImages, 
+                    imageBytes,
                     cancellationToken).ConfigureAwait(false);
             }
         }
@@ -805,7 +817,9 @@ public class ArtistService(
         }
     }
 
-    public async Task<MelodeeModels.OperationResult<bool>> LockUnlockArtistAsync(int artistId, bool doLock,
+    public async Task<MelodeeModels.OperationResult<bool>> LockUnlockArtistAsync(
+        int artistId, 
+        bool doLock,
         CancellationToken cancellationToken = default)
     {
         Guard.Against.Expression(x => x < 1, artistId, nameof(artistId));
@@ -827,7 +841,9 @@ public class ArtistService(
         };
     }
 
-    public async Task<MelodeeModels.OperationResult<bool>> DeleteAlbumsForArtist(int artistId, int[] albumIdsToDelete,
+    public async Task<MelodeeModels.OperationResult<bool>> DeleteAlbumsForArtist(
+        int artistId, 
+        int[] albumIdsToDelete,
         CancellationToken cancellationToken = default)
     {
         Guard.Against.Expression(x => x < 1, artistId, nameof(artistId));

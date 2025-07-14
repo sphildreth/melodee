@@ -165,44 +165,41 @@ def get_directory_size(dir_path, chunk_size=1000):
         pass
     return total_size
 
-def should_delete(dirname):
-    """Check if any of the keywords are in the directory name or if it contains a date."""
-    # Use pre-compiled patterns for better performance
+def should_delete(dirname, delete_dash_one=True):
+    """Check if any of the keywords are in the directory name, if it contains a date, or ends with '-1'."""
     keyword_match = any(pattern.search(dirname) for pattern in KEYWORD_PATTERNS.values())
-    return keyword_match or contains_embedded_date(dirname)
+    dash_one_match = delete_dash_one and dirname.strip().endswith('-1')
+    return keyword_match or contains_embedded_date(dirname) or dash_one_match
 
-def highlight_deletion_reason(dirname):
+def highlight_deletion_reason(dirname, delete_dash_one=True):
     """
     Highlight the reason why a directory would be deleted.
     Returns the directory name with highlighted keywords/dates and reason.
     """
     highlighted_name = dirname
     reasons = []
-    
     # Check for keywords and highlight them using pre-compiled patterns
     for keyword, pattern in KEYWORD_PATTERNS.items():
         if pattern.search(dirname):
             highlighted_name = pattern.sub(f"{Colors.BG_RED}{Colors.WHITE}{keyword.upper()}{Colors.RESET}", highlighted_name)
             reasons.append(f"keyword '{Colors.BOLD}{keyword}{Colors.RESET}'")
-    
     # Check for embedded dates and highlight them
     if contains_embedded_date(dirname):
-        # Find and highlight all date matches using pre-compiled pattern
         matches = list(COMBINED_DATE_PATTERN.finditer(dirname))
         if matches:
-            # Replace matches from right to left to maintain positions
             for match in reversed(matches):
                 date_text = match.group()
                 highlighted_date = f"{Colors.BG_YELLOW}{Colors.BOLD}{date_text}{Colors.RESET}"
                 highlighted_name = highlighted_name[:match.start()] + highlighted_date + highlighted_name[match.end():]
             reasons.append(f"embedded date pattern")
-    
-    # Create reason string
+    # Check for '-1' suffix
+    if delete_dash_one and dirname.strip().endswith('-1'):
+        highlighted_name = re.sub(r'(-1)$', f"{Colors.BG_RED}{Colors.WHITE}-1{Colors.RESET}", highlighted_name)
+        reasons.append(f"ends with '-1' (likely duplicate)")
     if reasons:
         reason_str = f" {Colors.CYAN}[Reason: {', '.join(reasons)}]{Colors.RESET}"
     else:
         reason_str = ""
-    
     return highlighted_name + reason_str
 
 def contains_embedded_date(s: str) -> bool:
@@ -238,7 +235,7 @@ def contains_embedded_date(s: str) -> bool:
             return True
     return False
 
-def delete_matching_dirs(root_dir, pretend=True, check_sfv=True):
+def delete_matching_dirs(root_dir, pretend=True, check_sfv=True, delete_dash_one=True):
     """Recursively process directories under root_dir with optimized single-pass processing."""
     global shutdown_requested
     deleted = 0
@@ -337,13 +334,10 @@ def delete_matching_dirs(root_dir, pretend=True, check_sfv=True):
                 if pbar:
                     pbar.update(1)
                 
-                # Check if directory should be deleted based on keywords/dates first
-                if should_delete(dirname):
+                # Check if directory should be deleted based on keywords/dates or '-1' suffix first
+                if should_delete(dirname, delete_dash_one=delete_dash_one):
                     dir_size = get_directory_size(full_path)
-                    
-                    # Get highlighted name with deletion reason
-                    highlighted_info = highlight_deletion_reason(dirname)
-                    
+                    highlighted_info = highlight_deletion_reason(dirname, delete_dash_one=delete_dash_one)
                     if pretend:
                         print(f"  {Colors.YELLOW}🗑️  Would delete:{Colors.RESET} {highlighted_info}")
                         print(f"    {Colors.CYAN}📍 Path:{Colors.RESET} {full_path} {Colors.CYAN}({format_size(dir_size)}){Colors.RESET}")
@@ -999,41 +993,34 @@ def print_sfv_details(sfv_results, directory_name):
 if __name__ == "__main__":
     # Setup signal handlers for graceful shutdown
     setup_signal_handlers()
-    
-    parser = argparse.ArgumentParser(description='Clean up directories based on keywords, dates, and SFV integrity')
+    parser = argparse.ArgumentParser(description='Clean up directories based on keywords, dates, SFV integrity, and duplicate "-1" suffix')
     parser.add_argument('--pretend', type=str, choices=['true', 'false'], default='true',
                         help='Pretend mode: true (default, safe mode - only show what would be deleted) or false (actually delete)')
     parser.add_argument('--root-dir', default='.',
                         help='Root directory to search from (default: current directory)')
     parser.add_argument('--check-sfv', type=str, choices=['true', 'false'], default='true',
                         help='Enable SFV integrity checking: true (default) or false (skip SFV verification)')
-    
+    parser.add_argument('--delete-dash-one', type=str, choices=['true', 'false'], default='true',
+                        help='Delete directories ending with "-1" (likely duplicates): true (default) or false')
     args = parser.parse_args()
-    
-    # Handle the pretend logic
     pretend_mode = args.pretend.lower() == 'true'
     check_sfv_enabled = args.check_sfv.lower() == 'true'
-    
-    # Print header
+    delete_dash_one_enabled = args.delete_dash_one.lower() == 'true'
     print(f"{Colors.BOLD}{Colors.BG_BLUE}                  NEWS GROUP CLEANUP TOOL                  {Colors.RESET}")
     print(f"{Colors.BOLD}{'='*60}{Colors.RESET}")
-    
     if pretend_mode:
         print(f"{Colors.YELLOW}🔍 PRETEND MODE:{Colors.RESET} Showing what would be deleted (use {Colors.BOLD}--pretend false{Colors.RESET} to actually delete)")
     else:
         print(f"{Colors.RED}⚠️  LIVE MODE:{Colors.RESET} {Colors.BOLD}Actually deleting directories{Colors.RESET}")
         print(f"{Colors.RED}⚠️  WARNING:{Colors.RESET} This will permanently delete directories!")
-    
     print(f"{Colors.CYAN}📁 Target Directory:{Colors.RESET} {Colors.BOLD}{os.path.abspath(args.root_dir)}{Colors.RESET}")
     print(f"{Colors.MAGENTA}🎯 Keywords:{Colors.RESET} {', '.join(KEYWORDS)}")
     if check_sfv_enabled:
         print(f"{Colors.BLUE}📋 SFV Checking:{Colors.RESET} {Colors.GREEN}Enabled{Colors.RESET} (use {Colors.BOLD}--check-sfv false{Colors.RESET} to disable)")
     else:
         print(f"{Colors.BLUE}📋 SFV Checking:{Colors.RESET} {Colors.YELLOW}Disabled{Colors.RESET}")
+    print(f"{Colors.YELLOW}🗂️  Delete '-1' Duplicates:{Colors.RESET} {'Enabled' if delete_dash_one_enabled else 'Disabled'} (use --delete-dash-one false to disable)")
     print(f"{Colors.BOLD}{'-' * 60}{Colors.RESET}")
-    
-    # Set the root directory to search from
     ROOT_DIR = args.root_dir
-    deleted_count = delete_matching_dirs(ROOT_DIR, pretend_mode, check_sfv_enabled)
-    
+    deleted_count = delete_matching_dirs(ROOT_DIR, pretend_mode, check_sfv_enabled, delete_dash_one=delete_dash_one_enabled)
     print_statistics()

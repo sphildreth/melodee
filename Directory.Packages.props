@@ -102,10 +102,10 @@
     <PackageVersion Include="Toolbelt.Blazor.HotKeys2" Version="5.1.0" />
     <PackageVersion Include="Xamarin.UITest" Version="4.3.4" />
     <PackageVersion Include="xunit" Version="2.9.3" />
-    <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.1">
+    <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.2">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageVersion>
-    <PackageVersion Include="z440.atl.core" Version="7.0.0" />
+    <PackageVersion Include="z440.atl.core" Version="7.1.0" />
   </ItemGroup>
 </Project>
