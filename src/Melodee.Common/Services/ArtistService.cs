@@ -1,5 +1,4 @@
 using Ardalis.GuardClauses;
-using Dapper;
 using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
 using Melodee.Common.Data;
@@ -7,6 +6,7 @@ using Melodee.Common.Data.Models;
 using Melodee.Common.Data.Models.Extensions;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
+using Melodee.Common.Filtering;
 using Melodee.Common.MessageBus.Events;
 using Melodee.Common.Models.Collection;
 using Melodee.Common.Models.Extensions;
@@ -43,32 +43,45 @@ public class ArtistService(
     public async Task<MelodeeModels.PagedResult<ArtistDataInfo>> ListAsync(MelodeeModels.PagedRequest pagedRequest,
         CancellationToken cancellationToken = default)
     {
-        int artistCount;
+        await using var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
+        
+        // Build the base query with performance optimizations
+        var baseQuery = scopedContext.Artists
+            .AsNoTracking()
+            .Include(a => a.Library);
+
+        // Apply filters using EF Core instead of raw SQL
+        var filteredQuery = ApplyFilters(baseQuery, pagedRequest);
+
+        // Get count efficiently
+        var artistCount = await filteredQuery.CountAsync(cancellationToken).ConfigureAwait(false);
+
         ArtistDataInfo[] artists = [];
-        await using (var scopedContext =
-                     await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        if (!pagedRequest.IsTotalCountOnlyRequest)
         {
-            var orderBy = pagedRequest.OrderByValue();
-            var dbConn = scopedContext.Database.GetDbConnection();
-            var countSqlParts = pagedRequest.FilterByParts("SELECT COUNT(*) FROM \"Artists\"");
-            artistCount = await dbConn
-                .QuerySingleAsync<int>(countSqlParts.Item1, countSqlParts.Item2)
+            // Apply ordering, skip, and take with projection to ArtistDataInfo
+            var orderedQuery = ApplyOrdering(filteredQuery, pagedRequest);
+            
+            artists = await orderedQuery
+                .Skip(pagedRequest.SkipValue)
+                .Take(pagedRequest.TakeValue)
+                .Select(a => new ArtistDataInfo(
+                    a.Id,
+                    a.ApiKey,
+                    a.IsLocked,
+                    a.LibraryId,
+                    a.Library.Path, // LibraryPath
+                    a.Name,
+                    a.NameNormalized,
+                    a.AlternateNames ?? string.Empty,
+                    a.Directory,
+                    a.AlbumCount,
+                    a.SongCount,
+                    a.CreatedAt,
+                    a.Tags ?? string.Empty,
+                    a.LastUpdatedAt))
+                .ToArrayAsync(cancellationToken)
                 .ConfigureAwait(false);
-            if (!pagedRequest.IsTotalCountOnlyRequest)
-            {
-                var sqlStartFragment = """
-                                       SELECT a."Id", a."ApiKey", a."IsLocked", a."LibraryId", l."Path" as "LibraryPath", a."Name", a."NameNormalized", a."AlternateNames",
-                                              a."Directory", a."AlbumCount", a."SongCount", a."CreatedAt", a."Tags", a."LastUpdatedAt"
-                                       FROM "Artists" a
-                                       JOIN "Libraries" l ON (a."LibraryId" = l."Id") 
-                                       """;
-                var listSqlParts = pagedRequest.FilterByParts(sqlStartFragment, "a");
-                var listSql =
-                    $"{listSqlParts.Item1} ORDER BY {orderBy} OFFSET {pagedRequest.SkipValue} ROWS FETCH NEXT {pagedRequest.TakeValue} ROWS ONLY;";
-                artists = (await dbConn
-                    .QueryAsync<ArtistDataInfo>(listSql, listSqlParts.Item2)
-                    .ConfigureAwait(false)).ToArray();
-            }
         }
 
         return new MelodeeModels.PagedResult<ArtistDataInfo>
@@ -76,6 +89,72 @@ public class ArtistService(
             TotalCount = artistCount,
             TotalPages = pagedRequest.TotalPages(artistCount),
             Data = artists
+        };
+    }
+
+    private static IQueryable<Artist> ApplyFilters(IQueryable<Artist> query, MelodeeModels.PagedRequest pagedRequest)
+    {
+        if (pagedRequest.FilterBy == null || pagedRequest.FilterBy.Length == 0)
+        {
+            return query;
+        }
+
+        foreach (var filter in pagedRequest.FilterBy)
+        {
+            var filterValue = filter.Value.ToString() ?? string.Empty;
+            
+            query = filter.PropertyName.ToLowerInvariant() switch
+            {
+                "name" => filter.Operator switch
+                {
+                    FilterOperator.Contains => query.Where(a => a.Name.Contains(filterValue)),
+                    FilterOperator.Equals => query.Where(a => a.Name == filterValue),
+                    FilterOperator.StartsWith => query.Where(a => a.Name.StartsWith(filterValue)),
+                    _ => query
+                },
+                "namenormalized" => filter.Operator switch
+                {
+                    FilterOperator.Contains => query.Where(a => a.NameNormalized.Contains(filterValue)),
+                    FilterOperator.Equals => query.Where(a => a.NameNormalized == filterValue),
+                    FilterOperator.StartsWith => query.Where(a => a.NameNormalized.StartsWith(filterValue)),
+                    _ => query
+                },
+                "alternatenames" => filter.Operator switch
+                {
+                    FilterOperator.Contains => query.Where(a => a.AlternateNames != null && a.AlternateNames.Contains(filterValue)),
+                    _ => query
+                },
+                "islocked" => filter.Operator switch
+                {
+                    FilterOperator.Equals when bool.TryParse(filterValue, out var boolValue) => 
+                        query.Where(a => a.IsLocked == boolValue),
+                    _ => query
+                },
+                _ => query
+            };
+        }
+
+        return query;
+    }
+
+    private static IQueryable<Artist> ApplyOrdering(IQueryable<Artist> query, MelodeeModels.PagedRequest pagedRequest)
+    {
+        // Use the existing OrderByValue method from PagedRequest
+        var orderByClause = pagedRequest.OrderByValue("Name", MelodeeModels.PagedRequest.OrderAscDirection);
+        
+        // Parse the order by clause to determine field and direction
+        var isDescending = orderByClause.Contains("DESC", StringComparison.OrdinalIgnoreCase);
+        var fieldName = orderByClause.Split(' ')[0].Trim('"').ToLowerInvariant();
+
+        return fieldName switch
+        {
+            "name" => isDescending ? query.OrderByDescending(a => a.Name) : query.OrderBy(a => a.Name),
+            "namenormalized" => isDescending ? query.OrderByDescending(a => a.NameNormalized) : query.OrderBy(a => a.NameNormalized),
+            "createdat" => isDescending ? query.OrderByDescending(a => a.CreatedAt) : query.OrderBy(a => a.CreatedAt),
+            "lastupdatedat" => isDescending ? query.OrderByDescending(a => a.LastUpdatedAt) : query.OrderBy(a => a.LastUpdatedAt),
+            "albumcount" => isDescending ? query.OrderByDescending(a => a.AlbumCount) : query.OrderBy(a => a.AlbumCount),
+            "songcount" => isDescending ? query.OrderByDescending(a => a.SongCount) : query.OrderBy(a => a.SongCount),
+            _ => query.OrderBy(a => a.Name)
         };
     }
 
@@ -109,17 +188,16 @@ public class ArtistService(
         var id = await CacheManager.GetAsync(
             CacheKeyDetailByMusicBrainzIdTemplate.FormatSmart(musicBrainzId.ToString()), async () =>
             {
-                await using (var scopedContext =
-                             await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
-                {
-                    var dbConn = scopedContext.Database.GetDbConnection();
-                    return await dbConn
-                        .QuerySingleOrDefaultAsync<int?>(
-                            "SELECT \"Id\" FROM \"Artists\" WHERE \"MusicBrainzId\" = @musicBrainzId",
-                            new { musicBrainzId })
-                        .ConfigureAwait(false);
-                }
+                await using var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
+                
+                return await scopedContext.Artists
+                    .AsNoTracking()
+                    .Where(a => a.MusicBrainzId == musicBrainzId)
+                    .Select(a => (int?)a.Id)
+                    .FirstOrDefaultAsync(cancellationToken)
+                    .ConfigureAwait(false);
             }, cancellationToken);
+            
         if (id == null)
         {
             return new MelodeeModels.OperationResult<Artist?>("Unknown artist.")
@@ -139,17 +217,16 @@ public class ArtistService(
         var id = await CacheManager.GetAsync(CacheKeyDetailByNameNormalizedTemplate.FormatSmart(nameNormalized),
             async () =>
             {
-                await using (var scopedContext =
-                             await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
-                {
-                    var dbConn = scopedContext.Database.GetDbConnection();
-                    return await dbConn
-                        .QuerySingleOrDefaultAsync<int?>(
-                            "SELECT \"Id\" FROM \"Artists\" WHERE \"NameNormalized\" = @nameNormalized",
-                            new { nameNormalized })
-                        .ConfigureAwait(false);
-                }
+                await using var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
+                
+                return await scopedContext.Artists
+                    .AsNoTracking()
+                    .Where(a => a.NameNormalized == nameNormalized)
+                    .Select(a => (int?)a.Id)
+                    .FirstOrDefaultAsync(cancellationToken)
+                    .ConfigureAwait(false);
             }, cancellationToken);
+            
         if (id == null)
         {
             return new MelodeeModels.OperationResult<Artist?>("Unknown artist.")
@@ -170,75 +247,65 @@ public class ArtistService(
     {
         int? id = null;
 
-        await using (var scopedContext =
-                     await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        await using var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
+        
+        try
         {
-            var dbConn = scopedContext.Database.GetDbConnection();
-            try
+            // Try to find by ID first (most efficient)
+            if (byId.HasValue)
             {
-                string sql;
-
-                if (byId.HasValue)
-                {
-                    sql = """
-                           select a."Id"
-                           from "Artists" a 
-                           where a."Id" = @id
-                          """;
-                    id = await dbConn
-                        .QuerySingleOrDefaultAsync<int?>(sql, new { id = byId })
-                        .ConfigureAwait(false);
-                }
-
-                if (id == null && byApiKey != Guid.Empty)
-                {
-                    sql = """
-                           select a."Id"
-                           from "Artists" a 
-                           where a."ApiKey" = @apiKey
-                          """;
-                    id = await dbConn
-                        .QuerySingleOrDefaultAsync<int?>(sql, new { apiKey = byApiKey })
-                        .ConfigureAwait(false);
-                }
-
-                if (id == null && (byMusicBrainzId != null || bySpotifyId != null))
-                {
-                    sql = """
-                          select a."Id"
-                          from "Artists" a 
-                          where a."MusicBrainzId" = @musicBrainzId  
-                          or a."SpotifyId" = @spotifyId
-                          """;
-                    id = await dbConn
-                        .QuerySingleOrDefaultAsync<int?>(sql,
-                            new { musicBrainzId = byMusicBrainzId, spotifyId = bySpotifyId })
-                        .ConfigureAwait(false);
-                }
-
-                if (id == null)
-                {
-                    sql = """
-                          select a."Id"
-                          from "Artists" a 
-                          where a."NameNormalized" = @name
-                          """;
-                    id = await dbConn
-                        .QuerySingleOrDefaultAsync<int?>(sql, new { name = byName })
-                        .ConfigureAwait(false);
-                }
+                id = await scopedContext.Artists
+                    .AsNoTracking()
+                    .Where(a => a.Id == byId.Value)
+                    .Select(a => (int?)a.Id)
+                    .FirstOrDefaultAsync(cancellationToken)
+                    .ConfigureAwait(false);
             }
-            catch (Exception e)
+
+            // Try to find by API key
+            if (id == null && byApiKey != Guid.Empty)
             {
-                Logger.Error(e,
-                    "[{ServiceName}] attempting to Find Artist id [{Id}], apiKey [{ApiKey}], name [{Name}] musicbrainzId [{MbId}] spotifyId [{SpotifyId}]",
-                    nameof(ArtistService),
-                    byId,
-                    byApiKey,
-                    byName,
-                    byMusicBrainzId,
-                    bySpotifyId);
+                id = await scopedContext.Artists
+                    .AsNoTracking()
+                    .Where(a => a.ApiKey == byApiKey)
+                    .Select(a => (int?)a.Id)
+                    .FirstOrDefaultAsync(cancellationToken)
+                    .ConfigureAwait(false);
             }
+
+            // Try to find by MusicBrainz ID or Spotify ID
+            if (id == null && (byMusicBrainzId != null || bySpotifyId != null))
+            {
+                id = await scopedContext.Artists
+                    .AsNoTracking()
+                    .Where(a => (byMusicBrainzId != null && a.MusicBrainzId == byMusicBrainzId) ||
+                               (bySpotifyId != null && a.SpotifyId == bySpotifyId))
+                    .Select(a => (int?)a.Id)
+                    .FirstOrDefaultAsync(cancellationToken)
+                    .ConfigureAwait(false);
+            }
+
+            // Finally try to find by normalized name
+            if (id == null && !string.IsNullOrEmpty(byName))
+            {
+                id = await scopedContext.Artists
+                    .AsNoTracking()
+                    .Where(a => a.NameNormalized == byName)
+                    .Select(a => (int?)a.Id)
+                    .FirstOrDefaultAsync(cancellationToken)
+                    .ConfigureAwait(false);
+            }
+        }
+        catch (Exception e)
+        {
+            Logger.Error(e,
+                "[{ServiceName}] attempting to Find Artist id [{Id}], apiKey [{ApiKey}], name [{Name}] musicbrainzId [{MbId}] spotifyId [{SpotifyId}]",
+                nameof(ArtistService),
+                byId,
+                byApiKey,
+                byName,
+                byMusicBrainzId,
+                bySpotifyId);
         }
 
         if (id == null)
@@ -259,16 +326,16 @@ public class ArtistService(
 
         var id = await CacheManager.GetAsync(CacheKeyDetailByApiKeyTemplate.FormatSmart(apiKey), async () =>
         {
-            await using (var scopedContext =
-                         await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
-            {
-                var dbConn = scopedContext.Database.GetDbConnection();
-                return await dbConn
-                    .QuerySingleOrDefaultAsync<int?>("SELECT \"Id\" FROM \"Artists\" WHERE \"ApiKey\" = @apiKey",
-                        new { apiKey })
-                    .ConfigureAwait(false);
-            }
+            await using var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
+            
+            return await scopedContext.Artists
+                .AsNoTracking()
+                .Where(a => a.ApiKey == apiKey)
+                .Select(a => (int?)a.Id)
+                .FirstOrDefaultAsync(cancellationToken)
+                .ConfigureAwait(false);
         }, cancellationToken);
+        
         if (id == null)
         {
             return new MelodeeModels.OperationResult<Artist?>("Unknown artist.")
