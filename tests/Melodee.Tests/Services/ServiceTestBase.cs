@@ -1,6 +1,4 @@
-using System.Data.Common;
 using System.Net;
-using Dapper;
 using Melodee.Common.Configuration;
 using Melodee.Common.Data;
 using Melodee.Common.Data.Models;
@@ -21,7 +19,6 @@ using Melodee.Common.Services;
 using Melodee.Common.Services.Caching;
 using Melodee.Common.Services.Scanning;
 using Melodee.Common.Services.SearchEngines;
-using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Moq;
 using Quartz;
@@ -34,8 +31,6 @@ namespace Melodee.Tests.Services;
 public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
 {
     private readonly DbContextOptions<ArtistSearchEngineServiceDbContext> _dbArtistSearchEngineContextOptions;
-    private readonly DbConnection _dbConnection;
-
     private readonly DbContextOptions<MelodeeDbContext> _dbContextOptions;
 
     protected ServiceTestBase()
@@ -47,20 +42,15 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
         Serializer = new Serializer(Logger);
         CacheManager = new FakeCacheManager(Logger, TimeSpan.FromDays(1), Serializer);
 
-        _dbConnection = new SqliteConnection("Filename=:memory:;Cache=Shared;");
-        _dbConnection.Open();
-
-        SqlMapper.AddTypeHandler(new DateTimeOffsetHandler());
-        SqlMapper.AddTypeHandler(new GuidHandler());
-        SqlMapper.AddTypeHandler(new TimeSpanHandler());
-        SqlMapper.AddTypeHandler(new InstantHandler());
+        // Use EF Core In-Memory provider instead of SQLite
+        var databaseName = Guid.NewGuid().ToString(); // Unique database name for each test instance
 
         _dbContextOptions = new DbContextOptionsBuilder<MelodeeDbContext>()
-            .UseSqlite(_dbConnection, x => x.UseNodaTime())
+            .UseInMemoryDatabase(databaseName)
             .Options;
 
         _dbArtistSearchEngineContextOptions = new DbContextOptionsBuilder<ArtistSearchEngineServiceDbContext>()
-            .UseSqlite(_dbConnection)
+            .UseInMemoryDatabase($"{databaseName}_artistsearch")
             .Options;
 
         using (var context = new MelodeeDbContext(_dbContextOptions))
@@ -84,12 +74,11 @@ public abstract class ServiceTestBase : IDisposable, IAsyncDisposable
 
     public virtual async ValueTask DisposeAsync()
     {
-        await _dbConnection.DisposeAsync();
+        await Task.CompletedTask;
     }
 
     public virtual void Dispose()
     {
-        _dbConnection.Dispose();
     }
 
     protected IFileSystemService MockFileSystemService() => new MockFileSystemService();

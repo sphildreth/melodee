@@ -407,21 +407,15 @@ public class AlbumServiceTests : ServiceTestBase
         // Arrange
         var albumName = "New Album";
         var artistName = "Test Artist";
+
+        DataModels.Artist? artist;
         
         await using (var context = await MockFactory().CreateDbContextAsync())
         {
-            var library = new Library
-            {
-                ApiKey = Guid.NewGuid(),
-                Name = "Test Library",
-                Path = "/test/library",
-                Type = (int)LibraryType.Storage,
-                CreatedAt = Instant.FromDateTimeUtc(DateTime.UtcNow)
-            };
-            context.Libraries.Add(library);
-            await context.SaveChangesAsync();
 
-            var artist = new DataModels.Artist
+            var libraryStorageType = (int)LibraryType.Storage;
+            var library = context.Libraries.First(x => x.Type == libraryStorageType);
+            artist = new DataModels.Artist
             {
                 ApiKey = Guid.NewGuid(),
                 Directory = artistName.ToNormalizedString() ?? artistName,
@@ -432,18 +426,22 @@ public class AlbumServiceTests : ServiceTestBase
             };
             context.Artists.Add(artist);
             await context.SaveChangesAsync();
+
         }
 
         var album = new DataModels.Album
         {
             ArtistId = 1,
+            Artist = artist,
             Name = albumName,
             NameNormalized = albumName.ToNormalizedString()!,
             Directory = albumName.ToNormalizedString() ?? albumName,
             CreatedAt = Instant.FromDateTimeUtc(DateTime.UtcNow),
-            AlbumStatus = (short)AlbumStatus.Ok
+            AlbumStatus = (short)AlbumStatus.Ok,
+            ReleaseDate = LocalDate.FromDateOnly(DateOnly.FromDateTime(DateTime.Now))
         };
-
+        
+        
         // Act
         var result = await GetAlbumService().AddAlbumAsync(album);
 
@@ -453,6 +451,7 @@ public class AlbumServiceTests : ServiceTestBase
         Assert.Equal(albumName, result.Data.Name);
         Assert.NotEqual(Guid.Empty, result.Data.ApiKey);
         Assert.NotNull(result.Data.Directory);
+        
     }
 
     [Fact]

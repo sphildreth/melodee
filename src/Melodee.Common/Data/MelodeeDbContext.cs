@@ -61,6 +61,11 @@ public class MelodeeDbContext(DbContextOptions<MelodeeDbContext> options) : DbCo
 
         modelBuilder.Entity<Library>(s =>
         {
+            // Add filtered unique index to allow multiple Storage libraries but only one of each other type
+            s.HasIndex(e => e.Type)
+                .IsUnique()
+                .HasFilter("\"Type\" != 3"); // Exclude LibraryType.Storage (value 3) from unique constraint
+
             s.HasData(new Library
                 {
                     Id = 1,

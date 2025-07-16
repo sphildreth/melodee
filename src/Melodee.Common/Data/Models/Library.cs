@@ -10,10 +10,9 @@ using NodaTime;
 namespace Melodee.Common.Data.Models;
 
 /// <summary>
-///     Should be a single record for each type of library. A staging, an inbound, a library.
+///     Should be a single record for each type of library - except for Storage. See <see cref="MelodeeDbContext" /> for restriction configuration.
 /// </summary>
 [Serializable]
-[Index(nameof(Type), IsUnique = true)]
 public class Library : DataModelBase
 {
     [MaxLength(MaxLengthDefinitions.MaxGeneralInputLength)]
