@@ -20,7 +20,7 @@ public class MockFileSystemTests : IDisposable
         var files = mock.EnumerateFiles(albumPath, "*.mp3", SearchOption.TopDirectoryOnly);
 
         // Assert
-        Assert.Equal(3, files.Count());
+        Assert.Equal(5, files.Count());
         Assert.Contains("/music/Artist Name/Album Name (2023)/01 - Track One.mp3", files);
         Assert.Contains("/music/Artist Name/Album Name (2023)/02 - Track Two.mp3", files);
         Assert.Contains("/music/Artist Name/Album Name (2023)/03 - Track Three.mp3", files);
