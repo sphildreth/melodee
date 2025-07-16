@@ -158,7 +158,7 @@
                     </RadzenColumn>
                     <RadzenColumn Size="12" SizeMD="4">
                         <RadzenImage
-                            Path=@($"/images/{_playlist.ToApiKey(_playlist.IsDynamic)}/600")
+                            Path=@($"/images/{_playlist.ToApiKey(_playlist.IsDynamic)}/{ ImageSize.Large}")
                             Style="margin:auto;display: block;"
                             AlternateText="@_playlist.Name"/>
                         <Markdown Content="@(_playlist.Description)"/>

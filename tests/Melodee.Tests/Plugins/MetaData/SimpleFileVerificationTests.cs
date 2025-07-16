@@ -93,7 +93,7 @@ public class SimpleFileVerificationTests : TestsBase
                 Size = 0
             }
         };
-        var parsedModel = SimpleFileVerification.ModelFromSfvLine(string.Empty, input);
+        var parsedModel = SimpleFileVerification.ModelFromSfvLine("/fake_path", input);
         Assert.Equal(shouldBe, parsedModel);
     }
 
@@ -111,7 +111,7 @@ public class SimpleFileVerificationTests : TestsBase
                 Size = 0
             }
         };
-        var parsedModel = SimpleFileVerification.ModelFromSfvLine(string.Empty, input);
+        var parsedModel = SimpleFileVerification.ModelFromSfvLine("/fake_path", input);
         Assert.Equal(shouldBe, parsedModel);
     }
 
@@ -129,7 +129,7 @@ public class SimpleFileVerificationTests : TestsBase
                 Size = 0
             }
         };
-        var parsedModel = SimpleFileVerification.ModelFromSfvLine(string.Empty, input);
+        var parsedModel = SimpleFileVerification.ModelFromSfvLine("/fake_path", input);
         Assert.Equal(shouldBe, parsedModel);
     }
 }

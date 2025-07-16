@@ -69,7 +69,7 @@ public class OpenSubsonicApiService(
 )
     : ServiceBase(logger, cacheManager, contextFactory)
 {
-    private const string ImageCacheRegion = "urn:openSubsonic:artist-and-album-images";
+    public const string ImageCacheRegion = "urn:openSubsonic:artist-and-album-images";
 
     private Lazy<Task<IMelodeeConfiguration>> Configuration => new(() => configurationFactory.GetConfigurationAsync());
 
@@ -1382,6 +1382,7 @@ public class OpenSubsonicApiService(
 
         var badEtag = Instant.MinValue.ToEtag();
         var sizeValue = size ?? ImageSizeRegistry.Large;
+        
         var imageBytesAndEtag = await CacheManager.GetAsync(GenerateImageCacheKeyForApiId(apiId, sizeValue), async () =>
         {
             using (Operation.At(LogEventLevel.Debug)

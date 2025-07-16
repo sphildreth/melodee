@@ -64,28 +64,28 @@ public class AlbumService(
         var album = await GetAsync(albumId, cancellationToken).ConfigureAwait(false);
         if (album.Data != null)
         {
-            CacheManager.Remove(CacheKeyDetailByApiKeyTemplate.FormatSmart(album.Data.ApiKey));
-            CacheManager.Remove(CacheKeyDetailByNameNormalizedTemplate.FormatSmart(album.Data.NameNormalized));
-            CacheManager.Remove(CacheKeyDetailTemplate.FormatSmart(album.Data.Id));
-            CacheManager.Remove(CacheKeyAlbumImageBytesAndEtagTemplate.FormatSmart(album.Data.Id, ImageSizeRegistry.Small));
-            CacheManager.Remove(CacheKeyAlbumImageBytesAndEtagTemplate.FormatSmart(album.Data.Id, ImageSizeRegistry.Medium));
-            CacheManager.Remove(CacheKeyAlbumImageBytesAndEtagTemplate.FormatSmart(album.Data.Id, ImageSizeRegistry.Large));            
+            CacheManager.Remove(CacheKeyDetailByApiKeyTemplate.FormatSmart(album.Data.ApiKey), Album.CacheRegion);
+            CacheManager.Remove(CacheKeyDetailByNameNormalizedTemplate.FormatSmart(album.Data.NameNormalized), Album.CacheRegion);
+            CacheManager.Remove(CacheKeyDetailTemplate.FormatSmart(album.Data.Id), Album.CacheRegion);
+            CacheManager.Remove(CacheKeyAlbumImageBytesAndEtagTemplate.FormatSmart(album.Data.Id, ImageSizeRegistry.Small), Album.CacheRegion);
+            CacheManager.Remove(CacheKeyAlbumImageBytesAndEtagTemplate.FormatSmart(album.Data.Id, ImageSizeRegistry.Medium), Album.CacheRegion);
+            CacheManager.Remove(CacheKeyAlbumImageBytesAndEtagTemplate.FormatSmart(album.Data.Id, ImageSizeRegistry.Large), Album.CacheRegion);
+            
+            // This is needed because the OpenSubsonicApiService caches the image bytes after potentially resizing
+            CacheManager.Remove(OpenSubsonicApiService.ImageCacheRegion);
             
             if (album.Data.MusicBrainzId != null)
             {
-                CacheManager.Remove(
-                    CacheKeyDetailByMusicBrainzIdTemplate.FormatSmart(album.Data.MusicBrainzId.Value.ToString()));
+                CacheManager.Remove(CacheKeyDetailByMusicBrainzIdTemplate.FormatSmart(album.Data.MusicBrainzId.Value.ToString()), Album.CacheRegion);
             }
         }
     }
 
-    public async Task<MelodeeModels.PagedResult<AlbumDataInfo>> ListForContributorsAsync(
-        MelodeeModels.PagedRequest pagedRequest, string contributorName, CancellationToken cancellationToken = default)
+    public async Task<MelodeeModels.PagedResult<AlbumDataInfo>> ListForContributorsAsync(MelodeeModels.PagedRequest pagedRequest, string contributorName, CancellationToken cancellationToken = default)
     {
         int albumCount;
         AlbumDataInfo[] albums = [];
-        await using (var scopedContext =
-                     await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             var dbConn = scopedContext.Database.GetDbConnection();
 
@@ -103,7 +103,7 @@ public class AlbumService(
                 sql = """
                       SELECT a."Id", a."ApiKey", a."IsLocked", a."Name", a."NameNormalized", a."AlternateNames",
                         ar."ApiKey" as "ArtistApiKey", ar."Name" as "ArtistName",
-                        a."SongCount", a."Duration", a."CreatedAt", a."Tags", a."ReleaseDate", 
+                        a."SongCount", a."Duration", a."CreatedAt", a."Tags", a."ReleaseDate",
                         a."AlbumStatus"
                       from "Contributors" c
                       join "Albums" a on (a."Id" = c."AlbumId")
@@ -721,15 +721,15 @@ public class AlbumService(
     }
 
     public async Task<MelodeeModels.OperationResult<bool>> SaveImageAsAlbumImageAsync(
-        int albumid,
+        int albumId,
         bool deleteAllImages, 
         byte[] imageBytes, 
         CancellationToken cancellationToken = default)
     {
-        Guard.Against.Expression(x => x < 1, albumid, nameof(albumid));
+        Guard.Against.Expression(x => x < 1, albumId, nameof(albumId));
         Guard.Against.NullOrEmpty(imageBytes, nameof(imageBytes));
 
-        var album = await GetAsync(albumid, cancellationToken);
+        var album = await GetAsync(albumId, cancellationToken);
         if (!album.IsSuccess || album.Data == null)
         {
             return new MelodeeModels.OperationResult<bool>("Unknown album.")

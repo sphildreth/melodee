@@ -333,7 +333,7 @@
                         @if (_albumsImagesInByteBase64.Length < 2)
                         {
                             <RadzenImage
-                                Path=@($"/images/{_album.ToApiKey()}/600")
+                                Path=@($"/images/{_album.ToApiKey()}/{ ImageSize.Large}")
                                 Style="margin:auto;display: block;"
                                 AlternateText="@_album.Name"/>
                         }

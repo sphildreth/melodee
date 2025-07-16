@@ -282,17 +282,21 @@ public class ArtistService(
 
     public async Task ClearCacheAsync(Artist artist, CancellationToken cancellationToken)
     {
-        CacheManager.Remove(CacheKeyDetailByApiKeyTemplate.FormatSmart(artist.ApiKey));
-        CacheManager.Remove(CacheKeyDetailByNameNormalizedTemplate.FormatSmart(artist.NameNormalized));
-        CacheManager.Remove(CacheKeyDetailTemplate.FormatSmart(artist.Id));
+        CacheManager.Remove(CacheKeyDetailByApiKeyTemplate.FormatSmart(artist.ApiKey), Artist.CacheRegion);
+        CacheManager.Remove(CacheKeyDetailByNameNormalizedTemplate.FormatSmart(artist.NameNormalized), Artist.CacheRegion);
+        CacheManager.Remove(CacheKeyDetailTemplate.FormatSmart(artist.Id), Artist.CacheRegion);
         if (artist.MusicBrainzId != null)
         {
-            CacheManager.Remove(CacheKeyDetailByMusicBrainzIdTemplate.FormatSmart(artist.MusicBrainzId.Value.ToString()));
+            CacheManager.Remove(CacheKeyDetailByMusicBrainzIdTemplate.FormatSmart(artist.MusicBrainzId.Value.ToString()), Artist.CacheRegion);
         }
-        CacheManager.Remove(CacheKeyArtistImageBytesAndEtagTemplate.FormatSmart(artist.Id, ImageSizeRegistry.Small));
-        CacheManager.Remove(CacheKeyArtistImageBytesAndEtagTemplate.FormatSmart(artist.Id, ImageSizeRegistry.Medium));
-        CacheManager.Remove(CacheKeyArtistImageBytesAndEtagTemplate.FormatSmart(artist.Id, ImageSizeRegistry.Large));
-
+        
+        CacheManager.Remove(CacheKeyArtistImageBytesAndEtagTemplate.FormatSmart(artist.Id, ImageSizeRegistry.Small), Artist.CacheRegion);
+        CacheManager.Remove(CacheKeyArtistImageBytesAndEtagTemplate.FormatSmart(artist.Id, ImageSizeRegistry.Medium), Artist.CacheRegion);
+        CacheManager.Remove(CacheKeyArtistImageBytesAndEtagTemplate.FormatSmart(artist.Id, ImageSizeRegistry.Large), Artist.CacheRegion);
+        
+        // This is needed because the OpenSubsonicApiService caches the image bytes after potentially resizing
+        CacheManager.ClearRegion(OpenSubsonicApiService.ImageCacheRegion);        
+        
         await albumService.ClearCacheForArtist(artist.Id, cancellationToken);
     }
 
@@ -560,23 +564,19 @@ public class ArtistService(
         var configuration = await configurationFactory.GetConfigurationAsync(cancellationToken);
         var imageConvertor = new ImageConvertor(configuration);
         var artistDirectory = artist.ToFileSystemDirectoryInfo();
-        var artistImages = artistDirectory.FileInfosForExtension("jpg").ToArray();
+        var artistImages = artistDirectory.FileInfosForExtension("jpg", false).ToArray();
         if (deleteAllImages && artistImages.Length != 0)
         {
             foreach (var fileInAlbumDirectory in artistImages)
             {
-                if (fileInAlbumDirectory.Name.Contains(nameof(PictureIdentifier.Artist), StringComparison.OrdinalIgnoreCase) ||
-                    fileInAlbumDirectory.Name.Contains(nameof(PictureIdentifier.ArtistSecondary), StringComparison.OrdinalIgnoreCase))
-                {
-                    fileInAlbumDirectory.Delete();
-                }
+                fileInAlbumDirectory.Delete();
             }
-
-            artistImages = artistDirectory.FileInfosForExtension("jpg").ToArray();
+            artistImages = artistDirectory.FileInfosForExtension("jpg", false).ToArray();
         }
-
-        var artistImageFileName = Path.Combine(artistDirectory.Path, deleteAllImages ? "01-Band.image" : $"{artistImages.Length + 1}-Band.image");
+        var totalArtistImageCount = artistImages.Length == 1 ? 1 : artistImages.Length + 1;
+        var artistImageFileName = Path.Combine(artistDirectory.Path, deleteAllImages ? "01-Band.image" : $"{totalArtistImageCount}-Band.image");
         var artistImageFileInfo = new FileInfo(artistImageFileName).ToFileSystemInfo();
+
         await File.WriteAllBytesAsync(artistImageFileInfo.FullName(artistDirectory), imageBytes, cancellationToken);
         await imageConvertor.ProcessFileAsync(
             artistDirectory,
@@ -589,10 +589,12 @@ public class ArtistService(
                 .Where(x => x.Id == artist.Id)
                 .ExecuteUpdateAsync(setters => setters
                     .SetProperty(x => x.LastUpdatedAt, now)
-                    .SetProperty(x => x.ImageCount, artistImages.Length + 1), cancellationToken)
+                    .SetProperty(x => x.ImageCount, totalArtistImageCount), cancellationToken)
                 .ConfigureAwait(false);
         }
         await ClearCacheAsync(artist, cancellationToken);
+        Logger.Information("Saved image for artist [{ArtistId}] with {ImageCount} images.",
+            artist.Id, totalArtistImageCount);
         return true;
     }
 
@@ -885,6 +887,7 @@ public class ArtistService(
         var artistId = artist.Data.Id;
         
         var cacheKey = CacheKeyArtistImageBytesAndEtagTemplate.FormatSmart(artistId, size ?? ImageSizeRegistry.Large);
+        
         return await CacheManager.GetAsync(cacheKey, async () =>
         {
             var badEtag = Instant.MinValue.ToEtag();
@@ -910,6 +913,6 @@ public class ArtistService(
 
             var imageBytes = await File.ReadAllBytesAsync(imageFile.FullName, cancellationToken).ConfigureAwait(false);
             return new MelodeeModels.ImageBytesAndEtag(imageBytes, (artist.Data.LastUpdatedAt ?? artist.Data.CreatedAt).ToEtag());
-        }, cancellationToken, configuration.CacheDuration(),Artist.CacheRegion);
+        }, cancellationToken, configuration.CacheDuration(), Artist.CacheRegion);
     }
 }

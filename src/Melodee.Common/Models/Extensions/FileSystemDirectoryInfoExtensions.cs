@@ -209,7 +209,8 @@ public static class FileSystemDirectoryInfoExtensions
     }
 
     public static IEnumerable<FileInfo> FileInfosForExtension(this FileSystemDirectoryInfo fileSystemDirectoryInfo,
-        string extension)
+        string extension,
+        bool? recursive = null)
     {
         var dirInfo = new DirectoryInfo(fileSystemDirectoryInfo.FullName());
         if (!dirInfo.Exists)
@@ -225,7 +226,7 @@ public static class FileSystemDirectoryInfoExtensions
 
         return dirInfo.GetFiles(searchPattern, new EnumerationOptions
         {
-            RecurseSubdirectories = true,
+            RecurseSubdirectories = recursive ?? true,
             MatchCasing = MatchCasing.CaseInsensitive
         }).OrderBy(x => x.Name).ToArray();
     }

@@ -32,4 +32,6 @@ public class ArtistServiceTests : ServiceTestBase
         Assert.NotNull(result.Data);
         Assert.Equal(artistName, result.Data.Name);
     }
+    
+    
 }

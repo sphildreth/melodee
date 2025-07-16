@@ -13,7 +13,7 @@ public static class FileSystemFileInfoExtensions
 
     public static string FullName(this FileSystemFileInfo fileSystemFileInfo, FileSystemDirectoryInfo directoryInfo)
     {
-        return Path.Combine(directoryInfo.Path, fileSystemFileInfo.Name);
+        return Path.Combine(directoryInfo.FullName(), fileSystemFileInfo.Name);
     }
 
     public static bool Exists(this FileSystemFileInfo fileSystemFileInfo, FileSystemDirectoryInfo directoryInfo)
