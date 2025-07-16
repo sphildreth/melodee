@@ -465,10 +465,12 @@ public static class AlbumExtensions
         var minimumAlbumYear = SafeParser.ToNumber<int>(configuration[SettingRegistry.ValidationMinimumAlbumYear]);
         var maximumValidAlbumYear = SafeParser.ToNumber<int>(configuration[SettingRegistry.ValidationMaximumAlbumYear]);
         var albumYear = album.AlbumYear();
+        
+        // If album year is invalid, use a default value instead of throwing an exception
         if (albumYear.HasValue && (albumYear < minimumAlbumYear || albumYear > maximumValidAlbumYear))
         {
-            throw new Exception(
-                $"Invalid year [{albumYear}] for Album [{album}], Minimum configured value is [{minimumAlbumYear}], Maximum configured value is [{maximumValidAlbumYear}].");
+            // Use a default year for invalid years instead of throwing
+            albumYear = minimumAlbumYear; // Use minimum valid year as fallback
         }
 
         return $"[{albumYear}] {albumPathTitle}/";

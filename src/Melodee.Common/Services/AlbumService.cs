@@ -173,42 +173,44 @@ public class AlbumService(
             
             if (!pagedRequest.IsTotalCountOnlyRequest)
             {
-                // Build optimized query with projection to AlbumDataInfo
-                var albumsQuery = baseQuery
-                    .Include(a => a.Artist)
-                    .Select(a => new AlbumDataInfo(
-                        a.Id,
-                        a.ApiKey,
-                        a.IsLocked,
-                        a.Name,
-                        a.NameNormalized,
-                        a.AlternateNames,
-                        a.Artist.ApiKey,
-                        a.Artist.Name,
-                        a.SongCount ?? 0,
-                        a.Duration,
-                        a.CreatedAt,
-                        a.Tags,
-                        a.ReleaseDate,
-                        a.AlbumStatus
-                    ));
-
-                // Apply ordering based on request
-                albumsQuery = pagedRequest.OrderByValue() switch
+                // Apply ordering first on the base query, then project
+                var orderedQuery = pagedRequest.OrderByValue() switch
                 {
-                    "\"Name\"" => albumsQuery.OrderBy(a => a.Name),
-                    "\"CreatedAt\"" => albumsQuery.OrderBy(a => a.CreatedAt),
-                    "\"ReleaseDate\"" => albumsQuery.OrderBy(a => a.ReleaseDate),
-                    _ => albumsQuery.OrderBy(a => a.Name)
+                    "\"Name\"" => baseQuery.OrderBy(a => a.Name),
+                    "Name" => baseQuery.OrderBy(a => a.Name),
+                    "\"CreatedAt\"" => baseQuery.OrderBy(a => a.CreatedAt),
+                    "CreatedAt" => baseQuery.OrderBy(a => a.CreatedAt),
+                    "\"ReleaseDate\"" => baseQuery.OrderBy(a => a.ReleaseDate),
+                    "ReleaseDate" => baseQuery.OrderBy(a => a.ReleaseDate),
+                    _ => baseQuery.OrderBy(a => a.Name)
                 };
 
-                // Apply paging and execute query
-                albums = await albumsQuery
+                // Apply paging and include Artist for projection
+                var pagedQuery = orderedQuery
+                    .Include(a => a.Artist)
                     .Skip(pagedRequest.SkipValue)
                     .Take(pagedRequest.TakeValue)
-                    .AsNoTracking()
-                    .ToArrayAsync(cancellationToken)
-                    .ConfigureAwait(false);
+                    .AsNoTracking();
+
+                // Execute query and project to AlbumDataInfo
+                var rawAlbums = await pagedQuery.ToArrayAsync(cancellationToken).ConfigureAwait(false);
+                
+                albums = rawAlbums.Select(a => new AlbumDataInfo(
+                    a.Id,
+                    a.ApiKey,
+                    a.IsLocked,
+                    a.Name,
+                    a.NameNormalized,
+                    a.AlternateNames,
+                    a.Artist.ApiKey,
+                    a.Artist.Name,
+                    a.SongCount ?? 0,
+                    a.Duration,
+                    a.CreatedAt,
+                    a.Tags,
+                    a.ReleaseDate,
+                    a.AlbumStatus
+                )).ToArray();
             }
 
             return new MelodeeModels.PagedResult<AlbumDataInfo>
@@ -221,33 +223,25 @@ public class AlbumService(
     }
 
     public async Task<MelodeeModels.PagedResult<AlbumDataInfo>> ListAsync(
-        MelodeeModels.PagedRequest pagedRequest,
+        MelodeeModels.PagedRequest pagedRequest, 
         string? filteringColumnNamePrefix = null,
         CancellationToken cancellationToken = default)
     {
         await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
-            // Create base query with joins
-            var baseQuery = scopedContext.Albums
-                .Include(a => a.Artist)
-                .AsQueryable();
+            // Create base query
+            var baseQuery = scopedContext.Albums.AsQueryable();
 
-            // Apply dynamic filters based on FilterBy collection
-            if (pagedRequest.FilterBy is { Length: > 0 })
+            // Apply filters
+            foreach (var filter in pagedRequest.FilterBy ?? [])
             {
-                foreach (var filter in pagedRequest.FilterBy)
+                var value = filter.Value.ToString();
+                if (!string.IsNullOrEmpty(value))
                 {
-                    var propertyName = filter.PropertyName;
-                    var value = filter.Value.ToString();
-                    
-                    if (string.IsNullOrEmpty(value))
-                        continue;
-
-                    // Apply filters based on property name
-                    baseQuery = propertyName switch
+                    var normalizedValue = value.ToNormalizedString();
+                    baseQuery = filter.PropertyName switch
                     {
-                        "Name" => baseQuery.Where(a => EF.Functions.ILike(a.Name, $"%{value}%")),
-                        "NameNormalized" => baseQuery.Where(a => EF.Functions.ILike(a.NameNormalized, $"%{value}%")),
+                        "Name" => baseQuery.Where(a => EF.Functions.ILike(a.NameNormalized, $"%{normalizedValue}%")),
                         "ArtistName" => baseQuery.Where(a => EF.Functions.ILike(a.Artist.Name, $"%{value}%")),
                         "Tags" => baseQuery.Where(a => a.Tags != null && EF.Functions.ILike(a.Tags, $"%{value}%")),
                         "AlbumStatus" => int.TryParse(value, out var statusValue) 
@@ -262,6 +256,7 @@ public class AlbumService(
                         _ => baseQuery
                     };
                 }
+                
             }
 
             // Get total count efficiently
@@ -271,46 +266,46 @@ public class AlbumService(
             
             if (!pagedRequest.IsTotalCountOnlyRequest)
             {
-                // Build optimized query with projection to AlbumDataInfo
-                var albumsQuery = baseQuery
-                    .Select(a => new AlbumDataInfo(
-                        a.Id,
-                        a.ApiKey,
-                        a.IsLocked,
-                        a.Name,
-                        a.NameNormalized,
-                        a.AlternateNames,
-                        a.Artist.ApiKey,
-                        a.Artist.Name,
-                        a.SongCount ?? 0,
-                        a.Duration,
-                        a.CreatedAt,
-                        a.Tags,
-                        a.ReleaseDate,
-                        a.AlbumStatus
-                    ));
-
-                // Apply ordering based on request
-                albumsQuery = pagedRequest.OrderByValue() switch
+                // Apply ordering first on the base query, then project
+                var orderedQuery = pagedRequest.OrderByValue() switch
                 {
-                    "\"Name\"" => albumsQuery.OrderBy(a => a.Name),
-                    "Name" => albumsQuery.OrderBy(a => a.Name),
-                    "\"CreatedAt\"" => albumsQuery.OrderBy(a => a.CreatedAt),
-                    "CreatedAt" => albumsQuery.OrderBy(a => a.CreatedAt),
-                    "\"ReleaseDate\"" => albumsQuery.OrderBy(a => a.ReleaseDate),
-                    "ReleaseDate" => albumsQuery.OrderBy(a => a.ReleaseDate),
-                    "\"ArtistName\"" => albumsQuery.OrderBy(a => a.ArtistName),
-                    "ArtistName" => albumsQuery.OrderBy(a => a.ArtistName),
-                    _ => albumsQuery.OrderBy(a => a.Name)
+                    "\"Name\"" => baseQuery.OrderBy(a => a.Name),
+                    "Name" => baseQuery.OrderBy(a => a.Name),
+                    "\"CreatedAt\"" => baseQuery.OrderBy(a => a.CreatedAt),
+                    "CreatedAt" => baseQuery.OrderBy(a => a.CreatedAt),
+                    "\"ReleaseDate\"" => baseQuery.OrderBy(a => a.ReleaseDate),
+                    "ReleaseDate" => baseQuery.OrderBy(a => a.ReleaseDate),
+                    "\"ArtistName\"" => baseQuery.Include(a => a.Artist).OrderBy(a => a.Artist.Name),
+                    "ArtistName" => baseQuery.Include(a => a.Artist).OrderBy(a => a.Artist.Name),
+                    _ => baseQuery.OrderBy(a => a.Name)
                 };
 
-                // Apply paging and execute query
-                albums = await albumsQuery
+                // Apply paging and include Artist for projection
+                var pagedQuery = orderedQuery
+                    .Include(a => a.Artist)
                     .Skip(pagedRequest.SkipValue)
                     .Take(pagedRequest.TakeValue)
-                    .AsNoTracking()
-                    .ToArrayAsync(cancellationToken)
-                    .ConfigureAwait(false);
+                    .AsNoTracking();
+
+                // Execute query and project to AlbumDataInfo
+                var rawAlbums = await pagedQuery.ToArrayAsync(cancellationToken).ConfigureAwait(false);
+                
+                albums = rawAlbums.Select(a => new AlbumDataInfo(
+                    a.Id,
+                    a.ApiKey,
+                    a.IsLocked,
+                    a.Name,
+                    a.NameNormalized,
+                    a.AlternateNames,
+                    a.Artist.ApiKey,
+                    a.Artist.Name,
+                    a.SongCount ?? 0,
+                    a.Duration,
+                    a.CreatedAt,
+                    a.Tags,
+                    a.ReleaseDate,
+                    a.AlbumStatus
+                )).ToArray();
             }
 
             return new MelodeeModels.PagedResult<AlbumDataInfo>
@@ -409,6 +404,7 @@ public class AlbumService(
                     .ConfigureAwait(false);
             }
         }, cancellationToken);
+        
         return new MelodeeModels.OperationResult<Album?>
         {
             Data = result
@@ -432,7 +428,7 @@ public class AlbumService(
                         .ConfigureAwait(false);
                 }
             }, cancellationToken);
-        if (id == null)
+        if (id == null || id == 0)
         {
             return new MelodeeModels.OperationResult<Album?>("Unknown album.")
             {
@@ -461,7 +457,7 @@ public class AlbumService(
                     .ConfigureAwait(false);
             }
         }, cancellationToken);
-        if (id == null)
+        if (id == null || id == 0)
         {
             return new MelodeeModels.OperationResult<Album?>("Unknown album.")
             {
@@ -575,21 +571,39 @@ public class AlbumService(
 
                 if (didChangeName)
                 {
-                    await mediaEditService.InitializeAsync(token: cancellationToken);
-                    var newAlbumPath = Path.Combine(dbDetail.Artist.Library.Path, dbDetail.Artist.Directory, dbDetail.Directory);
-                    var melodeeAlbum = await MelodeeModels.Album.DeserializeAndInitializeAlbumAsync(serializer, Path.Combine(newAlbumPath, "melodee.json"), cancellationToken).ConfigureAwait(false);
-                    if (melodeeAlbum != null)
+                    try
                     {
-                        melodeeAlbum.AlbumDbId = dbDetail.Id;
-                        melodeeAlbum.Directory = newAlbumPath.ToFileSystemDirectoryInfo();
-                        melodeeAlbum.MusicBrainzId = dbDetail.MusicBrainzId;
-                        melodeeAlbum.SpotifyId = dbDetail.SpotifyId;
-                        melodeeAlbum.SetTagValue(MetaTagIdentifier.Album, dbDetail.Name);
-                        foreach(var song in melodeeAlbum.Songs ?? [])
+                        await mediaEditService.InitializeAsync(token: cancellationToken);
+                        var newAlbumPath = Path.Combine(dbDetail.Artist.Library.Path, dbDetail.Artist.Directory, dbDetail.Directory);
+                        
+                        // Check if the melodee.json file exists before trying to read it
+                        var melodeeJsonPath = Path.Combine(newAlbumPath, "melodee.json");
+                        if (File.Exists(melodeeJsonPath))
                         {
-                            melodeeAlbum.SetSongTagValue(song.Id, MetaTagIdentifier.Album, dbDetail.Name);
+                            var melodeeAlbum = await MelodeeModels.Album.DeserializeAndInitializeAlbumAsync(serializer, melodeeJsonPath, cancellationToken).ConfigureAwait(false);
+                            if (melodeeAlbum != null)
+                            {
+                                melodeeAlbum.AlbumDbId = dbDetail.Id;
+                                melodeeAlbum.Directory = newAlbumPath.ToFileSystemDirectoryInfo();
+                                melodeeAlbum.MusicBrainzId = dbDetail.MusicBrainzId;
+                                melodeeAlbum.SpotifyId = dbDetail.SpotifyId;
+                                melodeeAlbum.SetTagValue(MetaTagIdentifier.Album, dbDetail.Name);
+                                foreach(var song in melodeeAlbum.Songs ?? [])
+                                {
+                                    melodeeAlbum.SetSongTagValue(song.Id, MetaTagIdentifier.Album, dbDetail.Name);
+                                }
+                                await mediaEditService.SaveMelodeeAlbum(melodeeAlbum, true, cancellationToken).ConfigureAwait(false);
+                            }
                         }
-                        await mediaEditService.SaveMelodeeAlbum(melodeeAlbum, true, cancellationToken).ConfigureAwait(false);
+                        else
+                        {
+                            Logger.Warning("Melodee.json file not found at [{Path}] during album update.", melodeeJsonPath);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.Warning(ex, "Failed to update melodee.json file during album name change for album [{AlbumId}].", dbDetail.Id);
+                        // Don't fail the entire operation if we can't update the melodee.json file
                     }
                 }
             }
@@ -612,40 +626,34 @@ public class AlbumService(
                          throw new Exception("Album title is required.");
         var nameNormalized = albumTitle.ToNormalizedString() ?? albumTitle;
 
-        await using (var scopedContext =
-                     await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             int? id = null;
 
             try
             {
-                // First priority: Search by AlbumDbId if available
                 if (melodeeAlbum.AlbumDbId.HasValue)
                 {
                     id = await scopedContext.Albums
                         .Where(a => a.Id == melodeeAlbum.AlbumDbId.Value)
-                        .Select(a => a.Id)
+                        .Select(a => (int?)a.Id)
                         .FirstOrDefaultAsync(cancellationToken)
                         .ConfigureAwait(false);
                 }
-
-                // Second priority: Search by ApiKey if not found and ApiKey is available
                 if (id == null && melodeeAlbum.Id != Guid.Empty)
                 {
                     id = await scopedContext.Albums
                         .Where(a => a.ApiKey == melodeeAlbum.Id)
-                        .Select(a => a.Id)
+                        .Select(a => (int?)a.Id)
                         .FirstOrDefaultAsync(cancellationToken)
                         .ConfigureAwait(false);
                 }
-
-                // Third priority: Search by ArtistId and multiple criteria
                 id ??= await scopedContext.Albums
-                    .Where(a => a.ArtistId == artistId &&
-                                (a.NameNormalized == nameNormalized ||
-                                 (melodeeAlbum.MusicBrainzId.HasValue && a.MusicBrainzId == melodeeAlbum.MusicBrainzId) ||
-                                 (!string.IsNullOrEmpty(melodeeAlbum.SpotifyId) && a.SpotifyId == melodeeAlbum.SpotifyId)))
-                    .Select(a => a.Id)
+                    .Where(a => a.ArtistId == artistId)
+                    .Where(a => a.NameNormalized == nameNormalized ||
+                            (a.MusicBrainzId == melodeeAlbum.MusicBrainzId && a.MusicBrainzId != null) ||
+                            (a.SpotifyId == melodeeAlbum.SpotifyId && a.SpotifyId != null))
+                    .Select(a => (int?)a.Id)
                     .FirstOrDefaultAsync(cancellationToken)
                     .ConfigureAwait(false);
             }
@@ -661,7 +669,7 @@ public class AlbumService(
                     melodeeAlbum.SpotifyId);
             }
 
-            if (id == null)
+            if (id is null or 0)
             {
                 return new MelodeeModels.OperationResult<Album?>("Unknown album.")
                 {
@@ -678,12 +686,12 @@ public class AlbumService(
     {
         Guard.Against.NullOrEmpty(albumIds, nameof(albumIds));
 
-        var result = false;
+        var successfulScans = 0;
 
         foreach (var albumId in albumIds)
         {
             var albumResult = await GetAsync(albumId, cancellationToken).ConfigureAwait(false);
-            if (!albumResult.IsSuccess)
+            if (!albumResult.IsSuccess || albumResult.Data == null)
             {
                 return new MelodeeModels.OperationResult<bool>("Unknown album.")
                 {
@@ -691,23 +699,23 @@ public class AlbumService(
                 };
             }
 
-            var album = albumResult.Data!;
+            var album = albumResult.Data;
             var albumDirectory = Path.Combine(album.Artist.Library.Path, album.Artist.Directory, album.Directory);
             if (!Directory.Exists(albumDirectory))
             {
-                Logger.Error("Album directory [{AlbumDirectory}] does not exist.", albumDirectory);
-                return new MelodeeModels.OperationResult<bool>($"Album directory not found [{albumDirectory}].")
-                {
-                    Data = false
-                };
+                Logger.Warning("Album directory [{AlbumDirectory}] does not exist for rescan.", albumDirectory);
+                // Continue with other albums but don't count this as successful
+                continue;
             }
 
             await bus.SendLocal(new AlbumRescanEvent(album.Id, albumDirectory, false)).ConfigureAwait(false);
+            successfulScans++;
         }
 
+        // Return false if no albums were successfully scanned
         return new MelodeeModels.OperationResult<bool>
         {
-            Data = result
+            Data = successfulScans > 0
         };
     }
 
@@ -780,7 +788,17 @@ public class AlbumService(
             }
         }
 
-        return await GetAsync(album.Id, cancellationToken);
+        // After saving, the album.Id should be populated by EF Core
+        if (album.Id > 0)
+        {
+            return await GetAsync(album.Id, cancellationToken);
+        }
+        
+        // If for some reason the ID wasn't set, return the album as-is
+        return new MelodeeModels.OperationResult<Album?>
+        {
+            Data = album
+        };
     }
 
     public async Task<MelodeeModels.ImageBytesAndEtag> GetAlbumImageBytesAndEtagAsync(Guid? apiKey, string? size = null, CancellationToken cancellationToken = default)

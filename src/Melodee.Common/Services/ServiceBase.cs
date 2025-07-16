@@ -1,6 +1,5 @@
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
-using Dapper;
 using IdSharp.Common.Utils;
 using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
@@ -18,6 +17,7 @@ using Melodee.Common.Serialization;
 using Melodee.Common.Services.Caching;
 using Melodee.Common.Utility;
 using Microsoft.EntityFrameworkCore;
+using NodaTime;
 using Serilog;
 using Serilog.Events;
 using SerilogTimings;
@@ -217,214 +217,306 @@ public abstract class ServiceBase
     protected async Task<OperationResult<bool>> UpdateArtistAggregateValuesByIdAsync(int artistId,
         CancellationToken cancellationToken = default)
     {
-        await using (var scopedContext =
-                     await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
-        {
-            var dbConn = scopedContext.Database.GetDbConnection();
-            var sql = """
-                      UPDATE "Artists" a
-                      SET "AlbumCount" = (select COUNT(*) from "Albums" where "ArtistId" = a."Id"), "LastUpdatedAt" = NOW()
-                      WHERE a."Id" = @artistId
-                      AND "AlbumCount" <> (select COUNT(*) from "Albums" where "ArtistId" = a."Id");
-                                                     
-                      UPDATE "Artists" a
-                      SET "SongCount" = (
-                      	select COUNT(s.*)
-                      	from "Songs" s 
-                        join "Albums" aa on (s."AlbumId" = aa."Id")	
-                      	where aa."ArtistId" = a."Id"
-                      ), "LastUpdatedAt" = NOW()
-                      where "SongCount" <> (
-                      	select COUNT(s.*)
-                      	from "Songs" s 
-                        join "Albums" aa on (s."AlbumId" = aa."Id")	
-                      	where aa."ArtistId" = a."Id"
-                      )
-                      AND a."Id" = @artistId;
-                      """;
-            var result = await dbConn
-                .ExecuteAsync(sql, new { artistId })
-                .ConfigureAwait(false);
+        await using var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
+        
+        var artist = await scopedContext.Artists
+            .Where(a => a.Id == artistId)
+            .FirstOrDefaultAsync(cancellationToken)
+            .ConfigureAwait(false);
 
-            return new OperationResult<bool>
-            {
-                Data = result > 0
-            };
+        if (artist == null)
+        {
+            return new OperationResult<bool> { Data = false };
         }
+
+        var albumCount = await scopedContext.Albums
+            .Where(a => a.ArtistId == artistId)
+            .CountAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        var songCount = await scopedContext.Songs
+            .Where(s => s.Album.ArtistId == artistId)
+            .CountAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        var updated = false;
+        if (artist.AlbumCount != albumCount)
+        {
+            artist.AlbumCount = albumCount;
+            artist.LastUpdatedAt = Instant.FromDateTimeUtc(DateTime.UtcNow);
+            updated = true;
+        }
+
+        if (artist.SongCount != songCount)
+        {
+            artist.SongCount = songCount;
+            artist.LastUpdatedAt = Instant.FromDateTimeUtc(DateTime.UtcNow);
+            updated = true;
+        }
+
+        if (updated)
+        {
+            await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        }
+
+        return new OperationResult<bool> { Data = updated };
     }
 
 
     protected async Task<OperationResult<bool>> UpdateLibraryAggregateStatsByIdAsync(int libraryId,
         CancellationToken cancellationToken = default)
     {
-        await using (var scopedContext =
-                     await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        await using var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
+        
+        var library = await scopedContext.Libraries
+            .Where(l => l.Id == libraryId)
+            .FirstOrDefaultAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        if (library == null)
         {
-            var dbConn = scopedContext.Database.GetDbConnection();
-            var sql = """
-                      UPDATE "Libraries" l 
-                      set "ArtistCount" = (select count(*) from "Artists" where "LibraryId" = l."Id"),
-                          "AlbumCount" = (select count(aa.*) 
-                          	from "Albums" aa 
-                          	join "Artists" a on (a."Id" = aa."ArtistId") 
-                          	where a."LibraryId" = l."Id"),
-                          "SongCount" = (select count(s.*) 
-                          	from "Songs" s
-                          	join "Albums" aa on (s."AlbumId" = aa."Id") 
-                          	join "Artists" a on (a."Id" = aa."ArtistId") 
-                          	where a."LibraryId" = l."Id"),
-                      	"LastUpdatedAt" = now()
-                      where l."Id" = @libraryId;
-                      """;
-
-            var result = await dbConn
-                .ExecuteAsync(sql, new { libraryId })
-                .ConfigureAwait(false);
-
-            return new OperationResult<bool>
-            {
-                Data = result > 0
-            };
+            return new OperationResult<bool> { Data = false };
         }
+
+        var artistCount = await scopedContext.Artists
+            .Where(a => a.LibraryId == libraryId)
+            .CountAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        var albumCount = await scopedContext.Albums
+            .Where(aa => aa.Artist.LibraryId == libraryId)
+            .CountAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        var songCount = await scopedContext.Songs
+            .Where(s => s.Album.Artist.LibraryId == libraryId)
+            .CountAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        library.ArtistCount = artistCount;
+        library.AlbumCount = albumCount;
+        library.SongCount = songCount;
+        library.LastUpdatedAt = Instant.FromDateTimeUtc(DateTime.UtcNow);
+
+        await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+
+        return new OperationResult<bool> { Data = true };
     }
 
 
     protected async Task<AlbumList2[]> AlbumListForArtistApiKey(Guid artistApiKey, int userId,
         CancellationToken cancellationToken)
     {
-        await using (var scopedContext =
-                     await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        await using var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
+        
+        var query = from a in scopedContext.Albums
+            join aa in scopedContext.Artists on a.ArtistId equals aa.Id
+            join l in scopedContext.Libraries on aa.LibraryId equals l.Id
+            where aa.ApiKey == artistApiKey
+            select new { Album = a, Artist = aa, Library = l };
+
+        var albumsWithArtists = await query
+            .Include(x => x.Album.UserAlbums.Where(ua => ua.UserId == userId))
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        var albumList = new List<AlbumList2>();
+        
+        foreach (var item in albumsWithArtists)
         {
-            var dbConn = scopedContext.Database.GetDbConnection();
-            var sql = """
-                      SELECT 
-                          'album_' || cast(a."ApiKey" as varchar(50)) as "Id",
-                          a."Name" as "Album",
-                          a."Name" as "Title",
-                          a."Name" as "Name",
-                          'album_' || cast(a."ApiKey" as varchar(50)) as "CoverArt",
-                          a."SongCount",
-                          a."CreatedAt" as "CreatedRaw",
-                          a."Duration"/1000 as "Duration",
-                          a."PlayedCount",
-                          'artist_' || cast(aa."ApiKey" as varchar(50)) as "ArtistId",
-                          aa."Name" as "Artist",
-                          DATE_PART('year', a."ReleaseDate"::date) as "Year",
-                          a."Genres",
-                          (SELECT COUNT(*) FROM "UserAlbums" WHERE "IsStarred" AND "AlbumId" = a."Id") as "UserStarredCount",
-                          ua."IsStarred" as "Starred",
-                          ua."Rating" as "UserRating"
-                      FROM "Albums" a 
-                      JOIN "Artists" aa on (a."ArtistId" = aa."Id")
-                      LEFT JOIN "UserAlbums" ua on (a."Id" = ua."AlbumId" and ua."UserId" = @userId)
-                      WHERE aa."ApiKey" = @artistApiKey;
-                      """;
-            return (await dbConn.QueryAsync<AlbumList2>(sql, new { userId, artistApiKey }).ConfigureAwait(false))
-                .ToArray();
+            var userAlbum = item.Album.UserAlbums.FirstOrDefault();
+
+            albumList.Add(new AlbumList2
+            {
+                Id = $"album_{item.Album.ApiKey}",
+                Album = item.Album.Name,
+                Title = item.Album.Name,
+                Name = item.Album.Name,
+                CoverArt = $"album_{item.Album.ApiKey}",
+                SongCount = item.Album.SongCount ?? 0,
+                CreatedRaw = item.Album.CreatedAt,
+                Duration = (int)(item.Album.Duration / 1000),
+                PlayedCount = item.Album.PlayedCount,
+                ArtistId = $"artist_{item.Artist.ApiKey}",
+                Artist = item.Artist.Name,
+                Year = item.Album.ReleaseDate.Year,
+                Genres = item.Album.Genres,
+                Parent = $"library_{item.Library.ApiKey}",
+                UserRating = userAlbum?.Rating
+            });
         }
+
+        return albumList.ToArray();
     }
 
     protected async Task<DatabaseDirectoryInfo?> DatabaseArtistInfoForArtistApiKey(Guid apiKeyId, int userId,
         CancellationToken cancellationToken = default)
     {
-        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        await using var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
+        
+        var result = await (from a in scopedContext.Artists
+            join l in scopedContext.Libraries on a.LibraryId equals l.Id
+            where a.ApiKey == apiKeyId
+            select new { Artist = a, Library = l })
+            .Include(x => x.Artist.UserArtists.Where(ua => ua.UserId == userId))
+            .FirstOrDefaultAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        if (result == null)
         {
-            var dbConn = scopedContext.Database.GetDbConnection();
-            var sql = """
-                      select a."Id", a."ApiKey", LEFT(a."SortName", 1) as "Index", a."Name", 'artist_' || a."ApiKey" as "CoverArt", a."CalculatedRating", a."AlbumCount", a."PlayedCount" as "PlayCount", a."CreatedAt" as "CreatedAt", a."LastUpdatedAt" as "LastUpdatedAt",
-                             a."LastPlayedAt" as "Played", l."Path" || a."Directory" as "Directory", ua."StarredAt" as "UserStarred", ua."Rating" as "UserRating"
-                      from "Artists" a
-                      join "Libraries" l on (a."LibraryId" = l."Id")
-                      left join "UserArtists" ua on (a."Id" = ua."ArtistId" and ua."UserId" = @userId)
-                      where a."ApiKey" = @apiKeyId;
-                      """;
-            return await dbConn.QuerySingleOrDefaultAsync<DatabaseDirectoryInfo>(sql, new { userId, apiKeyId })
-                .ConfigureAwait(false);
+            return null;
         }
+
+        var userArtist = result.Artist.UserArtists.FirstOrDefault();
+        
+        return new DatabaseDirectoryInfo(
+            result.Artist.Id,
+            result.Artist.ApiKey,
+            result.Artist.SortName?.Substring(0, 1) ?? result.Artist.Name.Substring(0, 1),
+            result.Artist.Name,
+            $"artist_{result.Artist.ApiKey}",
+            result.Artist.CalculatedRating,
+            result.Artist.AlbumCount,
+            result.Artist.PlayedCount,
+            result.Artist.CreatedAt,
+            result.Artist.LastUpdatedAt,
+            result.Artist.LastPlayedAt,
+            Path.Combine(result.Library.Path, result.Artist.Directory),
+            userArtist?.StarredAt,
+            userArtist?.Rating
+        );
     }
 
     protected async Task<DatabaseDirectoryInfo?> DatabaseAlbumInfoForAlbumApiKey(Guid apiKeyId, int userId,
         CancellationToken cancellationToken = default)
     {
-        await using (var scopedContext =
-                     await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        await using var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
+        
+        var result = await (from a in scopedContext.Albums
+            join aa in scopedContext.Artists on a.ArtistId equals aa.Id
+            join l in scopedContext.Libraries on aa.LibraryId equals l.Id
+            where a.ApiKey == apiKeyId
+            select new { Album = a, Artist = aa, Library = l })
+            .Include(x => x.Album.UserAlbums.Where(ua => ua.UserId == userId))
+            .FirstOrDefaultAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        if (result == null)
         {
-            var dbConn = scopedContext.Database.GetDbConnection();
-            var sql = """
-                      select a."Id", a."ApiKey", LEFT(a."SortName", 1) as "Index", a."Name", 'album_' || a."ApiKey" as "CoverArt", a."CalculatedRating", 0 as "AlbumCount", a."PlayedCount" as "PlayCount",a."CreatedAt" as "CreatedAt", a."LastUpdatedAt" as "LastUpdatedAt", 
-                             a."LastPlayedAt" as "Played", l."Path" || a."Directory" as "Directory", ua."StarredAt" as "UserStarred", ua."Rating" as "UserRating"
-                      from "Albums" a
-                      join "Artists" aa on (a."ArtistId" = aa."Id")
-                      join "Libraries" l on (aa."LibraryId" = l."Id")
-                      left join "UserAlbums" ua on (a."Id" = ua."AlbumId" and ua."UserId" = @userId)
-                      where a."ApiKey" = @apiKeyId;
-                      """;
-            return await dbConn.QuerySingleOrDefaultAsync<DatabaseDirectoryInfo>(sql, new { userId, apiKeyId })
-                .ConfigureAwait(false);
+            return null;
         }
+
+        var userAlbum = result.Album.UserAlbums.FirstOrDefault();
+        
+        return new DatabaseDirectoryInfo(
+            result.Album.Id,
+            result.Album.ApiKey,
+            result.Album.SortName?.Substring(0, 1) ?? result.Album.Name.Substring(0, 1),
+            result.Album.Name,
+            $"album_{result.Album.ApiKey}",
+            result.Album.CalculatedRating,
+            0,
+            result.Album.PlayedCount,
+            result.Album.CreatedAt,
+            result.Album.LastUpdatedAt,
+            result.Album.LastPlayedAt,
+            Path.Combine(result.Library.Path, result.Album.Directory),
+            userAlbum?.StarredAt,
+            userAlbum?.Rating
+        );
     }
 
     protected async Task<DatabaseDirectoryInfo[]?> DatabaseSongInfosForAlbumApiKey(Guid apiKeyId, int userId,
         CancellationToken cancellationToken = default)
     {
-        await using (var scopedContext =
-                     await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        await using var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
+        
+        var results = await (from s in scopedContext.Songs
+            join a in scopedContext.Albums on s.AlbumId equals a.Id
+            join aa in scopedContext.Artists on a.ArtistId equals aa.Id
+            join l in scopedContext.Libraries on aa.LibraryId equals l.Id
+            where a.ApiKey == apiKeyId
+            select new { Song = s, Album = a, Artist = aa, Library = l })
+            .Include(x => x.Song.UserSongs.Where(us => us.UserId == userId))
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        var songInfos = new List<DatabaseDirectoryInfo>();
+        
+        foreach (var result in results)
         {
-            var dbConn = scopedContext.Database.GetDbConnection();
-            var sql = """
-                      select s."Id", s."ApiKey", LEFT(s."TitleSort", 1) as "Index", s."Title" as "Name", 'song_' || s."ApiKey" as "CoverArt", s."CalculatedRating", 0 as "AlbumCount", s."PlayedCount" as "PlayCount", s."CreatedAt" as "CreatedAt", s."LastUpdatedAt" as "LastUpdatedAt", 
-                             s."LastPlayedAt" as "Played", l."Path" || a."Directory" as "Directory", us."StarredAt" as "UserStarred", us."Rating" as "UserRating"
-                      from "Songs" s
-                      join "Albums" a on (s."AlbumId" = a."Id") 
-                      join "Artists" aa on (a."ArtistId" = aa."Id")
-                      join "Libraries" l on (aa."LibraryId" = l."Id")    
-                      left join "UserSongs" us on (s."Id" = us."SongId" and us."UserId" = @userId)
-                      where a."ApiKey" = @apiKeyId;
-                      """;
-            return (await dbConn.QueryAsync<DatabaseDirectoryInfo>(sql, new { userId, apiKeyId }).ConfigureAwait(false))
-                .ToArray();
+            var userSong = result.Song.UserSongs.FirstOrDefault();
+            
+            songInfos.Add(new DatabaseDirectoryInfo(
+                result.Song.Id,
+                result.Song.ApiKey,
+                result.Song.TitleSort?.Substring(0, 1) ?? result.Song.Title.Substring(0, 1),
+                result.Song.Title,
+                $"song_{result.Song.ApiKey}",
+                result.Song.CalculatedRating,
+                0,
+                result.Song.PlayedCount,
+                result.Song.CreatedAt,
+                result.Song.LastUpdatedAt,
+                result.Song.LastPlayedAt,
+                Path.Combine(result.Library.Path, result.Album.Directory),
+                userSong?.StarredAt,
+                userSong?.Rating
+            ));
         }
+
+        return songInfos.ToArray();
     }
 
     protected async Task<DatabaseSongIdsInfo?> DatabaseSongIdsInfoForSongApiKey(Guid apiKeyId,
         CancellationToken cancellationToken = default)
     {
-        await using (var scopedContext =
-                     await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
-        {
-            var dbConn = scopedContext.Database.GetDbConnection();
-            var sql = """
-                      select s."Id" as SongId, s."ApiKey" as SongApiKey,  
-                             a."Id" as "AlbumId", a."ApiKey" as AlbumApiKey, aa."Id" as AlbumArtistId, aa."ApiKey" as AlbumArtistApiKey
-                      from "Songs" s 
-                      left join "Albums" a on (s."AlbumId" = a."Id")
-                      left join "Artists" aa on (a."ArtistId" = aa."Id")
-                      where s."ApiKey" = @apiKeyId;
-                      """;
-            return await dbConn.QuerySingleOrDefaultAsync<DatabaseSongIdsInfo>(sql, new { apiKeyId })
-                .ConfigureAwait(false);
-        }
+        await using var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
+        
+        var result = await scopedContext.Songs
+            .Include(s => s.Album)
+            .ThenInclude(a => a.Artist)
+            .Where(s => s.ApiKey == apiKeyId)
+            .Select(s => new DatabaseSongIdsInfo(
+                s.Id,
+                s.ApiKey,
+                s.Album.Id,
+                s.Album.ApiKey,
+                s.Album.Artist.Id,
+                s.Album.Artist.ApiKey
+            ))
+            .FirstOrDefaultAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        return result;
     }
 
     protected async Task<DatabaseSongScrobbleInfo?> DatabaseSongScrobbleInfoForSongApiKey(Guid apiKey,
         CancellationToken cancellationToken = default)
     {
-        await using (var scopedContext =
-                     await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
-        {
-            var dbConn = scopedContext.Database.GetDbConnection();
-            var sql = """
-                      select s."ApiKey" as SongApiKey, aa."Id" as ArtistId, a."Id" as AlbumId, s."Id" as SongId, 
-                             aa."Name" as ArtistName, a."Name" as AlbumTitle, now() as TimePlayed, 
-                             s."Title" as "SongTitle", s."Duration" as SongDuration, s."MusicBrainzId" as SongMusicBrainzId, s."SongNumber" as SongNumber
-                      from "Songs" s 
-                      left join "Albums" a on (s."AlbumId" = a."Id")
-                      left join "Artists" aa on (a."ArtistId" = aa."Id")
-                      where s."ApiKey" = @apiKeyId;
-                      """;
-            return await dbConn.QuerySingleOrDefaultAsync<DatabaseSongScrobbleInfo>(sql, new { apiKeyId = apiKey })
-                .ConfigureAwait(false);
-        }
+        await using var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
+        
+        var result = await scopedContext.Songs
+            .Include(s => s.Album)
+            .ThenInclude(a => a.Artist)
+            .Where(s => s.ApiKey == apiKey)
+            .Select(s => new DatabaseSongScrobbleInfo(
+                s.ApiKey,
+                s.Album.Artist.Id,
+                s.Album.Id,
+                s.Id,
+                s.Album.Artist.Name,
+                s.Album.Name,
+                Instant.FromDateTimeUtc(DateTime.UtcNow),
+                s.Title,
+                s.Duration,
+                s.MusicBrainzId,
+                s.SongNumber
+            ))
+            .FirstOrDefaultAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        return result;
     }
 
     /// <summary>

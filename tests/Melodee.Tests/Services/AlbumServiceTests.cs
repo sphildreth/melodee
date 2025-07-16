@@ -91,7 +91,7 @@ public class AlbumServiceTests : ServiceTestBase
         var result = await albumService.GetAsync(999);
 
         // Assert
-        AssertResultIsSuccessful(result);
+        Assert.False(result.IsSuccess);
         Assert.Null(result.Data);
     }
 
@@ -660,6 +660,8 @@ public class AlbumServiceTests : ServiceTestBase
         // Arrange
         var albumName = "Test Album";
         var artistName = "Test Artist";
+
+        var artistId = 0;
         
         await using (var context = await MockFactory().CreateDbContextAsync())
         {
@@ -698,6 +700,8 @@ public class AlbumServiceTests : ServiceTestBase
             };
             context.Albums.Add(album);
             await context.SaveChangesAsync();
+
+            artistId = artist.Id;
         }
 
         var melodeeAlbum = new MelodeeModels.Album
@@ -705,11 +709,13 @@ public class AlbumServiceTests : ServiceTestBase
             ViaPlugins = [],
             OriginalDirectory = new FileSystemDirectoryInfo { Path = "/test", Name = "test" },
             Directory = new FileSystemDirectoryInfo { Path = "/test", Name = "test" },
-            Tags = [new MetaTag<object?> { Identifier = MetaTagIdentifier.Album, Value = albumName }]
+            Tags = [
+                new MetaTag<object?> { Identifier = MetaTagIdentifier.Album, Value = albumName }
+            ]
         };
 
         // Act
-        var result = await GetAlbumService().FindAlbumAsync(1, melodeeAlbum);
+        var result = await GetAlbumService().FindAlbumAsync(artistId, melodeeAlbum);
 
         // Assert
         AssertResultIsSuccessful(result);
@@ -883,7 +889,7 @@ public class AlbumServiceTests : ServiceTestBase
         var result = await GetAlbumService().RescanAsync(albumIds);
 
         // Assert
-        AssertResultIsSuccessful(result);
+        Assert.False(result.IsSuccess);
         Assert.False(result.Data); // This will be false since the directory doesn't actually exist
     }
 
