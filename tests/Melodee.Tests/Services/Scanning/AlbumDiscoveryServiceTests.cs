@@ -29,8 +29,14 @@ public class AlbumDiscoveryServiceTests : ServiceTestBase
             mockFileSystemService ?? new MockFileSystemService());
     }
 
-    private static Album CreateTestAlbum(Guid? id = null, string title = "Test Album", string artistName = "Test Artist", 
-        AlbumStatus status = AlbumStatus.Ok, int year = 2023, int songCount = 10, int duration = 3600000)
+    public static Album CreateTestAlbum(
+        Guid? id = null, 
+        string title = "Test Album", 
+        string artistName = "Test Artist", 
+        AlbumStatus status = AlbumStatus.Ok, 
+        int year = 2023, 
+        int songCount = 10, 
+        int duration = 3600000)
     {
         return new Album
         {

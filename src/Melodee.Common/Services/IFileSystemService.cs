@@ -13,4 +13,13 @@ public interface IFileSystemService
     string GetDirectoryName(string path);
     string GetFileName(string path);
     string CombinePath(params string[] paths);
+    
+    // Additional methods needed by ArtistService
+    Task<byte[]> ReadAllBytesAsync(string filePath, CancellationToken cancellationToken = default);
+    Task WriteAllBytesAsync(string filePath, byte[] bytes, CancellationToken cancellationToken = default);
+    void CreateDirectory(string path);
+    bool FileExists(string path);
+    void DeleteFile(string path);
+    void MoveDirectory(string sourcePath, string destinationPath);
+    string[] GetFiles(string path, string searchPattern = "*", SearchOption searchOption = SearchOption.TopDirectoryOnly);
 }

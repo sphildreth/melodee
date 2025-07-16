@@ -1,4 +1,6 @@
 using Melodee.Common.Models.Extensions;
+using Melodee.Common.Services.Scanning;
+using Melodee.Tests.Services.Scanning;
 
 namespace Melodee.Tests.Services;
 
@@ -56,7 +58,7 @@ public class MockFileSystemTests : IDisposable
     public async Task MockFileSystem_DeserializeAlbumAsync_ReturnsSetupAlbum()
     {
         // Arrange
-        var testAlbum = FileSystemTestHelper.CreateSampleAlbum();
+        var testAlbum = AlbumDiscoveryServiceTests.CreateTestAlbum();
         var filePath = "/music/test/melodee.json";
         
         _mockFileSystem.SetAlbumForFile(filePath, testAlbum);

@@ -31,7 +31,8 @@ public class ArtistService(
     ISerializer serializer,
     IHttpClientFactory httpClientFactory,
     AlbumService albumService,
-    IBus bus)
+    IBus bus,
+    IFileSystemService fileSystemService)
     : ServiceBase(logger, cacheManager, contextFactory)
 {
     private const string CacheKeyDetailByApiKeyTemplate = "urn:artist:apikey:{0}";
@@ -432,9 +433,9 @@ public class ArtistService(
                     .ConfigureAwait(false);
 
                 var artistDirectory = Path.Combine(artist.Library.Path, artist.Directory);
-                if (Directory.Exists(artistDirectory))
+                if (fileSystemService.DirectoryExists(artistDirectory))
                 {
-                    Directory.Delete(artistDirectory, true);
+                    fileSystemService.DeleteDirectory(artistDirectory, true);
                 }
 
                 var artistContributors = await scopedContext.Contributors.Where(x => x.ArtistId == artistId)
@@ -507,10 +508,12 @@ public class ArtistService(
 
             var newArtistDirectory = artist.ToMelodeeArtistModel().ToDirectoryName(configuration.GetValue<int>(SettingRegistry.ProcessingMaximumArtistDirectoryNameLength));
             var newDirectory = Path.Combine(dbDetail.Library.Path, newArtistDirectory);
-            var originalDirectory = new DirectoryInfo(Path.Combine(dbDetail.Library.Path, dbDetail.Directory));
-            if (!originalDirectory.IsSameDirectory(newDirectory))
+            var originalDirectoryPath = Path.Combine(dbDetail.Library.Path, dbDetail.Directory);
+            
+            // Check if we need to move the directory
+            if (originalDirectoryPath != newDirectory)
             {
-                originalDirectory.MoveTo(newDirectory);
+                fileSystemService.MoveDirectory(originalDirectoryPath, newDirectory);
                 dbDetail.Directory = newArtistDirectory;
             }
 
@@ -644,7 +647,7 @@ public class ArtistService(
         var artistImageFileName = Path.Combine(artistDirectory.Path, deleteAllImages ? "01-Band.image" : $"{totalArtistImageCount}-Band.image");
         var artistImageFileInfo = new FileInfo(artistImageFileName).ToFileSystemInfo();
 
-        await File.WriteAllBytesAsync(artistImageFileInfo.FullName(artistDirectory), imageBytes, cancellationToken);
+        await fileSystemService.WriteAllBytesAsync(artistImageFileInfo.FullName(artistDirectory), imageBytes, cancellationToken);
         await imageConvertor.ProcessFileAsync(
             artistDirectory,
             artistImageFileInfo,
@@ -744,10 +747,10 @@ public class ArtistService(
                 };
             }
 
-            var dbArtistToMergeIntoDirectory = dbArtistToMergeInto.ToFileSystemDirectoryInfo();
-            if (!Directory.Exists(dbArtistToMergeIntoDirectory.FullName()))
+            var dbArtistToMergeIntoDirectoryPath = dbArtistToMergeInto.ToFileSystemDirectoryInfo().FullName();
+            if (!fileSystemService.DirectoryExists(dbArtistToMergeIntoDirectoryPath))
             {
-                Directory.CreateDirectory(dbArtistToMergeIntoDirectory.FullName());
+                fileSystemService.CreateDirectory(dbArtistToMergeIntoDirectoryPath);
             }
 
             var now = Instant.FromDateTimeUtc(DateTime.UtcNow);
@@ -792,18 +795,17 @@ public class ArtistService(
                             albumToMerge.Directory);
                         var albumToMergeNewDirectory = Path.Combine(dbArtistToMergeInto.Library.Path,
                             dbArtistToMergeInto.Directory, albumToMerge.Directory);
-                        if (Directory.Exists(albumToMergeDirectory) && !Directory.Exists(albumToMergeNewDirectory))
+                        if (fileSystemService.DirectoryExists(albumToMergeDirectory) && !fileSystemService.DirectoryExists(albumToMergeNewDirectory))
                         {
-                            albumToMergeDirectory.ToFileSystemDirectoryInfo().MoveToDirectory(albumToMergeNewDirectory);
+                            fileSystemService.MoveDirectory(albumToMergeDirectory, albumToMergeNewDirectory);
                         }
-                        else if (Directory.Exists(albumToMergeNewDirectory))
+                        else if (fileSystemService.DirectoryExists(albumToMergeNewDirectory))
                         {
-                            var albumJsonFiles = Directory.GetFiles(albumToMergeNewDirectory,
+                            var albumJsonFiles = fileSystemService.GetFiles(albumToMergeNewDirectory,
                                 MelodeeModels.Album.JsonFileName, SearchOption.TopDirectoryOnly);
                             if (albumJsonFiles.Length > 0)
                             {
-                                var album = await MelodeeModels.Album
-                                    .DeserializeAndInitializeAlbumAsync(serializer, albumJsonFiles[0],
+                                var album = await fileSystemService.DeserializeAlbumAsync(albumJsonFiles[0],
                                         cancellationToken).ConfigureAwait(false);
                                 if (album != null)
                                 {
@@ -841,23 +843,24 @@ public class ArtistService(
                 if (saveResult > 0)
                 {
                     var dbArtistDirectory = dbArtist.ToFileSystemDirectoryInfo();
-                    if ((dbArtistToMergeInto.ImageCount ?? 0) == 0 && Directory.Exists(dbArtistDirectory.FullName()))
+                    if ((dbArtistToMergeInto.ImageCount ?? 0) == 0 && fileSystemService.DirectoryExists(dbArtistDirectory.FullName()))
                     {
                         dbArtistToMergeInto.ImageCount = dbArtistToMergeInto.ImageCount ?? 0;
-                        foreach (var dbArtistImage in dbArtistDirectory.FileInfosForExtension("jpg"))
+                        var jpgFiles = fileSystemService.GetFiles(dbArtistDirectory.FullName(), "*.jpg", SearchOption.TopDirectoryOnly);
+                        foreach (var jpgFile in jpgFiles)
                         {
-                            dbArtistImage.MoveTo(Path.Combine(dbArtistToMergeIntoDirectory.FullName(),
-                                dbArtistImage.Name));
+                            var fileName = fileSystemService.GetFileName(jpgFile);
+                            var newPath = fileSystemService.CombinePath(dbArtistToMergeIntoDirectoryPath, fileName);
+                            fileSystemService.MoveDirectory(jpgFile, newPath);
                             dbArtistToMergeInto.ImageCount++;
                         }
 
                         await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
                     }
 
-                    var dirPath = dbArtist.ToFileSystemDirectoryInfo().FullName();
-                    if (Directory.Exists(dirPath))
+                    if (fileSystemService.DirectoryExists(dbArtistDirectory.FullName()))
                     {
-                        Directory.Delete(dirPath, true);
+                        fileSystemService.DeleteDirectory(dbArtistDirectory.FullName(), true);
                     }
                 }
 
@@ -978,7 +981,7 @@ public class ArtistService(
                 return new MelodeeModels.ImageBytesAndEtag(null, badEtag);
             }
 
-            var imageBytes = await File.ReadAllBytesAsync(imageFile.FullName, cancellationToken).ConfigureAwait(false);
+            var imageBytes = await fileSystemService.ReadAllBytesAsync(imageFile.FullName, cancellationToken).ConfigureAwait(false);
             return new MelodeeModels.ImageBytesAndEtag(imageBytes, (artist.Data.LastUpdatedAt ?? artist.Data.CreatedAt).ToEtag());
         }, cancellationToken, configuration.CacheDuration(), Artist.CacheRegion);
     }

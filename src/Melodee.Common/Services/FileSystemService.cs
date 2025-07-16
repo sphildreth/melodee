@@ -33,4 +33,34 @@ public class FileSystemService(ISerializer serializer) : IFileSystemService
     public string GetFileName(string path) => Path.GetFileName(path);
 
     public string CombinePath(params string[] paths) => Path.Combine(paths);
+    
+    // Additional methods needed by ArtistService
+    public async Task<byte[]> ReadAllBytesAsync(string filePath, CancellationToken cancellationToken = default)
+    {
+        return await File.ReadAllBytesAsync(filePath, cancellationToken);
+    }
+
+    public async Task WriteAllBytesAsync(string filePath, byte[] bytes, CancellationToken cancellationToken = default)
+    {
+        await File.WriteAllBytesAsync(filePath, bytes, cancellationToken);
+    }
+
+    public void CreateDirectory(string path)
+    {
+        Directory.CreateDirectory(path);
+    }
+
+    public bool FileExists(string path) => File.Exists(path);
+
+    public void DeleteFile(string path) => File.Delete(path);
+
+    public void MoveDirectory(string sourcePath, string destinationPath)
+    {
+        Directory.Move(sourcePath, destinationPath);
+    }
+
+    public string[] GetFiles(string path, string searchPattern = "*", SearchOption searchOption = SearchOption.TopDirectoryOnly)
+    {
+        return Directory.GetFiles(path, searchPattern, searchOption);
+    }
 }

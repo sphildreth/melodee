@@ -1,5 +1,6 @@
 using Melodee.Common.Enums;
 using Melodee.Common.Models;
+using NodaTime;
 
 namespace Melodee.Tests.Services;
 
@@ -49,108 +50,42 @@ public static class FileSystemTestHelper
     }
     
     /// <summary>
-    /// Creates a mock file system with multiple albums for testing bulk operations.
+    /// Creates a mock file system with multiple artists and albums for complex testing scenarios.
     /// </summary>
-    public static MockFileSystemService CreateMultipleAlbumsStructure()
+    public static MockFileSystemService CreateMultiArtistStructure()
     {
         var mock = new MockFileSystemService();
         
         var rootPath = "/music";
         mock.SetDirectoryExists(rootPath);
         
-        // Create multiple artists and albums
-        var artists = new[] { "Artist A", "Artist B", "Various Artists" };
-        var albums = new[] { "Album 1 (2020)", "Album 2 (2021)", "Compilation (2022)" };
+        // First artist
+        var artist1Path = "/music/Artist One";
+        mock.SetDirectoryExists(artist1Path)
+            .AddSubdirectory(rootPath, "Artist One");
+            
+        var album1Path = "/music/Artist One/First Album (2022)";
+        mock.SetDirectoryExists(album1Path)
+            .AddSubdirectory(artist1Path, "First Album (2022)")
+            .AddFilesToDirectory(album1Path,
+                "/music/Artist One/First Album (2022)/01 - Song A.mp3",
+                "/music/Artist One/First Album (2022)/02 - Song B.mp3",
+                "/music/Artist One/First Album (2022)/melodee.json");
         
-        for (int i = 0; i < artists.Length; i++)
-        {
-            var artistPath = $"/music/{artists[i]}";
-            mock.SetDirectoryExists(artistPath)
-                .AddSubdirectory(rootPath, artists[i]);
+        // Second artist
+        var artist2Path = "/music/Artist Two";
+        mock.SetDirectoryExists(artist2Path)
+            .AddSubdirectory(rootPath, "Artist Two");
             
-            var albumPath = $"/music/{artists[i]}/{albums[i]}";
-            mock.SetDirectoryExists(albumPath)
-                .AddSubdirectory(artistPath, albums[i]);
-            
-            // Add files for each album
-            mock.AddFilesToDirectory(albumPath,
-                $"{albumPath}/01 - Song One.mp3",
-                $"{albumPath}/02 - Song Two.mp3",
-                $"{albumPath}/melodee.json"
-            );
-        }
+        var album2Path = "/music/Artist Two/Second Album (2023)";
+        mock.SetDirectoryExists(album2Path)
+            .AddSubdirectory(artist2Path, "Second Album (2023)")
+            .AddFilesToDirectory(album2Path,
+                "/music/Artist Two/Second Album (2023)/01 - Track X.mp3",
+                "/music/Artist Two/Second Album (2023)/02 - Track Y.mp3",
+                "/music/Artist Two/Second Album (2023)/melodee.json");
         
         return mock;
-    }
-    
-    /// <summary>
-    /// Creates a mock file system with problematic scenarios for edge case testing.
-    /// </summary>
-    public static MockFileSystemService CreateProblematicStructure()
-    {
-        var mock = new MockFileSystemService();
-        
-        var rootPath = "/music";
-        mock.SetDirectoryExists(rootPath);
-        
-        // Empty directory
-        var emptyPath = "/music/Empty Artist";
-        mock.SetDirectoryExists(emptyPath)
-            .AddSubdirectory(rootPath, "Empty Artist");
-        
-        // Directory with only non-music files
-        var nonMusicPath = "/music/Documents";
-        mock.SetDirectoryExists(nonMusicPath)
-            .AddSubdirectory(rootPath, "Documents")
-            .AddFilesToDirectory(nonMusicPath,
-                "/music/Documents/readme.txt",
-                "/music/Documents/info.pdf"
-            );
-        
-        // Album without melodee.json
-        var incompleteAlbumPath = "/music/Incomplete Artist/Incomplete Album";
-        mock.SetDirectoryExists("/music/Incomplete Artist")
-            .SetDirectoryExists(incompleteAlbumPath)
-            .AddSubdirectory(rootPath, "Incomplete Artist")
-            .AddSubdirectory("/music/Incomplete Artist", "Incomplete Album")
-            .AddFilesToDirectory(incompleteAlbumPath,
-                "/music/Incomplete Artist/Incomplete Album/track.mp3"
-            );
-        
-        return mock;
-    }
-    
-    /// <summary>
-    /// Creates a sample Album object for testing.
-    /// </summary>
-    public static Album CreateSampleAlbum(string artistName = "Test Artist", string albumName = "Test Album")
-    {
-        return new Album
-        {
-            Id = Guid.NewGuid(),
-            Artist = new Artist(artistName,
-                artistName,
-                null),
-            Directory = new FileSystemDirectoryInfo
-            {
-                Path = $"/music/{artistName}/{albumName}",
-                Name = albumName
-            },
-            OriginalDirectory = new FileSystemDirectoryInfo
-            {
-                Path = $"/music/{artistName}/{albumName}",
-                Name = albumName
-            },
-            ViaPlugins = ["TestPlugin"],
-            Tags = new List<MetaTag<object?>>
-            {
-                new MetaTag<object?> { Identifier = MetaTagIdentifier.Album, Value = albumName },
-                new MetaTag<object?> { Identifier = MetaTagIdentifier.Artist, Value = artistName },
-                new MetaTag<object?> { Identifier = MetaTagIdentifier.AlbumArtist, Value = artistName },
-                new MetaTag<object?> { Identifier = MetaTagIdentifier.RecordingDate, Value = 2023 },
-                new MetaTag<object?> { Identifier = MetaTagIdentifier.OrigAlbumYear, Value = 2023 }
-            },
-        };
     }
     
     /// <summary>
