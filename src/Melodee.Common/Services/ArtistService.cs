@@ -183,7 +183,8 @@ public class ArtistService(
         };
     }
 
-    public async Task<MelodeeModels.OperationResult<Artist?>> GetByMusicBrainzIdAsync(Guid musicBrainzId,
+    public async Task<MelodeeModels.OperationResult<Artist?>> GetByMusicBrainzIdAsync(
+        Guid musicBrainzId,
         CancellationToken cancellationToken = default)
     {
         var id = await CacheManager.GetAsync(

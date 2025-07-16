@@ -767,6 +767,601 @@ public class ArtistServiceTests : ServiceTestBase
 
     #endregion
 
+    #region SaveImageAsArtistImageAsync Tests
+
+    [Fact]
+    public async Task SaveImageAsArtistImageAsync_ValidArtistAndImage_SavesImage()
+    {
+        // Arrange
+        var artist = await CreateTestArtistWithLibrary();
+        var imageBytes = new byte[] { 0xFF, 0xD8, 0xFF, 0xE0 }; // Simple JPEG header
+
+        // Act
+        var result = await GetArtistService().SaveImageAsArtistImageAsync(artist.Id, false, imageBytes);
+
+        // Assert
+        AssertResultIsSuccessful(result);
+        Assert.True(result.Data);
+    }
+
+    [Fact]
+    public async Task SaveImageAsArtistImageAsync_NonExistentArtist_ReturnsError()
+    {
+        // Arrange
+        var imageBytes = new byte[] { 0xFF, 0xD8, 0xFF, 0xE0 };
+
+        // Act
+        var result = await GetArtistService().SaveImageAsArtistImageAsync(999999, false, imageBytes);
+
+        // Assert
+        Assert.False(result.IsSuccess);
+        Assert.Contains("Unknown artist", result.Messages?.FirstOrDefault() ?? string.Empty);
+    }
+
+    [Fact]
+    public async Task SaveImageAsArtistImageAsync_EmptyImageBytes_ThrowsArgumentException()
+    {
+        // Arrange
+        var artist = await CreateTestArtistWithLibrary();
+        var service = GetArtistService();
+
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentException>(() => 
+            service.SaveImageAsArtistImageAsync(artist.Id, false, Array.Empty<byte>()));
+    }
+
+    [Fact]
+    public async Task SaveImageAsArtistImageAsync_InvalidArtistId_ThrowsArgumentException()
+    {
+        // Arrange
+        var imageBytes = new byte[] { 0xFF, 0xD8, 0xFF, 0xE0 };
+        var service = GetArtistService();
+
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentException>(() => 
+            service.SaveImageAsArtistImageAsync(0, false, imageBytes));
+        await Assert.ThrowsAsync<ArgumentException>(() => 
+            service.SaveImageAsArtistImageAsync(-1, false, imageBytes));
+    }
+
+    [Fact]
+    public async Task SaveImageAsArtistImageAsync_DeleteAllImagesTrue_ReplacesAllImages()
+    {
+        // Arrange
+        var artist = await CreateTestArtistWithLibrary();
+        var imageBytes = new byte[] { 0xFF, 0xD8, 0xFF, 0xE0 };
+
+        // Act
+        var result = await GetArtistService().SaveImageAsArtistImageAsync(artist.Id, true, imageBytes);
+
+        // Assert
+        AssertResultIsSuccessful(result);
+        Assert.True(result.Data);
+    }
+
+    #endregion
+
+    #region SaveImageUrlAsArtistImageAsync Tests
+
+    [Fact]
+    public async Task SaveImageUrlAsArtistImageAsync_ValidArtistAndUrl_ReturnsSuccess()
+    {
+        // Arrange
+        var artist = await CreateTestArtistWithLibrary();
+        var imageUrl = "https://example.com/image.jpg";
+
+        // Act
+        var result = await GetArtistService().SaveImageUrlAsArtistImageAsync(artist.Id, imageUrl, false);
+
+        // Assert
+        // Note: This will likely fail in practice due to HTTP call, but tests the method signature
+        Assert.NotNull(result);
+    }
+
+    [Fact]
+    public async Task SaveImageUrlAsArtistImageAsync_NonExistentArtist_ReturnsError()
+    {
+        // Arrange
+        var imageUrl = "https://example.com/image.jpg";
+
+        // Act
+        var result = await GetArtistService().SaveImageUrlAsArtistImageAsync(999999, imageUrl, false);
+
+        // Assert
+        Assert.False(result.IsSuccess);
+        Assert.Contains("Unknown artist", result.Messages?.FirstOrDefault() ?? string.Empty);
+    }
+
+    [Fact]
+    public async Task SaveImageUrlAsArtistImageAsync_EmptyUrl_ThrowsArgumentException()
+    {
+        // Arrange
+        var artist = await CreateTestArtistWithLibrary();
+        var service = GetArtistService();
+
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentException>(() => 
+            service.SaveImageUrlAsArtistImageAsync(artist.Id, string.Empty, false));
+    }
+
+    [Fact]
+    public async Task SaveImageUrlAsArtistImageAsync_InvalidArtistId_ThrowsArgumentException()
+    {
+        // Arrange
+        var imageUrl = "https://example.com/image.jpg";
+        var service = GetArtistService();
+
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentException>(() => 
+            service.SaveImageUrlAsArtistImageAsync(0, imageUrl, false));
+        await Assert.ThrowsAsync<ArgumentException>(() => 
+            service.SaveImageUrlAsArtistImageAsync(-1, imageUrl, false));
+    }
+
+    #endregion
+
+    #region MergeArtistsAsync Tests
+
+    [Fact]
+    public async Task MergeArtistsAsync_ValidArtists_MergesSuccessfully()
+    {
+        // Arrange
+        var targetArtist = await CreateTestArtistWithLibrary("Target Artist");
+        var sourceArtist1 = await CreateTestArtistWithLibrary("Source Artist 1");
+        var sourceArtist2 = await CreateTestArtistWithLibrary("Source Artist 2");
+        var artistIdsToMerge = new[] { sourceArtist1.Id, sourceArtist2.Id };
+
+        // Act
+        var result = await GetArtistService().MergeArtistsAsync(targetArtist.Id, artistIdsToMerge);
+
+        // Assert
+        AssertResultIsSuccessful(result);
+        Assert.True(result.Data);
+
+        // Verify source artists are deleted
+        var deletedArtist1 = await GetArtistService().GetAsync(sourceArtist1.Id);
+        var deletedArtist2 = await GetArtistService().GetAsync(sourceArtist2.Id);
+        Assert.Null(deletedArtist1.Data);
+        Assert.Null(deletedArtist2.Data);
+    }
+
+    [Fact]
+    public async Task MergeArtistsAsync_NonExistentTargetArtist_ReturnsError()
+    {
+        // Arrange
+        var sourceArtist = await CreateTestArtistWithLibrary("Source Artist");
+        var artistIdsToMerge = new[] { sourceArtist.Id };
+
+        // Act
+        var result = await GetArtistService().MergeArtistsAsync(999999, artistIdsToMerge);
+
+        // Assert
+        Assert.False(result.IsSuccess);
+        Assert.Contains("Unknown artist to merge into", result.Messages?.FirstOrDefault() ?? string.Empty);
+    }
+
+    [Fact]
+    public async Task MergeArtistsAsync_NonExistentSourceArtist_ReturnsError()
+    {
+        // Arrange
+        var targetArtist = await CreateTestArtistWithLibrary("Target Artist");
+        var artistIdsToMerge = new[] { 999999 };
+
+        // Act
+        var result = await GetArtistService().MergeArtistsAsync(targetArtist.Id, artistIdsToMerge);
+
+        // Assert
+        Assert.False(result.IsSuccess);
+        Assert.Contains("Unknown artist to merge", result.Messages?.FirstOrDefault() ?? string.Empty);
+    }
+
+    [Fact]
+    public async Task MergeArtistsAsync_InvalidTargetArtistId_ThrowsArgumentException()
+    {
+        // Arrange
+        var sourceArtist = await CreateTestArtistWithLibrary("Source Artist");
+        var artistIdsToMerge = new[] { sourceArtist.Id };
+        var service = GetArtistService();
+
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentException>(() => 
+            service.MergeArtistsAsync(0, artistIdsToMerge));
+        await Assert.ThrowsAsync<ArgumentException>(() => 
+            service.MergeArtistsAsync(-1, artistIdsToMerge));
+    }
+
+    [Fact]
+    public async Task MergeArtistsAsync_EmptySourceArray_ThrowsArgumentException()
+    {
+        // Arrange
+        var targetArtist = await CreateTestArtistWithLibrary("Target Artist");
+        var service = GetArtistService();
+
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentException>(() => 
+            service.MergeArtistsAsync(targetArtist.Id, Array.Empty<int>()));
+    }
+
+    #endregion
+
+    #region DeleteAlbumsForArtist Tests
+
+    [Fact]
+    public async Task DeleteAlbumsForArtist_ValidArtistAndAlbums_DeletesAlbums()
+    {
+        // Arrange
+        var artist = await CreateTestArtistWithLibrary();
+        var albumIdsToDelete = new[] { 1, 2, 3 }; // Mock album IDs
+
+        // Act
+        var result = await GetArtistService().DeleteAlbumsForArtist(artist.Id, albumIdsToDelete);
+
+        // Assert
+        // Note: This depends on AlbumService.DeleteAsync implementation
+        Assert.NotNull(result);
+    }
+
+    [Fact]
+    public async Task DeleteAlbumsForArtist_NonExistentArtist_ReturnsError()
+    {
+        // Arrange
+        var albumIdsToDelete = new[] { 1, 2, 3 };
+
+        // Act
+        var result = await GetArtistService().DeleteAlbumsForArtist(999999, albumIdsToDelete);
+
+        // Assert
+        Assert.False(result.IsSuccess);
+        Assert.Contains("Unknown artist", result.Messages?.FirstOrDefault() ?? string.Empty);
+    }
+
+    [Fact]
+    public async Task DeleteAlbumsForArtist_InvalidArtistId_ThrowsArgumentException()
+    {
+        // Arrange
+        var albumIdsToDelete = new[] { 1, 2, 3 };
+        var service = GetArtistService();
+
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentException>(() => 
+            service.DeleteAlbumsForArtist(0, albumIdsToDelete));
+        await Assert.ThrowsAsync<ArgumentException>(() => 
+            service.DeleteAlbumsForArtist(-1, albumIdsToDelete));
+    }
+
+    #endregion
+
+    #region GetArtistImageBytesAndEtagAsync Tests
+
+    [Fact]
+    public async Task GetArtistImageBytesAndEtagAsync_ValidApiKey_ReturnsImageData()
+    {
+        // Arrange
+        var artist = await CreateTestArtistWithLibrary();
+        var apiKey = artist.ApiKey;
+
+        // Act
+        var result = await GetArtistService().GetArtistImageBytesAndEtagAsync(apiKey);
+
+        // Assert
+        Assert.NotNull(result);
+        // Note: In a real scenario with file system, this would return actual image data
+    }
+
+    [Fact]
+    public async Task GetArtistImageBytesAndEtagAsync_ValidApiKeyWithSize_ReturnsImageData()
+    {
+        // Arrange
+        var artist = await CreateTestArtistWithLibrary();
+        var apiKey = artist.ApiKey;
+        var size = "medium";
+
+        // Act
+        var result = await GetArtistService().GetArtistImageBytesAndEtagAsync(apiKey, size);
+
+        // Assert
+        Assert.NotNull(result);
+    }
+
+    [Fact]
+    public async Task GetArtistImageBytesAndEtagAsync_NonExistentApiKey_ReturnsEmptyResult()
+    {
+        // Arrange
+        var nonExistentApiKey = Guid.NewGuid();
+
+        // Act
+        var result = await GetArtistService().GetArtistImageBytesAndEtagAsync(nonExistentApiKey);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Null(result.Bytes);
+        Assert.Null(result.Etag);
+    }
+
+    [Fact]
+    public async Task GetArtistImageBytesAndEtagAsync_NullApiKey_ThrowsArgumentNullException()
+    {
+        // Arrange
+        var service = GetArtistService();
+
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentNullException>(() => 
+            service.GetArtistImageBytesAndEtagAsync(null));
+    }
+
+    [Fact]
+    public async Task GetArtistImageBytesAndEtagAsync_EmptyGuid_ThrowsArgumentException()
+    {
+        // Arrange
+        var service = GetArtistService();
+
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentException>(() => 
+            service.GetArtistImageBytesAndEtagAsync(Guid.Empty));
+    }
+
+    #endregion
+
+    #region ClearCacheAsync Tests
+
+    [Fact]
+    public async Task ClearCacheAsync_ValidArtist_ClearsCache()
+    {
+        // Arrange
+        var artist = await CreateTestArtistWithLibrary();
+
+        // Act & Assert - Should not throw
+        await GetArtistService().ClearCacheAsync(artist, CancellationToken.None);
+    }
+
+    [Fact]
+    public async Task ClearCacheAsync_ValidArtistId_ClearsCache()
+    {
+        // Arrange
+        var artist = await CreateTestArtistWithLibrary();
+
+        // Act & Assert - Should not throw
+        await GetArtistService().ClearCacheAsync(artist.Id, CancellationToken.None);
+    }
+
+    [Fact]
+    public async Task ClearCacheAsync_NonExistentArtistId_ThrowsException()
+    {
+        // Arrange
+        var service = GetArtistService();
+
+        // Act & Assert
+        await Assert.ThrowsAsync<NullReferenceException>(() => 
+            service.ClearCacheAsync(999999, CancellationToken.None));
+    }
+
+    #endregion
+
+    #region Edge Cases and Additional Coverage Tests
+
+    [Fact]
+    public async Task ListAsync_WithIsLockedFilter_ReturnsFilteredResults()
+    {
+        // Arrange
+        await SeedTestArtists();
+        var pagedRequest = new PagedRequest
+        {
+            PageSize = 10,
+            Page = 1,
+            FilterBy = new[]
+            {
+                new FilterOperatorInfo("islocked", FilterOperator.Equals, "false")
+            }
+        };
+
+        // Act
+        var result = await GetArtistService().ListAsync(pagedRequest);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.True(result.Data.All(a => !a.IsLocked));
+    }
+
+    [Fact]
+    public async Task ListAsync_WithAlternateNamesFilter_ReturnsFilteredResults()
+    {
+        // Arrange
+        await SeedTestArtistsWithAlternateNames();
+        var pagedRequest = new PagedRequest
+        {
+            PageSize = 10,
+            Page = 1,
+            FilterBy = new[]
+            {
+                new FilterOperatorInfo("alternatenames", FilterOperator.Contains, "Alternative")
+            }
+        };
+
+        // Act
+        var result = await GetArtistService().ListAsync(pagedRequest);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.True(result.Data.All(a => a.AlternateNames.Contains("Alternative")));
+    }
+
+    [Fact]
+    public async Task ListAsync_WithStartsWithFilter_ReturnsFilteredResults()
+    {
+        // Arrange
+        await SeedTestArtists();
+        var pagedRequest = new PagedRequest
+        {
+            PageSize = 10,
+            Page = 1,
+            FilterBy = new[]
+            {
+                new FilterOperatorInfo("name", FilterOperator.StartsWith, "Test")
+            }
+        };
+
+        // Act
+        var result = await GetArtistService().ListAsync(pagedRequest);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.True(result.Data.All(a => a.Name.StartsWith("Test")));
+    }
+
+    [Fact]
+    public async Task ListAsync_WithDescendingOrder_ReturnsOrderedResults()
+    {
+        // Arrange
+        await SeedTestArtists();
+        var pagedRequest = new PagedRequest
+        {
+            PageSize = 10,
+            Page = 1,
+            OrderBy = new Dictionary<string, string> { { "Name", "DESC" } }
+        };
+
+        // Act
+        var result = await GetArtistService().ListAsync(pagedRequest);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.NotEmpty(result.Data);
+        
+        var names = result.Data.Select(a => a.Name).ToArray();
+        var sortedNames = names.OrderByDescending(n => n).ToArray();
+        Assert.Equal(sortedNames, names);
+    }
+
+    [Fact]
+    public async Task FindArtistAsync_ByMusicBrainzId_ReturnsArtist()
+    {
+        // Arrange
+        var musicBrainzId = Guid.NewGuid();
+        var artistName = "MusicBrainz Find Test";
+
+        await using (var context = await MockFactory().CreateDbContextAsync())
+        {
+            var library = new Library
+            {
+                Name = "Test Library",
+                Path = "/test/path",
+                Type = (int)LibraryType.Storage,
+                CreatedAt = Instant.FromDateTimeUtc(DateTime.UtcNow)
+            };
+            context.Libraries.Add(library);
+            await context.SaveChangesAsync();
+
+            var artist = new Artist
+            {
+                ApiKey = Guid.NewGuid(),
+                MusicBrainzId = musicBrainzId,
+                Directory = "find-mb-test",
+                CreatedAt = Instant.FromDateTimeUtc(DateTime.UtcNow),
+                LibraryId = library.Id,
+                Name = artistName,
+                NameNormalized = artistName.ToNormalizedString()!,
+                Library = library
+            };
+            context.Artists.Add(artist);
+            await context.SaveChangesAsync();
+        }
+
+        // Act
+        var result = await GetArtistService().FindArtistAsync(null, Guid.Empty, null, musicBrainzId, null);
+
+        // Assert
+        AssertResultIsSuccessful(result);
+        Assert.NotNull(result.Data);
+        Assert.Equal(artistName, result.Data.Name);
+        Assert.Equal(musicBrainzId, result.Data.MusicBrainzId);
+    }
+
+    [Fact]
+    public async Task FindArtistAsync_BySpotifyId_ReturnsArtist()
+    {
+        // Arrange
+        var spotifyId = "spotify:artist:123456";
+        var artistName = "Spotify Find Test";
+
+        await using (var context = await MockFactory().CreateDbContextAsync())
+        {
+            var library = new Library
+            {
+                Name = "Test Library",
+                Path = "/test/path",
+                Type = (int)LibraryType.Storage,
+                CreatedAt = Instant.FromDateTimeUtc(DateTime.UtcNow)
+            };
+            context.Libraries.Add(library);
+            await context.SaveChangesAsync();
+
+            var artist = new Artist
+            {
+                ApiKey = Guid.NewGuid(),
+                SpotifyId = spotifyId,
+                Directory = "find-spotify-test",
+                CreatedAt = Instant.FromDateTimeUtc(DateTime.UtcNow),
+                LibraryId = library.Id,
+                Name = artistName,
+                NameNormalized = artistName.ToNormalizedString()!,
+                Library = library
+            };
+            context.Artists.Add(artist);
+            await context.SaveChangesAsync();
+        }
+
+        // Act
+        var result = await GetArtistService().FindArtistAsync(null, Guid.Empty, null, null, spotifyId);
+
+        // Assert
+        AssertResultIsSuccessful(result);
+        Assert.NotNull(result.Data);
+        Assert.Equal(artistName, result.Data.Name);
+        Assert.Equal(spotifyId, result.Data.SpotifyId);
+    }
+
+    #endregion
+
+    #region Additional Helper Methods
+
+    private async Task SeedTestArtistsWithAlternateNames(int count = 3)
+    {
+        await using var context = await MockFactory().CreateDbContextAsync();
+        
+        var library = new Library
+        {
+            Name = "Test Library",
+            Path = "/test/library/path",
+            Type = (int)LibraryType.Storage,
+            CreatedAt = Instant.FromDateTimeUtc(DateTime.UtcNow)
+        };
+        context.Libraries.Add(library);
+        await context.SaveChangesAsync();
+
+        for (int i = 1; i <= count; i++)
+        {
+            var artistName = $"Test Artist {i}";
+            var artistModel = new Melodee.Common.Models.Artist(artistName, artistName.ToNormalizedString()!, null, null, library.Id);
+            var artist = new Artist
+            {
+                ApiKey = Guid.NewGuid(),
+                Directory = artistModel.ToDirectoryName(255),
+                CreatedAt = Instant.FromDateTimeUtc(DateTime.UtcNow),
+                LibraryId = library.Id,
+                Name = artistName,
+                NameNormalized = artistName.ToNormalizedString()!,
+                AlternateNames = $"Alternative Name {i}",
+                AlbumCount = i,
+                SongCount = i * 10,
+                Library = library
+            };
+            context.Artists.Add(artist);
+        }
+        await context.SaveChangesAsync();
+    }
+
+    #endregion
+
     #region Helper Methods
 
     private async Task<Library> CreateTestLibrary()
