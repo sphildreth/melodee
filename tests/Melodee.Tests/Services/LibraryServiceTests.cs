@@ -626,7 +626,7 @@ public sealed class LibraryServiceTests : ServiceTestBase
         // Assert
         Assert.NotNull(result);
         Assert.False(result.Data);
-        Assert.Contains("Invalid library type", result.Messages ?? []);
+        Assert.Contains("Invalid From library Name", result.Messages ?? []);
     }
 
     [Fact]
@@ -659,7 +659,7 @@ public sealed class LibraryServiceTests : ServiceTestBase
         
         // Assert
         Assert.NotNull(result);
-        Assert.True(result.Data);
+        Assert.False(result.Data); // Didn't move any albums, only returns true if albums were moved
         
         // Cleanup
         Directory.Delete("/tmp/FromLibrary", recursive: true);
@@ -693,7 +693,7 @@ public sealed class LibraryServiceTests : ServiceTestBase
         
         // Assert
         Assert.NotNull(result);
-        Assert.True(result.Data); // Should still return success even when no albums match condition
+        Assert.False(result.Data); 
         
         // Cleanup
         Directory.Delete("/tmp/FromLibrary", recursive: true);

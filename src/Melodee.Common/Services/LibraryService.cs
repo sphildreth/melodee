@@ -1,7 +1,7 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Linq.Dynamic.Core;
 using Ardalis.GuardClauses;
-using Dapper;
 using IdSharp.Common.Utils;
 using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
@@ -10,6 +10,7 @@ using Melodee.Common.Data.Models;
 using Melodee.Common.Data.Models.Extensions;
 using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
+using Melodee.Common.Filtering;
 using Melodee.Common.Metadata;
 using Melodee.Common.Models.Collection;
 using Melodee.Common.Models.Extensions;
@@ -93,7 +94,7 @@ public class LibraryService : ServiceBase
                     .Where(x => x.Type == storageLibraryType)
                     .ToArrayAsync(cancellationToken)
                     .ConfigureAwait(false);
-                if (library == null)
+                if (library == null || library.Length == 0)
                 {
                     throw new Exception(
                         "No storage library found. At least one Library record must be setup with a type of '3' (Storage).");
@@ -154,16 +155,15 @@ public class LibraryService : ServiceBase
 
         var id = await CacheManager.GetAsync(CacheKeyDetailByApiKeyTemplate.FormatSmart(apiKey), async () =>
         {
-            await using (var scopedContext =
-                         await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
-            {
-                var dbConn = scopedContext.Database.GetDbConnection();
-                return await dbConn
-                    .QuerySingleOrDefaultAsync<int?>("SELECT \"Id\" FROM \"Libraries\" WHERE \"ApiKey\" = @apiKey",
-                        new { apiKey })
-                    .ConfigureAwait(false);
-            }
+            await using var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
+            return await scopedContext.Libraries
+                .AsNoTracking()
+                .Where(x => x.ApiKey == apiKey)
+                .Select(x => (int?)x.Id)
+                .FirstOrDefaultAsync(cancellationToken)
+                .ConfigureAwait(false);
         }, cancellationToken);
+        
         if (id == null)
         {
             return new MelodeeModels.OperationResult<Library?>("Unknown library.")
@@ -271,108 +271,147 @@ public class LibraryService : ServiceBase
 
     public async Task<MelodeeModels.PagedResult<LibraryScanHistoryDataInfo>> ListLibraryHistoriesAsync(int libraryId, MelodeeModels.PagedRequest pagedRequest, CancellationToken cancellationToken = default)
     {
-        var librariesCount = 0;
-        LibraryScanHistoryDataInfo[] histories = [];
-        await using (var scopedContext =
-                     await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        await using var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
+        
+        try
         {
-            try
+            // Build base query with proper joins using EF Core includes
+            var baseQuery = from h in scopedContext.LibraryScanHistories.AsNoTracking()
+                           join ar in scopedContext.Artists on h.ForArtistId equals ar.Id into artistJoin
+                           from artist in artistJoin.DefaultIfEmpty()
+                           join al in scopedContext.Albums on h.ForAlbumId equals al.Id into albumJoin
+                           from album in albumJoin.DefaultIfEmpty()
+                           where h.LibraryId == libraryId
+                           select new { h, artist, album };
+            
+            // Apply filters on the entity properties before projection
+            var filteredQuery = ApplyHistoryFiltersBeforeProjection(baseQuery, pagedRequest);
+            
+            // Get count efficiently
+            var historiesCount = await filteredQuery.CountAsync(cancellationToken).ConfigureAwait(false);
+            
+            LibraryScanHistoryDataInfo[] histories = [];
+            if (!pagedRequest.IsTotalCountOnlyRequest)
             {
-                var orderBy = pagedRequest.OrderByValue();
-                var dbConn = scopedContext.Database.GetDbConnection();
-                var countSqlParts = pagedRequest.FilterByParts(
-                    "SELECT COUNT(*) FROM \"LibraryScanHistories\" where \"LibraryId\" = {0} ".FormatSmart(libraryId));
-                librariesCount = await dbConn
-                    .QuerySingleAsync<int>(countSqlParts.Item1, countSqlParts.Item2)
+                // Apply ordering on entity properties before projection
+                var orderedQuery = ApplyHistoryOrderingBeforeProjection(filteredQuery, pagedRequest);
+                
+                // Apply projection to LibraryScanHistoryDataInfo after ordering
+                var projectedQuery = orderedQuery.Select(x => new LibraryScanHistoryDataInfo(
+                    x.h.Id,
+                    x.h.CreatedAt,
+                    x.artist != null ? x.artist.Name : null,
+                    x.artist != null ? x.artist.ApiKey : null,
+                    x.album != null ? x.album.Name : null,
+                    x.album != null ? x.album.ApiKey : null,
+                    x.h.FoundArtistsCount,
+                    x.h.FoundAlbumsCount,
+                    x.h.FoundSongsCount,
+                    x.h.DurationInMs
+                ));
+                
+                histories = await projectedQuery
+                    .Skip(pagedRequest.SkipValue)
+                    .Take(pagedRequest.TakeValue)
+                    .ToArrayAsync(cancellationToken)
                     .ConfigureAwait(false);
-                if (!pagedRequest.IsTotalCountOnlyRequest)
-                {
-                    var sqlStartFragment = """
-                                           SELECT l."Id", l."CreatedAt", ar."Name" as "ForArtistName", ar."ApiKey" as "ForArtistApiKey", a."Name" as "ForAlbumName",
-                                                  a."ApiKey" as "ForAlbumApiKey", l."FoundArtistsCount", l."FoundAlbumsCount", l."FoundSongsCount", l."DurationInMs"
-                                           FROM "LibraryScanHistories" l
-                                           left join "Artists" ar on (l."ForArtistId" = ar."Id")
-                                           left join "Albums" a on (L."ForAlbumId" = a."Id")
-                                           where l."LibraryId" = {0}
-                                           """;
-                    var listSqlParts = pagedRequest.FilterByParts(sqlStartFragment.FormatSmart(libraryId));
-                    var listSql = $"{listSqlParts.Item1} ORDER BY {orderBy} OFFSET {pagedRequest.SkipValue} ROWS FETCH NEXT {pagedRequest.TakeValue} ROWS ONLY;";
-                    histories = (await dbConn
-                        .QueryAsync<LibraryScanHistoryDataInfo>(listSql, listSqlParts.Item2)
-                        .ConfigureAwait(false)).ToArray();
-                }
             }
-            catch (Exception e)
+            
+            return new MelodeeModels.PagedResult<LibraryScanHistoryDataInfo>
             {
-                Logger.Error(e, "Failed to get libraries from database");
-            }
-        }
-
-        return new MelodeeModels.PagedResult<LibraryScanHistoryDataInfo>
-        {
-            TotalCount = librariesCount,
-            TotalPages = pagedRequest.TotalPages(librariesCount),
-            Data = histories
-        };
-    }
-
-    public async Task<MelodeeModels.PagedResult<Library>> ListMediaLibrariesAsync(CancellationToken cancellationToken = default)
-    {
-        return await CacheManager.GetAsync(CacheKeyMediaLibraries, async () =>
-        {
-            var data = await ListAsync(new MelodeeModels.PagedRequest { PageSize = short.MaxValue }, cancellationToken)
-                .ConfigureAwait(false);
-            return new MelodeeModels.PagedResult<Library>
-            {
-                Data = data
-                    .Data
-                    .OrderBy(x => x.SortOrder).ThenBy(x => x.Name)
-                    .Where(x => x.TypeValue is LibraryType.Inbound or LibraryType.Staging)
-                    .ToArray()
+                TotalCount = historiesCount,
+                TotalPages = pagedRequest.TotalPages(historiesCount),
+                Data = histories
             };
-        }, cancellationToken).ConfigureAwait(false);
-    }
-
-
-    public virtual async Task<MelodeeModels.PagedResult<Library>> ListAsync(MelodeeModels.PagedRequest pagedRequest, CancellationToken cancellationToken = default)
-    {
-        var librariesCount = 0;
-        Library[] libraries = [];
-        await using (var scopedContext =
-                     await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        }
+        catch (Exception e)
         {
-            try
+            Logger.Error(e, "Failed to get library scan histories from database");
+            return new MelodeeModels.PagedResult<LibraryScanHistoryDataInfo>
             {
-                var orderBy = pagedRequest.OrderByValue();
-                var dbConn = scopedContext.Database.GetDbConnection();
-                var countSqlParts = pagedRequest.FilterByParts("SELECT COUNT(*) FROM \"Libraries\"");
-                librariesCount = await dbConn
-                    .QuerySingleAsync<int>(countSqlParts.Item1, countSqlParts.Item2)
-                    .ConfigureAwait(false);
-                if (!pagedRequest.IsTotalCountOnlyRequest)
-                {
-                    var listSqlParts = pagedRequest.FilterByParts("SELECT * FROM \"Libraries\"");
-                    var listSql =
-                        $"{listSqlParts.Item1} ORDER BY {orderBy} OFFSET {pagedRequest.SkipValue} ROWS FETCH NEXT {pagedRequest.TakeValue} ROWS ONLY;";
-                    libraries = (await dbConn
-                        .QueryAsync<Library>(listSql, listSqlParts.Item2)
-                        .ConfigureAwait(false)).ToArray();
-                }
-            }
-            catch (Exception e)
-            {
-                Logger.Error(e, "Failed to get libraries from database");
-            }
+                TotalCount = 0,
+                TotalPages = 0,
+                Data = []
+            };
+        }
+    }
+    
+    private static IQueryable<T> ApplyHistoryFiltersBeforeProjection<T>(
+        IQueryable<T> query, 
+        MelodeeModels.PagedRequest pagedRequest) where T : class
+    {
+        if (pagedRequest.FilterBy == null || pagedRequest.FilterBy.Length == 0)
+        {
+            return query;
         }
 
-        return new MelodeeModels.PagedResult<Library>
+        // Apply filters on the actual entity properties before projection
+        var filteredQuery = query;
+        foreach (var filter in pagedRequest.FilterBy)
         {
-            TotalCount = librariesCount,
-            TotalPages = pagedRequest.TotalPages(librariesCount),
-            Data = libraries
-        };
+            var filterValue = filter.Value.ToString().ToNormalizedString() ?? string.Empty;
+            
+            filteredQuery = filter.PropertyName.ToLowerInvariant() switch
+            {
+                "forartistname" when filter.Operator == FilterOperator.Contains => 
+                    filteredQuery.Where("artist != null && artist.Name.Contains(@0)", filterValue),
+                "forartistname" when filter.Operator == FilterOperator.Equals => 
+                    filteredQuery.Where("artist != null && artist.Name == @0", filterValue),
+                "foralbumname" when filter.Operator == FilterOperator.Contains => 
+                    filteredQuery.Where("album != null && album.Name.Contains(@0)", filterValue),
+                "foralbumname" when filter.Operator == FilterOperator.Equals => 
+                    filteredQuery.Where("album != null && album.Name == @0", filterValue),
+                "foundartiststcount" when filter.Operator == FilterOperator.Equals && int.TryParse(filterValue, out var artistsCount) => 
+                    filteredQuery.Where("h.FoundArtistsCount == @0", artistsCount),
+                "foundalbumstcount" when filter.Operator == FilterOperator.Equals && int.TryParse(filterValue, out var albumsCount) => 
+                    filteredQuery.Where("h.FoundAlbumsCount == @0", albumsCount),
+                "foundsongstcount" when filter.Operator == FilterOperator.Equals && int.TryParse(filterValue, out var songsCount) => 
+                    filteredQuery.Where("h.FoundSongsCount == @0", songsCount),
+                _ => filteredQuery
+            };
+        }
+
+        return filteredQuery;
     }
 
+    private static IOrderedQueryable<T> ApplyHistoryOrderingBeforeProjection<T>(
+        IQueryable<T> query, 
+        MelodeeModels.PagedRequest pagedRequest) where T : class
+    {
+        // Use the OrderBy collection directly and order on entity properties before projection
+        if (pagedRequest.OrderBy == null || pagedRequest.OrderBy.Count == 0)
+        {
+            // Default ordering
+            return query.OrderBy("h.CreatedAt DESC");
+        }
+
+        var orderByParts = new List<string>();
+
+        foreach (var orderItem in pagedRequest.OrderBy)
+        {
+            var fieldName = orderItem.Key.ToLowerInvariant();
+            var direction = orderItem.Value.Equals("DESC", StringComparison.OrdinalIgnoreCase) ? "DESC" : "ASC";
+
+            var orderExpression = fieldName switch
+            {
+                "id" => $"h.Id {direction}",
+                "createdat" => $"h.CreatedAt {direction}",
+                "forartistname" => $"artist.Name {direction}",
+                "foralbumname" => $"album.Name {direction}",
+                "foundartiststcount" => $"h.FoundArtistsCount {direction}",
+                "foundalbumstcount" => $"h.FoundAlbumsCount {direction}",
+                "foundsongstcount" => $"h.FoundSongsCount {direction}",
+                "durationinms" => $"h.DurationInMs {direction}",
+                _ => $"h.CreatedAt {direction}"
+            };
+
+            orderByParts.Add(orderExpression);
+        }
+
+        var orderByClause = string.Join(", ", orderByParts);
+        return query.OrderBy(orderByClause);
+    }
+    
     private async Task<MelodeeModels.OperationResult<bool>> MoveAlbumsToLibrary(Library library, MelodeeModels.Album[] albums, CancellationToken cancellationToken = default)
     {
         var configuration = await _configurationFactory.GetConfigurationAsync(cancellationToken);
@@ -562,14 +601,13 @@ public class LibraryService : ServiceBase
 
     private async Task<Library?> LibraryByType(int type, CancellationToken cancellationToken = default)
     {
-        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
-        {
-            var dbConn = scopedContext.Database.GetDbConnection();
-            var sql = $"SELECT * FROM \"Libraries\" WHERE \"Type\" = {type} ORDER BY \"SortOrder\" LIMIT 1;";
-            return await dbConn
-                .QuerySingleOrDefaultAsync<Library?>(sql)
-                .ConfigureAwait(false);
-        }
+        await using var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
+        return await scopedContext.Libraries
+            .AsNoTracking()
+            .Where(x => x.Type == type)
+            .OrderBy(x => x.SortOrder)
+            .FirstOrDefaultAsync(cancellationToken)
+            .ConfigureAwait(false);
     }
 
     private void ClearCache(Library library)
@@ -609,68 +647,26 @@ public class LibraryService : ServiceBase
                          await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
             {
                 var now = Instant.FromDateTimeUtc(DateTime.UtcNow);
-                var dbConn = scopedContext.Database.GetDbConnection();
-                var sql = """
-                          UPDATE "Artists" a
-                          SET "AlbumCount" = (select COUNT(*) from "Albums" where "ArtistId" = a."Id"), "LastUpdatedAt" = NOW()
-                          where "AlbumCount" <> (select COUNT(*) from "Albums" where "ArtistId" = a."Id")
-                          and a."LibraryId" = @libraryId;
-                                                         
-                          UPDATE "Artists" a
-                          SET "SongCount" = (
-                          	select COUNT(s.*)
-                          	from "Songs" s 
-                            join "Albums" aa on (s."AlbumId" = aa."Id")	
-                          	where aa."ArtistId" = a."Id"
-                          	and a."LibraryId" = @libraryId
-                          ), "LastUpdatedAt" = NOW()
-                          where "SongCount" <> (
-                          	select COUNT(s.*)
-                          	from "Songs" s
-                            join "Albums" aa on (s."AlbumId" = aa."Id")	
-                          	where aa."ArtistId" = a."Id"
-                          	and a."LibraryId" = @libraryId
-                          );
-
-                          UPDATE "Libraries" l 
-                          set "ArtistCount" = (select count(*) from "Artists" where "LibraryId" = l."Id"),
-                              "AlbumCount" = (select count(aa.*) 
-                              	from "Albums" aa 
-                              	join "Artists" a on (a."Id" = aa."ArtistId") 
-                              	where a."LibraryId" = l."Id"),
-                              "SongCount" = (select count(s.*) 
-                              	from "Songs" s
-                              	join "Albums" aa on (s."AlbumId" = aa."Id") 
-                              	join "Artists" a on (a."Id" = aa."ArtistId") 
-                              	where a."LibraryId" = l."Id"),
-                          	"LastUpdatedAt" = now()
-                          where l."Id" = @libraryId;
-                          """;
-                await dbConn
-                    .ExecuteAsync(sql, new { libraryId = library.Id })
+                
+                // Update artist aggregates
+                var artistsToUpdate = await scopedContext.Artists
+                    .Where(a => a.LibraryId == libraryId)
+                    .ToListAsync(cancellationToken)
                     .ConfigureAwait(false);
+                
+                foreach (var artist in artistsToUpdate)
+                {
+                    artist.AlbumCount = await scopedContext.Albums.CountAsync(a => a.ArtistId == artist.Id, cancellationToken);
+                    artist.SongCount = await scopedContext.Songs.CountAsync(s => s.Album.ArtistId == artist.Id, cancellationToken);
+                    artist.LastUpdatedAt = now;
+                }
 
-                sql = """
-                      with performerSongCounts as (
-                      	select c."ArtistId" as id, COUNT(*) as count
-                      	from "Contributors" c 
-                      	join "Songs" s on (c."SongId" = s."Id")
-                        join "Albums" aa on (s."AlbumId" = aa."Id")
-                        join "Artists" a on (a."Id" = aa."ArtistId") 
-                        WHERE a."LibraryId" = @libraryId
-                      	group by c."ArtistId"
-                      )
-                      UPDATE "Artists"
-                      set "SongCount" = c.count, "LastUpdatedAt" = NOW()
-                      from performerSongCounts c
-                      where c.id = "Artists"."Id";
-                      """;
-                await dbConn
-                    .ExecuteAsync(sql, new { libraryId = library.Id })
-                    .ConfigureAwait(false);
-
+                // Update library aggregates
                 var dbLibrary = await scopedContext.Libraries.FirstAsync(x => x.Id == library.Id, cancellationToken)
                     .ConfigureAwait(false);
+                dbLibrary.ArtistCount = await scopedContext.Artists.CountAsync(a => a.LibraryId == dbLibrary.Id, cancellationToken);
+                dbLibrary.AlbumCount = await scopedContext.Albums.CountAsync(a => a.Artist.LibraryId == dbLibrary.Id, cancellationToken);
+                dbLibrary.SongCount = await scopedContext.Songs.CountAsync(s => s.Album.Artist.LibraryId == dbLibrary.Id, cancellationToken);
                 dbLibrary.LastScanAt = now;
                 dbLibrary.LastUpdatedAt = now;
                 result = await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false) > 0;
@@ -800,6 +796,17 @@ public class LibraryService : ServiceBase
         };
     }
 
+    /// <summary>
+    /// Moves albums from one library to another based on a specified condition.
+    /// </summary>
+    /// <param name="fromLibraryName">The name of the source library.</param>
+    /// <param name="toLibraryName">The name of the destination library.</param>
+    /// <param name="condition">A predicate to filter which albums to move.</param>
+    /// <param name="verboseSet">If true, enables verbose logging.</param>
+    /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+    /// <returns>
+    /// An <see cref="Common.Models.OperationResult{T}"/> indicating whether any albums were moved.
+    /// </returns>
     public async Task<MelodeeModels.OperationResult<bool>> MoveAlbumsFromLibraryToLibrary(
         string fromLibraryName,
         string toLibraryName, 
@@ -822,8 +829,7 @@ public class LibraryService : ServiceBase
         var libraries = await ListAsync(new MelodeeModels.PagedRequest { PageSize = short.MaxValue }, cancellationToken)
             .ConfigureAwait(false);
             
-        var fromLibrary =
-            libraries.Data.FirstOrDefault(x => x.Name.ToNormalizedString() == fromLibraryName.ToNormalizedString());
+        var fromLibrary = libraries.Data.FirstOrDefault(x => x.Name.ToNormalizedString() == fromLibraryName.ToNormalizedString());
         if (fromLibrary == null)
         {
             return new MelodeeModels.OperationResult<bool>("Invalid From library Name")
@@ -840,8 +846,7 @@ public class LibraryService : ServiceBase
             };
         }
 
-        var toLibrary =
-            libraries.Data.FirstOrDefault(x => x.Name.ToNormalizedString() == toLibraryName.ToNormalizedString());
+        var toLibrary = libraries.Data.FirstOrDefault(x => x.Name.ToNormalizedString() == toLibraryName.ToNormalizedString());
         if (toLibrary == null)
         {
             return new MelodeeModels.OperationResult<bool>("Invalid To library Name")
@@ -1533,5 +1538,210 @@ public class LibraryService : ServiceBase
         {
             Data = result
         };
+    }
+
+    public async Task<MelodeeModels.PagedResult<Library>> ListMediaLibrariesAsync(CancellationToken cancellationToken = default)
+    {
+        return await CacheManager.GetAsync(CacheKeyMediaLibraries, async () =>
+        {
+            var data = await ListAsync(new MelodeeModels.PagedRequest { PageSize = short.MaxValue }, cancellationToken)
+                .ConfigureAwait(false);
+            return new MelodeeModels.PagedResult<Library>
+            {
+                Data = data
+                    .Data
+                    .OrderBy(x => x.SortOrder).ThenBy(x => x.Name)
+                    .Where(x => x.TypeValue is LibraryType.Inbound or LibraryType.Staging)
+                    .ToArray()
+            };
+        }, cancellationToken).ConfigureAwait(false);
+    }
+
+    public virtual async Task<MelodeeModels.PagedResult<Library>> ListAsync(MelodeeModels.PagedRequest pagedRequest, CancellationToken cancellationToken = default)
+    {
+        await using var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
+        
+        try
+        {
+            // Build the base query with performance optimizations
+            var baseQuery = scopedContext.Libraries.AsNoTracking();
+            
+            // Apply filters using EF Core
+            var filteredQuery = ApplyFilters(baseQuery, pagedRequest);
+            
+            // Get count efficiently
+            var librariesCount = await filteredQuery.CountAsync(cancellationToken).ConfigureAwait(false);
+            
+            Library[] libraries = [];
+            if (!pagedRequest.IsTotalCountOnlyRequest)
+            {
+                // Apply ordering, skip, and take
+                var orderedQuery = ApplyOrdering(filteredQuery, pagedRequest);
+                
+                libraries = await orderedQuery
+                    .Skip(pagedRequest.SkipValue)
+                    .Take(pagedRequest.TakeValue)
+                    .ToArrayAsync(cancellationToken)
+                    .ConfigureAwait(false);
+            }
+            
+            return new MelodeeModels.PagedResult<Library>
+            {
+                TotalCount = librariesCount,
+                TotalPages = pagedRequest.TotalPages(librariesCount),
+                Data = libraries
+            };
+        }
+        catch (Exception e)
+        {
+            Logger.Error(e, "Failed to get libraries from database");
+            return new MelodeeModels.PagedResult<Library>
+            {
+                TotalCount = 0,
+                TotalPages = 0,
+                Data = []
+            };
+        }
+    }
+    
+    private static IQueryable<Library> ApplyFilters(IQueryable<Library> query, MelodeeModels.PagedRequest pagedRequest)
+    {
+        if (pagedRequest.FilterBy == null || pagedRequest.FilterBy.Length == 0)
+        {
+            return query;
+        }
+
+        // If there's only one filter, apply it directly
+        if (pagedRequest.FilterBy.Length == 1)
+        {
+            var filter = pagedRequest.FilterBy[0];
+            var filterValue = filter.Value.ToString() ?? string.Empty;
+            var normalizedValue = filterValue.ToNormalizedString();
+            return filter.PropertyName.ToLowerInvariant() switch
+            {
+                "name" or "namenormalized" => query.Where(a => EF.Functions.ILike(a.Name, $"%{normalizedValue}%")),              
+                "description" => query.Where(a => a.Description != null && EF.Functions.ILike(a.Description, $"%{normalizedValue}%")),                
+                "type" => filter.Operator switch
+                {
+                    FilterOperator.Equals when int.TryParse(filterValue, out var typeValue) => 
+                        query.Where(l => l.Type == typeValue),
+                    _ => query
+                },
+                "islocked" => filter.Operator switch
+                {
+                    FilterOperator.Equals when bool.TryParse(filterValue, out var boolValue) => 
+                        query.Where(l => l.IsLocked == boolValue),
+                    _ => query
+                },
+                "tags" => query.Where(a => a.Tags != null && EF.Functions.ILike(a.Tags, $"%{normalizedValue}%")),
+                _ => query
+            };
+        }
+
+        // For multiple filters, combine them with OR logic
+        var filterPredicates = new List<System.Linq.Expressions.Expression<Func<Library, bool>>>();
+
+        foreach (var filter in pagedRequest.FilterBy)
+        {
+            var filterValue = filter.Value.ToString().ToNormalizedString() ?? string.Empty;
+            var normalizedValue = filterValue.ToNormalizedString();
+            var predicate = filter.PropertyName.ToLowerInvariant() switch
+            {
+                "name" or "namenormalized" => (System.Linq.Expressions.Expression<Func<Library, bool>>)(a => EF.Functions.ILike(a.Name, $"%{normalizedValue}%")),
+                "description" => (System.Linq.Expressions.Expression<Func<Library, bool>>)(a => a.Description != null && EF.Functions.ILike(a.Description, $"%{normalizedValue}%")),                
+                "type" => filter.Operator switch
+                {
+                    FilterOperator.Equals when int.TryParse(filterValue, out var typeValue) => 
+                        (System.Linq.Expressions.Expression<Func<Library, bool>>)(l => l.Type == typeValue),
+                    _ => null
+                },
+                "islocked" => filter.Operator switch
+                {
+                    FilterOperator.Equals when bool.TryParse(filterValue, out var boolValue) => 
+                        (System.Linq.Expressions.Expression<Func<Library, bool>>)(l => l.IsLocked == boolValue),
+                    _ => null
+                },
+                "tags" => (System.Linq.Expressions.Expression<Func<Library, bool>>)(a => a.Tags != null && EF.Functions.ILike(a.Tags, $"%{normalizedValue}%")),                
+                _ => null
+            };
+
+            if (predicate != null)
+            {
+                filterPredicates.Add(predicate);
+            }
+        }
+
+        // If we have predicates, combine them with OR logic
+        if (filterPredicates.Count > 0)
+        {
+            var combinedPredicate = filterPredicates.Aggregate((prev, next) =>
+            {
+                var parameter = System.Linq.Expressions.Expression.Parameter(typeof(Library), "l");
+                var left = System.Linq.Expressions.Expression.Invoke(prev, parameter);
+                var right = System.Linq.Expressions.Expression.Invoke(next, parameter);
+                var or = System.Linq.Expressions.Expression.OrElse(left, right);
+                return System.Linq.Expressions.Expression.Lambda<Func<Library, bool>>(or, parameter);
+            });
+
+            query = query.Where(combinedPredicate);
+        }
+
+        return query;
+    }
+
+    private static IQueryable<Library> ApplyOrdering(IQueryable<Library> query, MelodeeModels.PagedRequest pagedRequest)
+    {
+        // Use the OrderBy collection directly instead of OrderByValue
+        if (pagedRequest.OrderBy == null || pagedRequest.OrderBy.Count == 0)
+        {
+            // Default ordering
+            return query.OrderBy(l => l.SortOrder).ThenBy(l => l.Name);
+        }
+
+        IOrderedQueryable<Library>? orderedQuery = null;
+        bool isFirst = true;
+
+        foreach (var orderItem in pagedRequest.OrderBy)
+        {
+            var fieldName = orderItem.Key.ToLowerInvariant();
+            var isDescending = orderItem.Value.Equals("DESC", StringComparison.OrdinalIgnoreCase);
+
+            if (isFirst)
+            {
+                orderedQuery = fieldName switch
+                {
+                    "albumcount" => isDescending ? query.OrderByDescending(l => l.AlbumCount ?? -1) : query.OrderBy(l => l.AlbumCount ?? int.MaxValue),
+                    "artistcount" => isDescending ? query.OrderByDescending(l => l.ArtistCount ?? -1) : query.OrderBy(l => l.ArtistCount ?? int.MaxValue),
+                    "createdat" => isDescending ? query.OrderByDescending(l => l.CreatedAt) : query.OrderBy(l => l.CreatedAt),
+                    "description" => isDescending ? query.OrderByDescending(l => l.Description) : query.OrderBy(l => l.Description),
+                    "lastupdatedat" => isDescending ? query.OrderByDescending(l => l.LastUpdatedAt) : query.OrderBy(l => l.LastUpdatedAt),
+                    "name" or "namenormalized" => isDescending ? query.OrderByDescending(l => l.Name) : query.OrderBy(l => l.Name),
+                    "path" => isDescending ? query.OrderByDescending(l => l.Path) : query.OrderBy(l => l.Path),
+                    "songcount" => isDescending ? query.OrderByDescending(l => l.SongCount ?? -1) : query.OrderBy(l => l.SongCount ?? int.MaxValue),
+                    "sortorder" => isDescending ? query.OrderByDescending(l => l.SortOrder) : query.OrderBy(l => l.SortOrder),
+                    "type" or "typevalue" => isDescending ? query.OrderByDescending(l => l.Type) : query.OrderBy(l => l.Type),
+                    _ => query.OrderBy(l => l.SortOrder).ThenBy(l => l.Name)
+                };
+                isFirst = false;
+            }
+            else
+            {
+                orderedQuery = fieldName switch
+                {
+                    "name" => isDescending ? orderedQuery!.ThenByDescending(l => l.Name) : orderedQuery!.ThenBy(l => l.Name),
+                    "description" => isDescending ? orderedQuery!.ThenByDescending(l => l.Description) : orderedQuery!.ThenBy(l => l.Description),
+                    "type" => isDescending ? orderedQuery!.ThenByDescending(l => l.Type) : orderedQuery!.ThenBy(l => l.Type),
+                    "sortorder" => isDescending ? orderedQuery!.ThenByDescending(l => l.SortOrder) : orderedQuery!.ThenBy(l => l.SortOrder),
+                    "createdat" => isDescending ? orderedQuery!.ThenByDescending(l => l.CreatedAt) : orderedQuery!.ThenBy(l => l.CreatedAt),
+                    "lastupdatedat" => isDescending ? orderedQuery!.ThenByDescending(l => l.LastUpdatedAt) : orderedQuery!.ThenBy(l => l.LastUpdatedAt),
+                    "artistcount" => isDescending ? orderedQuery!.ThenByDescending(l => l.ArtistCount ?? -1) : orderedQuery!.ThenBy(l => l.ArtistCount ?? int.MaxValue),
+                    "albumcount" => isDescending ? orderedQuery!.ThenByDescending(l => l.AlbumCount ?? -1) : orderedQuery!.ThenBy(l => l.AlbumCount ?? int.MaxValue),
+                    "songcount" => isDescending ? orderedQuery!.ThenByDescending(l => l.SongCount ?? -1) : orderedQuery!.ThenBy(l => l.SongCount ?? int.MaxValue),
+                    _ => orderedQuery
+                };
+            }
+        }
+
+        return orderedQuery ?? query.OrderBy(l => l.SortOrder).ThenBy(l => l.Name);
     }
 }
