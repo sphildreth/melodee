@@ -100,20 +100,15 @@ public class ArtistService(
             return query;
         }
 
-        foreach (var filter in pagedRequest.FilterBy)
+        // If there's only one filter, apply it directly
+        if (pagedRequest.FilterBy.Length == 1)
         {
-            var filterValue = filter.Value.ToString() ?? string.Empty;
+            var filter = pagedRequest.FilterBy[0];
+            var filterValue = filter.Value.ToString().ToNormalizedString() ?? string.Empty;
             
-            query = filter.PropertyName.ToLowerInvariant() switch
+            return filter.PropertyName.ToLowerInvariant() switch
             {
-                "name" => filter.Operator switch
-                {
-                    FilterOperator.Contains => query.Where(a => a.Name.Contains(filterValue)),
-                    FilterOperator.Equals => query.Where(a => a.Name == filterValue),
-                    FilterOperator.StartsWith => query.Where(a => a.Name.StartsWith(filterValue)),
-                    _ => query
-                },
-                "namenormalized" => filter.Operator switch
+                "name" or "namenormalized" => filter.Operator switch
                 {
                     FilterOperator.Contains => query.Where(a => a.NameNormalized.Contains(filterValue)),
                     FilterOperator.Equals => query.Where(a => a.NameNormalized == filterValue),
@@ -133,6 +128,57 @@ public class ArtistService(
                 },
                 _ => query
             };
+        }
+
+        // For multiple filters, combine them with OR logic
+        var filterPredicates = new List<System.Linq.Expressions.Expression<Func<Artist, bool>>>();
+
+        foreach (var filter in pagedRequest.FilterBy)
+        {
+            var filterValue = filter.Value.ToString().ToNormalizedString() ?? string.Empty;
+            
+            var predicate = filter.PropertyName.ToLowerInvariant() switch
+            {
+                "name" or "namenormalized" => filter.Operator switch
+                {
+                    FilterOperator.Contains => (System.Linq.Expressions.Expression<Func<Artist, bool>>)(a => a.NameNormalized.Contains(filterValue)),
+                    FilterOperator.Equals => (System.Linq.Expressions.Expression<Func<Artist, bool>>)(a => a.NameNormalized == filterValue),
+                    FilterOperator.StartsWith => (System.Linq.Expressions.Expression<Func<Artist, bool>>)(a => a.NameNormalized.StartsWith(filterValue)),
+                    _ => null
+                },
+                "alternatenames" => filter.Operator switch
+                {
+                    FilterOperator.Contains => (System.Linq.Expressions.Expression<Func<Artist, bool>>)(a => a.AlternateNames != null && a.AlternateNames.Contains(filterValue)),
+                    _ => null
+                },
+                "islocked" => filter.Operator switch
+                {
+                    FilterOperator.Equals when bool.TryParse(filterValue, out var boolValue) => 
+                        (System.Linq.Expressions.Expression<Func<Artist, bool>>)(a => a.IsLocked == boolValue),
+                    _ => null
+                },
+                _ => null
+            };
+
+            if (predicate != null)
+            {
+                filterPredicates.Add(predicate);
+            }
+        }
+
+        // If we have predicates, combine them with OR logic
+        if (filterPredicates.Count > 0)
+        {
+            var combinedPredicate = filterPredicates.Aggregate((prev, next) =>
+            {
+                var parameter = System.Linq.Expressions.Expression.Parameter(typeof(Artist), "a");
+                var left = System.Linq.Expressions.Expression.Invoke(prev, parameter);
+                var right = System.Linq.Expressions.Expression.Invoke(next, parameter);
+                var or = System.Linq.Expressions.Expression.OrElse(left, right);
+                return System.Linq.Expressions.Expression.Lambda<Func<Artist, bool>>(or, parameter);
+            });
+
+            query = query.Where(combinedPredicate);
         }
 
         return query;

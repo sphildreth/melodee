@@ -104,9 +104,29 @@ public class AlbumService(
             
             if (!pagedRequest.IsTotalCountOnlyRequest)
             {
-                // Build optimized query with projection to AlbumDataInfo
-                var albumsQuery = baseQuery
-                    .Include(a => a.Artist)
+                // First, get the album data with artist information
+                var albumsQueryWithIncludes = baseQuery
+                    .Include(a => a.Artist);
+
+                // Apply ordering on the entity properties before projection
+                IQueryable<Album> albumsQuery = pagedRequest.OrderByValue() switch
+                {
+                    "\"Name\"" => albumsQueryWithIncludes.OrderBy(a => a.Name),
+                    "\"CreatedAt\"" => albumsQueryWithIncludes.OrderBy(a => a.CreatedAt),
+                    "\"ReleaseDate\"" => albumsQueryWithIncludes.OrderBy(a => a.ReleaseDate),
+                    _ => albumsQueryWithIncludes.OrderBy(a => a.Name)
+                };
+
+                // Apply paging and get the raw entities
+                var albumEntities = await albumsQuery
+                    .Skip(pagedRequest.SkipValue)
+                    .Take(pagedRequest.TakeValue)
+                    .AsNoTracking()
+                    .ToArrayAsync(cancellationToken)
+                    .ConfigureAwait(false);
+
+                // Project to AlbumDataInfo in memory
+                albums = albumEntities
                     .Select(a => new AlbumDataInfo(
                         a.Id,
                         a.ApiKey,
@@ -122,24 +142,8 @@ public class AlbumService(
                         a.Tags,
                         a.ReleaseDate,
                         a.AlbumStatus
-                    ));
-
-                // Apply ordering based on request
-                albumsQuery = pagedRequest.OrderByValue() switch
-                {
-                    "\"Name\"" => albumsQuery.OrderBy(a => a.Name),
-                    "\"CreatedAt\"" => albumsQuery.OrderBy(a => a.CreatedAt),
-                    "\"ReleaseDate\"" => albumsQuery.OrderBy(a => a.ReleaseDate),
-                    _ => albumsQuery.OrderBy(a => a.Name)
-                };
-
-                // Apply paging and execute query
-                albums = await albumsQuery
-                    .Skip(pagedRequest.SkipValue)
-                    .Take(pagedRequest.TakeValue)
-                    .AsNoTracking()
-                    .ToArrayAsync(cancellationToken)
-                    .ConfigureAwait(false);
+                    ))
+                    .ToArray();
             }
 
             return new MelodeeModels.PagedResult<AlbumDataInfo>
@@ -237,31 +241,7 @@ public class AlbumService(
             var baseQuery = scopedContext.Albums.AsQueryable();
 
             // Apply filters
-            foreach (var filter in pagedRequest.FilterBy ?? [])
-            {
-                var value = filter.Value.ToString();
-                if (!string.IsNullOrEmpty(value))
-                {
-                    var normalizedValue = value.ToNormalizedString();
-                    baseQuery = filter.PropertyName switch
-                    {
-                        "Name" => baseQuery.Where(a => EF.Functions.ILike(a.NameNormalized, $"%{normalizedValue}%")),
-                        "ArtistName" => baseQuery.Where(a => EF.Functions.ILike(a.Artist.Name, $"%{value}%")),
-                        "Tags" => baseQuery.Where(a => a.Tags != null && EF.Functions.ILike(a.Tags, $"%{value}%")),
-                        "AlbumStatus" => int.TryParse(value, out var statusValue) 
-                            ? baseQuery.Where(a => a.AlbumStatus == statusValue) 
-                            : baseQuery,
-                        "IsLocked" => bool.TryParse(value, out var lockedValue) 
-                            ? baseQuery.Where(a => a.IsLocked == lockedValue) 
-                            : baseQuery,
-                        "ReleaseDate" => DateTime.TryParse(value, out var dateValue) 
-                            ? baseQuery.Where(a => a.ReleaseDate.Year == dateValue.Year) 
-                            : baseQuery,
-                        _ => baseQuery
-                    };
-                }
-                
-            }
+            baseQuery = ApplyFilters(baseQuery, pagedRequest);
 
             // Get total count efficiently
             var albumCount = await baseQuery.CountAsync(cancellationToken).ConfigureAwait(false);
@@ -964,5 +944,93 @@ public class AlbumService(
         {
             Data = result
         };
+    }
+
+    private static IQueryable<Album> ApplyFilters(IQueryable<Album> query, MelodeeModels.PagedRequest pagedRequest)
+    {
+        if (pagedRequest.FilterBy == null || pagedRequest.FilterBy.Length == 0)
+        {
+            return query;
+        }
+
+        // If there's only one filter, apply it directly
+        if (pagedRequest.FilterBy.Length == 1)
+        {
+            var filter = pagedRequest.FilterBy[0];
+            var value = filter.Value.ToString();
+            if (!string.IsNullOrEmpty(value))
+            {
+                var normalizedValue = value.ToNormalizedString();
+                return filter.PropertyName.ToLowerInvariant() switch
+                {
+                    "name" or "namenormalized" => query.Where(a => EF.Functions.ILike(a.NameNormalized, $"%{normalizedValue}%")),
+                    "alternatenames" => query.Where(a => a.AlternateNames != null && EF.Functions.ILike(a.AlternateNames, $"%{normalizedValue}%")),
+                    "artistname" => query.Where(a => EF.Functions.ILike(a.Artist.NameNormalized, $"%{normalizedValue}%")),
+                    "tags" => query.Where(a => a.Tags != null && EF.Functions.ILike(a.Tags, $"%{normalizedValue}%")),
+                    "albumstatus" => int.TryParse(value, out var statusValue) 
+                        ? query.Where(a => a.AlbumStatus == statusValue) 
+                        : query,
+                    "islocked" => bool.TryParse(value, out var lockedValue) 
+                        ? query.Where(a => a.IsLocked == lockedValue) 
+                        : query,
+                    "releasedate" => DateTime.TryParse(value, out var dateValue) 
+                        ? query.Where(a => a.ReleaseDate.Year == dateValue.Year) 
+                        : query,
+                    _ => query
+                };
+            }
+            return query;
+        }
+
+        // For multiple filters, combine them with OR logic
+        var filterPredicates = new List<System.Linq.Expressions.Expression<Func<Album, bool>>>();
+
+        foreach (var filter in pagedRequest.FilterBy)
+        {
+            var value = filter.Value.ToString();
+            if (!string.IsNullOrEmpty(value))
+            {
+                var normalizedValue = value.ToNormalizedString();
+                
+                var predicate = filter.PropertyName switch
+                {
+                    "Name" or "NameNormalized" => (System.Linq.Expressions.Expression<Func<Album, bool>>)(a => EF.Functions.ILike(a.NameNormalized, $"%{normalizedValue}%")),
+                    "ArtistName" => (System.Linq.Expressions.Expression<Func<Album, bool>>)(a => EF.Functions.ILike(a.Artist.NameNormalized, $"%{normalizedValue}%")),
+                    "Tags" => (System.Linq.Expressions.Expression<Func<Album, bool>>)(a => a.Tags != null && EF.Functions.ILike(a.Tags, $"%{normalizedValue}%")),
+                    "AlbumStatus" => int.TryParse(value, out var statusValue) 
+                        ? (System.Linq.Expressions.Expression<Func<Album, bool>>)(a => a.AlbumStatus == statusValue)
+                        : null,
+                    "IsLocked" => bool.TryParse(value, out var lockedValue) 
+                        ? (System.Linq.Expressions.Expression<Func<Album, bool>>)(a => a.IsLocked == lockedValue)
+                        : null,
+                    "ReleaseDate" => DateTime.TryParse(value, out var dateValue) 
+                        ? (System.Linq.Expressions.Expression<Func<Album, bool>>)(a => a.ReleaseDate.Year == dateValue.Year)
+                        : null,
+                    _ => null
+                };
+
+                if (predicate != null)
+                {
+                    filterPredicates.Add(predicate);
+                }
+            }
+        }
+
+        // If we have predicates, combine them with OR logic
+        if (filterPredicates.Count > 0)
+        {
+            var combinedPredicate = filterPredicates.Aggregate((prev, next) =>
+            {
+                var parameter = System.Linq.Expressions.Expression.Parameter(typeof(Album), "a");
+                var left = System.Linq.Expressions.Expression.Invoke(prev, parameter);
+                var right = System.Linq.Expressions.Expression.Invoke(next, parameter);
+                var or = System.Linq.Expressions.Expression.OrElse(left, right);
+                return System.Linq.Expressions.Expression.Lambda<Func<Album, bool>>(or, parameter);
+            });
+
+            query = query.Where(combinedPredicate);
+        }
+
+        return query;
     }
 }
