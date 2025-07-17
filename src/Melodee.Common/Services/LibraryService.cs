@@ -293,7 +293,7 @@ public class LibraryService : ServiceBase
                                            FROM "LibraryScanHistories" l
                                            left join "Artists" ar on (l."ForArtistId" = ar."Id")
                                            left join "Albums" a on (L."ForAlbumId" = a."Id")
-                                           where l."LibraryId" = {0} 
+                                           where l."LibraryId" = {0}
                                            """;
                     var listSqlParts = pagedRequest.FilterByParts(sqlStartFragment.FormatSmart(libraryId));
                     var listSql = $"{listSqlParts.Item1} ORDER BY {orderBy} OFFSET {pagedRequest.SkipValue} ROWS FETCH NEXT {pagedRequest.TakeValue} ROWS ONLY;";
@@ -808,7 +808,7 @@ public class LibraryService : ServiceBase
         CancellationToken cancellationToken = default)
     {
         Guard.Against.NullOrEmpty(fromLibraryName, nameof(fromLibraryName));
-        Guard.Against.NullOrEmpty(fromLibraryName, nameof(toLibraryName));
+        Guard.Against.NullOrEmpty(toLibraryName, nameof(toLibraryName));
 
         if (fromLibraryName.Equals(toLibraryName, StringComparison.OrdinalIgnoreCase))
         {
@@ -818,8 +818,10 @@ public class LibraryService : ServiceBase
             };
         }
 
+        // Get libraries in one call instead of multiple calls
         var libraries = await ListAsync(new MelodeeModels.PagedRequest { PageSize = short.MaxValue }, cancellationToken)
             .ConfigureAwait(false);
+            
         var fromLibrary =
             libraries.Data.FirstOrDefault(x => x.Name.ToNormalizedString() == fromLibraryName.ToNormalizedString());
         if (fromLibrary == null)
@@ -866,85 +868,117 @@ public class LibraryService : ServiceBase
         }
 
         var configuration = await _configurationFactory.GetConfigurationAsync(cancellationToken);
-
         var duplicateDirPrefix = configuration.GetValue<string>(SettingRegistry.ProcessingDuplicateAlbumPrefix);
         var maxAlbumProcessingCount = configuration.GetValue<int>(SettingRegistry.ProcessingMaximumProcessingCount, value => value < 1 ? int.MaxValue : value);
-        var albumsForFromLibrary = Directory.GetFiles(fromLibrary.Path, MelodeeModels.Album.JsonFileName, SearchOption.AllDirectories);
-        var albumsToMove = new List<MelodeeModels.Album>();
-        foreach (var albumFile in albumsForFromLibrary)
+        
+        // Use faster method to get all album files
+        using (Operation.At(LogEventLevel.Debug).Begin("[{Name}] Finding albums to move", nameof(MoveAlbumsFromLibraryToLibrary)))
         {
-            var dirInfo = new DirectoryInfo(Path.GetDirectoryName(albumFile) ?? string.Empty);
-            if (!dirInfo.Exists)
+            var albumsForFromLibrary = Directory.GetFiles(fromLibrary.Path, MelodeeModels.Album.JsonFileName, SearchOption.AllDirectories);
+            
+            // Preallocate collection with capacity for better performance
+            var albumsToMove = new List<MelodeeModels.Album>(Math.Min(albumsForFromLibrary.Length, maxAlbumProcessingCount));
+            var albumDeserializationTasks = new List<Task<(string filePath, MelodeeModels.Album? album)>>(Math.Min(50, albumsForFromLibrary.Length));
+            var batchSize = 50; // Process albums in batches to control memory usage
+            
+            for (int i = 0; i < albumsForFromLibrary.Length; i += batchSize)
             {
-                continue;
-            }
-
-            if (duplicateDirPrefix != null)
-            {
-                if (dirInfo.Name.StartsWith(duplicateDirPrefix))
+                if (cancellationToken.IsCancellationRequested)
                 {
-                    continue;
+                    break;
                 }
-            }
-
-            try
-            {
-                var album = await MelodeeModels.Album
-                    .DeserializeAndInitializeAlbumAsync(_serializer, albumFile, cancellationToken)
-                    .ConfigureAwait(false);
-                if (album != null)
+                
+                albumDeserializationTasks.Clear();
+                var currentBatchSize = Math.Min(batchSize, albumsForFromLibrary.Length - i);
+                
+                // Create tasks for batch deserializing albums
+                for (int j = 0; j < currentBatchSize; j++)
                 {
-                    if (condition(album))
+                    var albumFile = albumsForFromLibrary[i + j];
+                    var dirInfo = new DirectoryInfo(Path.GetDirectoryName(albumFile) ?? string.Empty);
+                    
+                    if (!dirInfo.Exists || (duplicateDirPrefix != null && dirInfo.Name.StartsWith(duplicateDirPrefix)))
                     {
-                        albumsToMove.Add(album);
+                        continue;
+                    }
+                    
+                    albumDeserializationTasks.Add(Task.Run(async () => 
+                    {
+                        try
+                        {
+                            var album = await MelodeeModels.Album
+                                .DeserializeAndInitializeAlbumAsync(_serializer, albumFile, cancellationToken)
+                                .ConfigureAwait(false);
+                            return (albumFile, album);
+                        }
+                        catch (Exception e)
+                        {
+                            Logger.Error(e, "[{ServiceName}] Failed to deserialize album from file [{AlbumFile}]",
+                                nameof(LibraryService), albumFile);
+                            return (albumFile, null);
+                        }
+                    }, cancellationToken));
+                }
+                
+                // Wait for the batch to complete and process results
+                if (albumDeserializationTasks.Count > 0)
+                {
+                    var results = await Task.WhenAll(albumDeserializationTasks).ConfigureAwait(false);
+                    
+                    foreach (var rr in results)
+                    {
+                        if (rr.album != null && condition(rr.album))
+                        {
+                            albumsToMove.Add(rr.album);
+                            
+                            if (albumsToMove.Count >= maxAlbumProcessingCount)
+                            {
+                                break;
+                            }
+                        }
                     }
                 }
+                
+                if (albumsToMove.Count >= maxAlbumProcessingCount)
+                {
+                    break;
+                }
             }
-            catch (Exception e)
+            
+            var numberOfAlbumsToMove = albumsToMove.Count;
+
+            OnProcessingProgressEvent?.Invoke(this,
+                new ProcessingEvent(ProcessingEventType.Start,
+                    nameof(MoveAlbumsFromLibraryToLibrary),
+                    numberOfAlbumsToMove,
+                    0,
+                    "Starting processing"
+                ));
+
+            var result = await MoveAlbumsToLibrary(toLibrary, albumsToMove.ToArray(), cancellationToken)
+                .ConfigureAwait(false);
+
+            if (!result.IsSuccess)
             {
-                Logger.Error(e, "[{ServiceName}] Failed to deserialize album from file [{AlbumFile}]",
-                    nameof(LibraryService), albumFile);
+                return new MelodeeModels.OperationResult<bool>(result.Messages)
+                {
+                    Data = false,
+                    Errors = result.Errors
+                };
             }
 
-            if (albumsToMove.Count >= maxAlbumProcessingCount)
+            OnProcessingProgressEvent?.Invoke(this,
+                new ProcessingEvent(ProcessingEventType.Stop,
+                    nameof(MoveAlbumsFromLibraryToLibrary),
+                    numberOfAlbumsToMove,
+                    numberOfAlbumsToMove,
+                    "Completed processing"
+                ));
+            return new MelodeeModels.OperationResult<bool>
             {
-                break;
-            }
-        }
-
-        var numberOfAlbumsToMove = albumsToMove.Count();
-
-        OnProcessingProgressEvent?.Invoke(this,
-            new ProcessingEvent(ProcessingEventType.Start,
-                nameof(MoveAlbumsFromLibraryToLibrary),
-                numberOfAlbumsToMove,
-                0,
-                "Starting processing"
-            ));
-
-        var result = await MoveAlbumsToLibrary(toLibrary, albumsToMove.ToArray(), cancellationToken)
-            .ConfigureAwait(false);
-
-        if (!result.IsSuccess)
-        {
-            return new MelodeeModels.OperationResult<bool>(result.Messages)
-            {
-                Data = false,
-                Errors = result.Errors
+                Data = true
             };
         }
-
-        OnProcessingProgressEvent?.Invoke(this,
-            new ProcessingEvent(ProcessingEventType.Stop,
-                nameof(MoveAlbumsFromLibraryToLibrary),
-                numberOfAlbumsToMove,
-                numberOfAlbumsToMove,
-                "Completed processing"
-            ));
-        return new MelodeeModels.OperationResult<bool>
-        {
-            Data = true
-        };
     }
 
     public async Task<MelodeeModels.OperationResult<MelodeeModels.Statistic[]?>> AlbumStatusReport(string libraryName,
