@@ -109,11 +109,15 @@ public class AlbumService(
                     .Include(a => a.Artist);
 
                 // Apply ordering on the entity properties before projection
-                IQueryable<Album> albumsQuery = pagedRequest.OrderByValue() switch
+                var orderByClause = pagedRequest.OrderByValue("Name", MelodeeModels.PagedRequest.OrderAscDirection);
+                var isDescending = orderByClause.Contains("DESC", StringComparison.OrdinalIgnoreCase);
+                var fieldName = orderByClause.Split(' ')[0].Trim('"').ToLowerInvariant();
+
+                IQueryable<Album> albumsQuery = fieldName switch
                 {
-                    "\"Name\"" => albumsQueryWithIncludes.OrderBy(a => a.Name),
-                    "\"CreatedAt\"" => albumsQueryWithIncludes.OrderBy(a => a.CreatedAt),
-                    "\"ReleaseDate\"" => albumsQueryWithIncludes.OrderBy(a => a.ReleaseDate),
+                    "name" => isDescending ? albumsQueryWithIncludes.OrderByDescending(a => a.Name) : albumsQueryWithIncludes.OrderBy(a => a.Name),
+                    "createdat" => isDescending ? albumsQueryWithIncludes.OrderByDescending(a => a.CreatedAt) : albumsQueryWithIncludes.OrderBy(a => a.CreatedAt),
+                    "releasedate" => isDescending ? albumsQueryWithIncludes.OrderByDescending(a => a.ReleaseDate) : albumsQueryWithIncludes.OrderBy(a => a.ReleaseDate),
                     _ => albumsQueryWithIncludes.OrderBy(a => a.Name)
                 };
 
@@ -182,14 +186,18 @@ public class AlbumService(
             if (!pagedRequest.IsTotalCountOnlyRequest)
             {
                 // Apply ordering first on the base query, then project
-                var orderedQuery = pagedRequest.OrderByValue() switch
+                var orderByClause = pagedRequest.OrderByValue("Name", MelodeeModels.PagedRequest.OrderAscDirection);
+                var isDescending = orderByClause.Contains("DESC", StringComparison.OrdinalIgnoreCase);
+                var fieldName = orderByClause.Split(' ')[0].Trim('"').ToLowerInvariant();
+
+                var orderedQuery = fieldName switch
                 {
-                    "\"Name\"" => baseQuery.OrderBy(a => a.Name),
-                    "Name" => baseQuery.OrderBy(a => a.Name),
-                    "\"CreatedAt\"" => baseQuery.OrderBy(a => a.CreatedAt),
-                    "CreatedAt" => baseQuery.OrderBy(a => a.CreatedAt),
-                    "\"ReleaseDate\"" => baseQuery.OrderBy(a => a.ReleaseDate),
-                    "ReleaseDate" => baseQuery.OrderBy(a => a.ReleaseDate),
+                    "name" or "namenormalized" => isDescending ? baseQuery.OrderByDescending(a => a.Name) : baseQuery.OrderBy(a => a.SortName).ThenBy(x => x.Name),
+                    "createdat" => isDescending ? baseQuery.OrderByDescending(a => a.CreatedAt) : baseQuery.OrderBy(a => a.CreatedAt),
+                    "directory" => isDescending ? baseQuery.OrderByDescending(a => a.Directory) : baseQuery.OrderBy(a => a.Directory),
+                    "duration" => isDescending ? baseQuery.OrderByDescending(a => a.Duration) : baseQuery.OrderBy(a => a.Duration),
+                    "releasedate" => isDescending ? baseQuery.OrderByDescending(a => a.ReleaseDate) : baseQuery.OrderBy(a => a.ReleaseDate),
+                    "songcount" => isDescending ? baseQuery.OrderByDescending(a => a.SongCount) : baseQuery.OrderBy(a => a.SongCount),
                     _ => baseQuery.OrderBy(a => a.Name)
                 };
 
@@ -251,16 +259,18 @@ public class AlbumService(
             if (!pagedRequest.IsTotalCountOnlyRequest)
             {
                 // Apply ordering first on the base query, then project
-                var orderedQuery = pagedRequest.OrderByValue() switch
+                var orderByClause = pagedRequest.OrderByValue("Name", MelodeeModels.PagedRequest.OrderAscDirection);
+                var isDescending = orderByClause.Contains("DESC", StringComparison.OrdinalIgnoreCase);
+                var fieldName = orderByClause.Split(' ')[0].Trim('"').ToLowerInvariant();
+
+                var orderedQuery = fieldName switch
                 {
-                    "\"Name\"" => baseQuery.OrderBy(a => a.Name),
-                    "Name" => baseQuery.OrderBy(a => a.Name),
-                    "\"CreatedAt\"" => baseQuery.OrderBy(a => a.CreatedAt),
-                    "CreatedAt" => baseQuery.OrderBy(a => a.CreatedAt),
-                    "\"ReleaseDate\"" => baseQuery.OrderBy(a => a.ReleaseDate),
-                    "ReleaseDate" => baseQuery.OrderBy(a => a.ReleaseDate),
-                    "\"ArtistName\"" => baseQuery.Include(a => a.Artist).OrderBy(a => a.Artist.Name),
-                    "ArtistName" => baseQuery.Include(a => a.Artist).OrderBy(a => a.Artist.Name),
+                    "name" or "namenormalized" => isDescending ? baseQuery.OrderByDescending(a => a.SortName).ThenByDescending(x => x.Name) : baseQuery.OrderBy(a => a.SortName).ThenBy(x => x.Name),
+                    "createdat" => isDescending ? baseQuery.OrderByDescending(a => a.CreatedAt) : baseQuery.OrderBy(a => a.CreatedAt),
+                    "directory" => isDescending ? baseQuery.OrderByDescending(a => a.Directory) : baseQuery.OrderBy(a => a.Directory),
+                    "duration" => isDescending ? baseQuery.OrderByDescending(a => a.Duration) : baseQuery.OrderBy(a => a.Duration),
+                    "releasedate" => isDescending ? baseQuery.OrderByDescending(a => a.ReleaseDate) : baseQuery.OrderBy(a => a.ReleaseDate),
+                    "songcount" => isDescending ? baseQuery.OrderByDescending(a => a.SongCount) : baseQuery.OrderBy(a => a.SongCount),
                     _ => baseQuery.OrderBy(a => a.Name)
                 };
 

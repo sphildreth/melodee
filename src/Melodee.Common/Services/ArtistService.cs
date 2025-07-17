@@ -195,11 +195,12 @@ public class ArtistService(
 
         return fieldName switch
         {
-            "name" => isDescending ? query.OrderByDescending(a => a.Name) : query.OrderBy(a => a.Name),
-            "namenormalized" => isDescending ? query.OrderByDescending(a => a.NameNormalized) : query.OrderBy(a => a.NameNormalized),
+            "alternatenames" => isDescending ? query.OrderByDescending(a => a.AlternateNames) : query.OrderBy(a => a.AlternateNames),
+            "name" or "namenormalized" => isDescending ? query.OrderByDescending(a => a.SortName).ThenByDescending(x => x.Name) : query.OrderBy(a => a.SortName).ThenBy(x => x.Name),
             "createdat" => isDescending ? query.OrderByDescending(a => a.CreatedAt) : query.OrderBy(a => a.CreatedAt),
             "lastupdatedat" => isDescending ? query.OrderByDescending(a => a.LastUpdatedAt) : query.OrderBy(a => a.LastUpdatedAt),
             "albumcount" => isDescending ? query.OrderByDescending(a => a.AlbumCount) : query.OrderBy(a => a.AlbumCount),
+            "directory" => isDescending ? query.OrderByDescending(a => a.Directory) : query.OrderBy(a => a.Directory),
             "songcount" => isDescending ? query.OrderByDescending(a => a.SongCount) : query.OrderBy(a => a.SongCount),
             _ => query.OrderBy(a => a.Name)
         };
