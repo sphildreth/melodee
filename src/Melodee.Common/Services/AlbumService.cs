@@ -65,10 +65,14 @@ public class AlbumService(
         {
             CacheManager.Remove(CacheKeyDetailByApiKeyTemplate.FormatSmart(album.Data.ApiKey), Album.CacheRegion);
             CacheManager.Remove(CacheKeyDetailByNameNormalizedTemplate.FormatSmart(album.Data.NameNormalized), Album.CacheRegion);
-            CacheManager.Remove(CacheKeyDetailTemplate.FormatSmart(album.Data.Id), Album.CacheRegion);
-            CacheManager.Remove(CacheKeyAlbumImageBytesAndEtagTemplate.FormatSmart(album.Data.Id, ImageSize.Thumbnail), Album.CacheRegion);
-            CacheManager.Remove(CacheKeyAlbumImageBytesAndEtagTemplate.FormatSmart(album.Data.Id, ImageSize.Medium), Album.CacheRegion);
-            CacheManager.Remove(CacheKeyAlbumImageBytesAndEtagTemplate.FormatSmart(album.Data.Id, ImageSize.Large), Album.CacheRegion);
+            
+            CacheManager.Remove(CacheKeyDetailTemplate.FormatSmart(albumId), Album.CacheRegion);
+            
+            CacheManager.Remove(CacheKeyAlbumImageBytesAndEtagTemplate.FormatSmart(albumId, ImageSize.Thumbnail), Artist.CacheRegion);
+            CacheManager.Remove(CacheKeyAlbumImageBytesAndEtagTemplate.FormatSmart(albumId, ImageSize.Small), Artist.CacheRegion);
+            CacheManager.Remove(CacheKeyAlbumImageBytesAndEtagTemplate.FormatSmart(albumId, ImageSize.Medium), Artist.CacheRegion);
+            CacheManager.Remove(CacheKeyAlbumImageBytesAndEtagTemplate.FormatSmart(albumId, ImageSize.Large), Artist.CacheRegion);
+
             
             // This is needed because the OpenSubsonicApiService caches the image bytes after potentially resizing
             CacheManager.Remove(OpenSubsonicApiService.ImageCacheRegion);

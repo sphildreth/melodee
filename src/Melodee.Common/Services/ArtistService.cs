@@ -360,6 +360,7 @@ public class ArtistService(
         }
         
         CacheManager.Remove(CacheKeyArtistImageBytesAndEtagTemplate.FormatSmart(artist.Id, ImageSize.Thumbnail), Artist.CacheRegion);
+        CacheManager.Remove(CacheKeyArtistImageBytesAndEtagTemplate.FormatSmart(artist.Id, ImageSize.Small), Artist.CacheRegion);
         CacheManager.Remove(CacheKeyArtistImageBytesAndEtagTemplate.FormatSmart(artist.Id, ImageSize.Medium), Artist.CacheRegion);
         CacheManager.Remove(CacheKeyArtistImageBytesAndEtagTemplate.FormatSmart(artist.Id, ImageSize.Large), Artist.CacheRegion);
         
@@ -973,6 +974,7 @@ public class ArtistService(
                 return new MelodeeModels.ImageBytesAndEtag(null, badEtag);
             }
 
+            // The size parameter allows for the admin to pre-create sized images so on the fly resize doesn't happen
             var artistImages = artistDirectory.AllFileImageTypeFileInfos().ToArray();
             var imageFile = artistImages
                 .FirstOrDefault(x => x.Name.Contains($"-{sizeValue}", StringComparison.OrdinalIgnoreCase) ||

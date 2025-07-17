@@ -1481,29 +1481,38 @@ public class OpenSubsonicApiService(
 
                     if (result != null && !isForPlaylist && doCheckResize)
                     {
-                        if (sizeValue == ImageSize.Large)
+                        if (sizeValue != ImageSize.Large)
                         {
-                            var sizeValueParsed = SafeParser.ToNumber<int>(sizeValue);
-                            if (sizeValueParsed > 0)
+                            var sizeParsedToInt = SafeParser.ToNumber<int>(size);
+                            if (sizeParsedToInt > 0)
                             {
                                 result = ImageConvertor.ResizeImageIfNeeded(result,
-                                    sizeValueParsed,
-                                    sizeValueParsed, isUserImageRequest);
-                                eTag = HashHelper.CreateMd5(eTag + sizeValueParsed);
+                                    sizeParsedToInt,
+                                    sizeParsedToInt, isUserImageRequest);
+                                eTag = HashHelper.CreateMd5(eTag + sizeParsedToInt.ToString());
                             }
                             else
                             {
                                 switch (sizeValue)
                                 {
                                     case ImageSize.Thumbnail:
+                                        var thumbnailSize = (await Configuration.Value).GetValue<int?>(SettingRegistry.ImagingThumbnailSize) ?? SafeParser.ToNumber<int>(ImageSize.Thumbnail);
+                                        result = ImageConvertor.ResizeImageIfNeeded(result,
+                                            thumbnailSize,
+                                            thumbnailSize,
+                                            isUserImageRequest);
+                                        eTag = HashHelper.CreateMd5(eTag + nameof(ImageSize.Thumbnail));
+                                        break;
+                                    
+                                    case ImageSize.Small:
                                         var smallSize = (await Configuration.Value).GetValue<int?>(SettingRegistry.ImagingSmallSize) ??
                                                         throw new Exception($"Invalid configuration [{SettingRegistry.ImagingSmallSize}] not found.");
                                         result = ImageConvertor.ResizeImageIfNeeded(result,
                                             smallSize,
                                             smallSize,
                                             isUserImageRequest);
-                                        eTag = HashHelper.CreateMd5(eTag + nameof(ImageSize.Thumbnail));
-                                        break;
+                                        eTag = HashHelper.CreateMd5(eTag + nameof(ImageSize.Small));
+                                        break;                                    
 
                                     case ImageSize.Medium:
                                         var mediumSize =

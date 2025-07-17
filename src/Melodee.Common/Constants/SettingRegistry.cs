@@ -23,6 +23,7 @@ public static class SettingRegistry
     public const string ImagingSmallSize = "imaging.smallSize";
     public const string ImagingMediumSize = "imaging.mediumSize";
     public const string ImagingLargeSize = "imaging.largeSize";
+    public const string ImagingThumbnailSize = "imaging.thumbnailSize";
     public const string ImagingDuplicateThreshold = "imaging.duplicateThreshold";
     public const string JobsArtistHousekeepingCronExpression = "jobs.artistHousekeeping.cronExpression";
     public const string JobsArtistSearchEngineHousekeepingCronExpression = "jobs.artistSearchEngineHousekeeping.cronExpression";
