@@ -44,7 +44,7 @@ public class MelodeeConfigurationTests
 
     [Theory]
     [InlineData("http://example.com", "api123", ImageSize.Thumbnail, "http://example.com/images/api123/thumbnail")]
-    [InlineData("http://example.com", "api123", ImageSize.Medium, "http://example.com/images/api123/{ ImageSize.Medium }")]
+    [InlineData("http://example.com", "api123", ImageSize.Medium, "http://example.com/images/api123/medium")]
     [InlineData("http://example.com", "api123", ImageSize.Large, "http://example.com/images/api123/large")]
     public void GenerateImageUrl_ReturnsCorrectUrl(string baseUrl, string apiKey, ImageSize imageSize, string expectedUrl)
     {

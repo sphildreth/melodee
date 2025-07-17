@@ -800,8 +800,11 @@ public class LibraryService : ServiceBase
         };
     }
 
-    public async Task<MelodeeModels.OperationResult<bool>> MoveAlbumsFromLibraryToLibrary(string fromLibraryName,
-        string toLibraryName, Func<MelodeeModels.Album, bool> condition, bool verboseSet,
+    public async Task<MelodeeModels.OperationResult<bool>> MoveAlbumsFromLibraryToLibrary(
+        string fromLibraryName,
+        string toLibraryName, 
+        Func<MelodeeModels.Album, bool> condition, 
+        bool verboseSet,
         CancellationToken cancellationToken = default)
     {
         Guard.Against.NullOrEmpty(fromLibraryName, nameof(fromLibraryName));
@@ -865,10 +868,8 @@ public class LibraryService : ServiceBase
         var configuration = await _configurationFactory.GetConfigurationAsync(cancellationToken);
 
         var duplicateDirPrefix = configuration.GetValue<string>(SettingRegistry.ProcessingDuplicateAlbumPrefix);
-        var maxAlbumProcessingCount = configuration.GetValue<int>(SettingRegistry.ProcessingMaximumProcessingCount,
-            value => value < 1 ? int.MaxValue : value);
-        var albumsForFromLibrary = Directory.GetFiles(fromLibrary.Path, MelodeeModels.Album.JsonFileName,
-            SearchOption.AllDirectories);
+        var maxAlbumProcessingCount = configuration.GetValue<int>(SettingRegistry.ProcessingMaximumProcessingCount, value => value < 1 ? int.MaxValue : value);
+        var albumsForFromLibrary = Directory.GetFiles(fromLibrary.Path, MelodeeModels.Album.JsonFileName, SearchOption.AllDirectories);
         var albumsToMove = new List<MelodeeModels.Album>();
         foreach (var albumFile in albumsForFromLibrary)
         {
@@ -889,7 +890,8 @@ public class LibraryService : ServiceBase
             try
             {
                 var album = await MelodeeModels.Album
-                    .DeserializeAndInitializeAlbumAsync(_serializer, albumFile, cancellationToken).ConfigureAwait(false);
+                    .DeserializeAndInitializeAlbumAsync(_serializer, albumFile, cancellationToken)
+                    .ConfigureAwait(false);
                 if (album != null)
                 {
                     if (condition(album))
