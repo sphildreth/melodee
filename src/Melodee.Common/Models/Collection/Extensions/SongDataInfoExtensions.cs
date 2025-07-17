@@ -2,6 +2,7 @@ using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
 using Melodee.Common.Data.Constants;
 using Melodee.Common.Data.Models;
+using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 
 namespace Melodee.Common.Models.Collection.Extensions;
@@ -18,9 +19,9 @@ public static class SongDataInfoExtensions
         return $"/data/album/{songDataInfo.AlbumApiKey}";
     }
 
-    public static string ImageUrl(this SongDataInfo songDataInfo, int? size = null)
+    public static string ImageUrl(this SongDataInfo songDataInfo, ImageSize? size = null)
     {
-        return $"/images/{songDataInfo.ToApiKey()}/{size ?? 80}";
+        return $"/images/{songDataInfo.ToApiKey()}/{size ?? ImageSize.Thumbnail}";
     }
 
     public static string ToApiKey(this SongDataInfo songDataInfo)

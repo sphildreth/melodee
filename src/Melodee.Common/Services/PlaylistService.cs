@@ -368,7 +368,7 @@ public class PlaylistService(
                 }
 
                 scopedContext.Playlists.Remove(playlist.Data!);
-                await ClearCacheAsync(playlistId, cancellationToken);
+                await ClearCacheAsync(playlistId, cancellationToken).ConfigureAwait(false);
             }
 
             result = await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false) > 0;

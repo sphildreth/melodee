@@ -63,7 +63,7 @@
             else
             {
                 <RadzenImage
-                    Path=@($"/images/{_artist.ToApiKey()}/medium")
+                    Path=@($"/images/{_artist.ToApiKey()}/{ ImageSize.Medium }")
                     Style="margin-right: 5px; width: 100%; height: auto;"
                     AlternateText="@_artist.Name"/>
             }

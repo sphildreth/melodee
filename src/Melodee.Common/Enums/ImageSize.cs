@@ -4,9 +4,9 @@ public enum ImageSize
 {
     NotSet = 0,
 
-    Thumbnail,
+    Thumbnail = 80,
 
-    Medium,
+    Medium = 600,
 
-    Large
+    Large = 9999
 }

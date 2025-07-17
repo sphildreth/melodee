@@ -68,14 +68,14 @@
                         <RadzenTableRow>
                             <RadzenTableCell>
                                 <RadzenLink Path="@($"/data/artist/{album.ArtistApiKey}")">
-                                    <RadzenImage Path="@($"/images/artist_{album.ArtistApiKey}/80")"
+                                    <RadzenImage Path="@($"/images/artist_{album.ArtistApiKey}/{ ImageSize.Thumbnail }")"
                                                  Style="width: 30px; height: 30px; margin-right: 5px;"/>
                                     @album.ArtistName
                                 </RadzenLink>
                             </RadzenTableCell>
                             <RadzenTableCell>
                                 <RadzenLink Path="@($"/data/album/{album.ApiKey}")">
-                                    <RadzenImage Path="@($"/images/album_{album.ApiKey}/80")"
+                                    <RadzenImage Path="@($"/images/album_{album.ApiKey}/{ ImageSize.Thumbnail }")"
                                                  Style="width: 30px; height: 30px; margin-right: 5px;"/>
                                     @album.Name
                                 </RadzenLink>
@@ -120,14 +120,14 @@
                         <RadzenTableRow>
                             <RadzenTableCell>
                                 <RadzenLink Path="@($"/data/artist/{song.ArtistApiKey}")">
-                                    <RadzenImage Path="@($"/images/artist_{song.ArtistApiKey}/80")"
+                                    <RadzenImage Path="@($"/images/artist_{song.ArtistApiKey}/{ ImageSize.Thumbnail }")"
                                                  Style="width: 30px; height: 30px; margin-right: 5px;"/>
                                     @song.ArtistName
                                 </RadzenLink>
                             </RadzenTableCell>
                             <RadzenTableCell>
                                 <RadzenLink Path="@($"/data/album/{song.AlbumApiKey}")">
-                                    <RadzenImage Path="@($"/images/album_{song.AlbumApiKey}/80")"
+                                    <RadzenImage Path="@($"/images/album_{song.AlbumApiKey}/{ ImageSize.Thumbnail }")"
                                                  Style="width: 30px; height: 30px; margin-right: 5px;"/>
                                     @song.AlbumName
                                 </RadzenLink>

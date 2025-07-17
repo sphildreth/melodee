@@ -106,7 +106,7 @@
                                       Click=@(_ => NavigationManager.NavigateTo($"/data/useredit/{data.ApiKey}"))
                                       Icon="edit"
                                       ButtonStyle="ButtonStyle.Secondary"/>
-                        <RadzenImage Path=@($"/images/{data.ToApiKey()}/35")
+                        <RadzenImage Path=@($"/images/{data.ToApiKey()}/{ ImageSize.Thumbnail }")
                                      Style="float:left;margin-right: 5px;"
                                      AlternateText="@data.UserName"/>
                         <RadzenText Text="@data.UserName"/>

@@ -176,7 +176,7 @@ public class ArtistService(
                     .FirstOrDefaultAsync(x => x.Id == id, cancellationToken)
                     .ConfigureAwait(false);
             }
-        }, cancellationToken);
+        }, cancellationToken, region: Artist.CacheRegion);
         return new MelodeeModels.OperationResult<Artist?>
         {
             Data = result
@@ -198,7 +198,7 @@ public class ArtistService(
                     .Select(a => (int?)a.Id)
                     .FirstOrDefaultAsync(cancellationToken)
                     .ConfigureAwait(false);
-            }, cancellationToken);
+            }, cancellationToken, region: Artist.CacheRegion);
             
         if (id == null)
         {
@@ -227,7 +227,7 @@ public class ArtistService(
                     .Select(a => (int?)a.Id)
                     .FirstOrDefaultAsync(cancellationToken)
                     .ConfigureAwait(false);
-            }, cancellationToken);
+            }, cancellationToken, region: Artist.CacheRegion);
             
         if (id == null)
         {
@@ -336,7 +336,7 @@ public class ArtistService(
                 .Select(a => (int?)a.Id)
                 .FirstOrDefaultAsync(cancellationToken)
                 .ConfigureAwait(false);
-        }, cancellationToken);
+        }, cancellationToken, region: Artist.CacheRegion);
         
         if (id == null)
         {
@@ -359,9 +359,9 @@ public class ArtistService(
             CacheManager.Remove(CacheKeyDetailByMusicBrainzIdTemplate.FormatSmart(artist.MusicBrainzId.Value.ToString()), Artist.CacheRegion);
         }
         
-        CacheManager.Remove(CacheKeyArtistImageBytesAndEtagTemplate.FormatSmart(artist.Id, ImageSizeRegistry.Small), Artist.CacheRegion);
-        CacheManager.Remove(CacheKeyArtistImageBytesAndEtagTemplate.FormatSmart(artist.Id, ImageSizeRegistry.Medium), Artist.CacheRegion);
-        CacheManager.Remove(CacheKeyArtistImageBytesAndEtagTemplate.FormatSmart(artist.Id, ImageSizeRegistry.Large), Artist.CacheRegion);
+        CacheManager.Remove(CacheKeyArtistImageBytesAndEtagTemplate.FormatSmart(artist.Id, ImageSize.Thumbnail), Artist.CacheRegion);
+        CacheManager.Remove(CacheKeyArtistImageBytesAndEtagTemplate.FormatSmart(artist.Id, ImageSize.Medium), Artist.CacheRegion);
+        CacheManager.Remove(CacheKeyArtistImageBytesAndEtagTemplate.FormatSmart(artist.Id, ImageSize.Large), Artist.CacheRegion);
         
         // This is needed because the OpenSubsonicApiService caches the image bytes after potentially resizing
         CacheManager.ClearRegion(OpenSubsonicApiService.ImageCacheRegion);        
@@ -372,7 +372,7 @@ public class ArtistService(
     public async Task ClearCacheAsync(int artistId, CancellationToken cancellationToken)
     {
         var artist = await GetAsync(artistId, cancellationToken).ConfigureAwait(false);
-        await ClearCacheAsync(artist.Data!, cancellationToken);
+        await ClearCacheAsync(artist.Data!, cancellationToken).ConfigureAwait(false);
     }
 
     public async Task<MelodeeModels.OperationResult<bool>> RescanAsync(int[] artistIds, CancellationToken cancellationToken = default)
@@ -547,7 +547,7 @@ public class ArtistService(
 
             if (result)
             {
-                await ClearCacheAsync(dbDetail, cancellationToken);
+                await ClearCacheAsync(dbDetail, cancellationToken).ConfigureAwait(false);
             }
         }
 
@@ -663,7 +663,8 @@ public class ArtistService(
                     .SetProperty(x => x.ImageCount, totalArtistImageCount), cancellationToken)
                 .ConfigureAwait(false);
         }
-        await ClearCacheAsync(artist, cancellationToken);
+
+        await ClearCacheAsync(artist, cancellationToken).ConfigureAwait(false);
         Logger.Information("Saved image for artist [{ArtistId}] with {ImageCount} images.",
             artist.Id, totalArtistImageCount);
         return true;
@@ -802,8 +803,9 @@ public class ArtistService(
                         }
                         else if (fileSystemService.DirectoryExists(albumToMergeNewDirectory))
                         {
-                            var albumJsonFiles = fileSystemService.GetFiles(albumToMergeNewDirectory,
-                                MelodeeModels.Album.JsonFileName, SearchOption.TopDirectoryOnly);
+                            var albumJsonFiles = fileSystemService.GetFiles(
+                                albumToMergeNewDirectory,
+                                MelodeeModels.Album.JsonFileName);
                             if (albumJsonFiles.Length > 0)
                             {
                                 var album = await fileSystemService.DeserializeAlbumAsync(albumJsonFiles[0],
@@ -847,7 +849,7 @@ public class ArtistService(
                     if ((dbArtistToMergeInto.ImageCount ?? 0) == 0 && fileSystemService.DirectoryExists(dbArtistDirectory.FullName()))
                     {
                         dbArtistToMergeInto.ImageCount = dbArtistToMergeInto.ImageCount ?? 0;
-                        var jpgFiles = fileSystemService.GetFiles(dbArtistDirectory.FullName(), "*.jpg", SearchOption.TopDirectoryOnly);
+                        var jpgFiles = fileSystemService.GetFiles(dbArtistDirectory.FullName(), "*.jpg");
                         foreach (var jpgFile in jpgFiles)
                         {
                             var fileName = fileSystemService.GetFileName(jpgFile);
@@ -934,7 +936,7 @@ public class ArtistService(
         var result = deleteResult.IsSuccess;
         if (deleteResult.IsSuccess)
         {
-            await ClearCacheAsync(artistResult.Data!, cancellationToken);
+            await ClearCacheAsync(artistResult.Data!, cancellationToken).ConfigureAwait(false);
         }
 
         return new MelodeeModels.OperationResult<bool>
@@ -946,7 +948,7 @@ public class ArtistService(
     public async Task<MelodeeModels.ImageBytesAndEtag> GetArtistImageBytesAndEtagAsync(Guid? apiKey, string? size = null, CancellationToken cancellationToken = default)
     {
         Guard.Against.Null(apiKey, nameof(apiKey));
-        Guard.Against.Expression(x => x == Guid.Empty, apiKey!.Value, nameof(apiKey));
+        Guard.Against.Expression(x => x == Guid.Empty, apiKey.Value, nameof(apiKey));
 
         var configuration = await configurationFactory.GetConfigurationAsync(cancellationToken).ConfigureAwait(false);
         var artist = await GetByApiKeyAsync(apiKey.Value, cancellationToken).ConfigureAwait(false);
@@ -957,12 +959,12 @@ public class ArtistService(
 
         var artistId = artist.Data.Id;
         
-        var cacheKey = CacheKeyArtistImageBytesAndEtagTemplate.FormatSmart(artistId, size ?? ImageSizeRegistry.Large);
+        var cacheKey = CacheKeyArtistImageBytesAndEtagTemplate.FormatSmart(artistId, size ?? nameof(ImageSize.Large));
         
         return await CacheManager.GetAsync(cacheKey, async () =>
         {
             var badEtag = Instant.MinValue.ToEtag();
-            var sizeValue = size ?? ImageSizeRegistry.Large;
+            var sizeValue = size ?? nameof(ImageSize.Large);
 
             var artistDirectory = artist.Data.ToFileSystemDirectoryInfo();
             if (!artistDirectory.Exists())
@@ -983,6 +985,7 @@ public class ArtistService(
             }
 
             var imageBytes = await fileSystemService.ReadAllBytesAsync(imageFile.FullName, cancellationToken).ConfigureAwait(false);
+            Logger.Information("Image found for artist [{ArtistId}] with size [{Size}] CacheKey [{CacheKey}].", artistId, sizeValue, cacheKey);
             return new MelodeeModels.ImageBytesAndEtag(imageBytes, (artist.Data.LastUpdatedAt ?? artist.Data.CreatedAt).ToEtag());
         }, cancellationToken, configuration.CacheDuration(), Artist.CacheRegion);
     }

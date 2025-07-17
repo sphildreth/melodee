@@ -66,9 +66,9 @@ public class AlbumService(
             CacheManager.Remove(CacheKeyDetailByApiKeyTemplate.FormatSmart(album.Data.ApiKey), Album.CacheRegion);
             CacheManager.Remove(CacheKeyDetailByNameNormalizedTemplate.FormatSmart(album.Data.NameNormalized), Album.CacheRegion);
             CacheManager.Remove(CacheKeyDetailTemplate.FormatSmart(album.Data.Id), Album.CacheRegion);
-            CacheManager.Remove(CacheKeyAlbumImageBytesAndEtagTemplate.FormatSmart(album.Data.Id, ImageSizeRegistry.Small), Album.CacheRegion);
-            CacheManager.Remove(CacheKeyAlbumImageBytesAndEtagTemplate.FormatSmart(album.Data.Id, ImageSizeRegistry.Medium), Album.CacheRegion);
-            CacheManager.Remove(CacheKeyAlbumImageBytesAndEtagTemplate.FormatSmart(album.Data.Id, ImageSizeRegistry.Large), Album.CacheRegion);
+            CacheManager.Remove(CacheKeyAlbumImageBytesAndEtagTemplate.FormatSmart(album.Data.Id, ImageSize.Thumbnail), Album.CacheRegion);
+            CacheManager.Remove(CacheKeyAlbumImageBytesAndEtagTemplate.FormatSmart(album.Data.Id, ImageSize.Medium), Album.CacheRegion);
+            CacheManager.Remove(CacheKeyAlbumImageBytesAndEtagTemplate.FormatSmart(album.Data.Id, ImageSize.Large), Album.CacheRegion);
             
             // This is needed because the OpenSubsonicApiService caches the image bytes after potentially resizing
             CacheManager.Remove(OpenSubsonicApiService.ImageCacheRegion);
@@ -403,7 +403,7 @@ public class AlbumService(
                     .FirstOrDefaultAsync(x => x.Id == id, cancellationToken)
                     .ConfigureAwait(false);
             }
-        }, cancellationToken);
+        }, cancellationToken, region: Album.CacheRegion);
         
         return new MelodeeModels.OperationResult<Album?>
         {
@@ -427,8 +427,8 @@ public class AlbumService(
                         .FirstOrDefaultAsync(cancellationToken)
                         .ConfigureAwait(false);
                 }
-            }, cancellationToken);
-        if (id == null || id == 0)
+            }, cancellationToken, region: Album.CacheRegion);
+        if (id is null or 0)
         {
             return new MelodeeModels.OperationResult<Album?>("Unknown album.")
             {
@@ -456,8 +456,8 @@ public class AlbumService(
                     .FirstOrDefaultAsync(cancellationToken)
                     .ConfigureAwait(false);
             }
-        }, cancellationToken);
-        if (id == null || id == 0)
+        }, cancellationToken, region: Album.CacheRegion);
+        if (id is null or 0)
         {
             return new MelodeeModels.OperationResult<Album?>("Unknown album.")
             {
@@ -814,11 +814,11 @@ public class AlbumService(
         }
 
         var albumId = album.Data.Id;
-        var cacheKey = CacheKeyAlbumImageBytesAndEtagTemplate.FormatSmart(albumId, size ?? ImageSizeRegistry.Large);
+        var cacheKey = CacheKeyAlbumImageBytesAndEtagTemplate.FormatSmart(albumId, size ?? nameof(ImageSize.Large));
         return await CacheManager.GetAsync(cacheKey, async () =>
         {
             var badEtag = Instant.MinValue.ToEtag();
-            var sizeValue = size ?? ImageSizeRegistry.Large;
+            var sizeValue = size ?? nameof(ImageSize.Large);
 
             var albumDirectory = album.Data.ToFileSystemDirectoryInfo();
             if (!albumDirectory.Exists())
@@ -840,7 +840,7 @@ public class AlbumService(
 
             var imageBytes = await File.ReadAllBytesAsync(imageFile.FullName, cancellationToken).ConfigureAwait(false);
             return new MelodeeModels.ImageBytesAndEtag(imageBytes, (album.Data.LastUpdatedAt ?? album.Data.CreatedAt).ToEtag());
-        }, cancellationToken, configuration.CacheDuration(),Artist.CacheRegion);
+        }, cancellationToken, configuration.CacheDuration(), Album.CacheRegion);
     }
 
     public async Task<MelodeeModels.OperationResult<bool>> SaveImageAsAlbumImageAsync(
@@ -910,7 +910,7 @@ public class AlbumService(
                     .SetProperty(x => x.ImageCount, albumPath.ImageFilesFound), cancellationToken)
                 .ConfigureAwait(false);
         }
-        await ClearCacheAsync(album.Id, cancellationToken);
+        await ClearCacheAsync(album.Id, cancellationToken).ConfigureAwait(false);
         return true;        
         
     }

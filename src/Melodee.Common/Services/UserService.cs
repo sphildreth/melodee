@@ -261,7 +261,7 @@ public sealed class UserService(
                                     if (artistResult is { IsSuccess: true, Data: not null })
                                     {
                                         pin.Icon = "artist";
-                                        pin.ImageUrl = $"/images/{artistResult.Data.ToApiKey()}/80";
+                                        pin.ImageUrl = $"/images/{artistResult.Data.ToApiKey()}{ImageSize.Thumbnail}";
                                         pin.LinkUrl = $"/data/artist/ {artistResult.Data.ApiKey}";
                                         pin.Text = artistResult.Data.Name;
                                     }
@@ -273,7 +273,7 @@ public sealed class UserService(
                                     if (albumResult is { IsSuccess: true, Data: not null })
                                     {
                                         pin.Icon = "album";
-                                        pin.ImageUrl = $"/images/{albumResult.Data.ToApiKey()}/80";
+                                        pin.ImageUrl = $"/images/{albumResult.Data.ToApiKey()}/{ ImageSize.Thumbnail }";
                                         pin.LinkUrl = $"/data/album/ {albumResult.Data.ApiKey}";
                                         pin.Text = albumResult.Data.Name;
                                     }
@@ -285,7 +285,7 @@ public sealed class UserService(
                                     if (songResult is { IsSuccess: true, Data: not null })
                                     {
                                         pin.Icon = "music_note";
-                                        pin.ImageUrl = $"/images/{songResult.Data.ToApiKey()}/80";
+                                        pin.ImageUrl = $"/images/{songResult.Data.ToApiKey()}/{ ImageSize.Thumbnail }";
                                         pin.LinkUrl = $"/data/album/ {songResult.Data.Album.ApiKey}";
                                         pin.Text = songResult.Data.Title;
                                     }
@@ -297,7 +297,7 @@ public sealed class UserService(
                                     if (playlistResult is { IsSuccess: true, Data: not null })
                                     {
                                         pin.Icon = "playlist_play";
-                                        pin.ImageUrl = $"/images/{playlistResult.Data.ToApiKey()}/80";
+                                        pin.ImageUrl = $"/images/{playlistResult.Data.ToApiKey()}/{ ImageSize.Thumbnail }";
                                         pin.LinkUrl = $"/data/playlist/ {playlistResult.Data.ApiKey}";
                                         pin.Text = playlistResult.Data.Name;
                                     }

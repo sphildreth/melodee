@@ -1,4 +1,5 @@
 using Melodee.Common.Data.Constants;
+using Melodee.Common.Enums;
 
 namespace Melodee.Common.Models.Collection.Extensions;
 
@@ -29,14 +30,14 @@ public static class ArtistDataInfoExtensions
         return $"/data/artist/{artistDataInfo.ApiKey}";
     }
 
-    public static string ImageUrl(this ArtistDataInfo artistDataInfo, int? size = null)
+    public static string ImageUrl(this ArtistDataInfo artistDataInfo, ImageSize? size = null)
     {
         if (artistDataInfo.ImageBase64() != null)
         {
             return artistDataInfo.ImageBase64()!;
         }
 
-        return $"/images/{artistDataInfo.ToApiKey()}/{size ?? 80}";
+        return $"/images/{artistDataInfo.ToApiKey()}/{size ?? ImageSize.Thumbnail}";
     }
 
     public static string ToApiKey(this ArtistDataInfo artist)

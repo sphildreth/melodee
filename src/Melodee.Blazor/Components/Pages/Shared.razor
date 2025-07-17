@@ -47,7 +47,7 @@
                         [
                             new AuralizerTrack(songResult.Data.ToApiStreamUrl(configuration),
                                 $"{songResult.Data.Album.Name} - {songResult.Data.Title}",
-                                $"/images/{songResult.Data.ToCoverArtId()}/1024")
+                                $"/images/{songResult.Data.ToCoverArtId()}/{ ImageSize.Large }")
                         ];
                     }
 
@@ -59,7 +59,7 @@
                         _songInfos = albumResult.Data.Songs.Select(x =>
                             new AuralizerTrack(x.ToApiStreamUrl(configuration),
                                 $"{albumResult.Data.Name} - {x.Title}",
-                                $"/images/{albumResult.Data.ToCoverArtId()}/1024")
+                                $"/images/{albumResult.Data.ToCoverArtId()}/{ ImageSize.Large }")
                         ).ToArray();
                     }
 
@@ -71,7 +71,7 @@
                         _songInfos = playlistResult.Data.Songs.Select(x =>
                             new AuralizerTrack(x.Song.ToApiStreamUrl(configuration),
                                 $"{x.Song.Album.Name} - {x.Song.Title}",
-                                $"/images/{x.Song.ToCoverArtId()}/1024")
+                                $"/images/{x.Song.ToCoverArtId()}/{ ImageSize.Large }")
                         ).ToArray();
                     }
 

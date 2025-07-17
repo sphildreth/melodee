@@ -1,5 +1,6 @@
 using System.Web;
 using Melodee.Common.Data.Constants;
+using Melodee.Common.Enums;
 
 namespace Melodee.Common.Models.Collection.Extensions;
 
@@ -10,9 +11,9 @@ public static class AlbumDataInfoExtensions
         return $"data:image/jpeg;base64,{Convert.ToBase64String(albumDataInfo.ImageBytes ?? defaultImages)}";
     }
 
-    public static string ImageUrl(this AlbumDataInfo artistDataInfo, int? size = null)
+    public static string ImageUrl(this AlbumDataInfo artistDataInfo, ImageSize? size = null)
     {
-        return artistDataInfo.CoverUrl ?? $"/images/{artistDataInfo.ToApiKey()}/{size ?? 80}";
+        return artistDataInfo.CoverUrl ?? $"/images/{artistDataInfo.ToApiKey()}/{size ?? ImageSize.Thumbnail}";
     }
 
     public static string DetailUrl(this AlbumDataInfo albumDataInfo, string? fromUrl = null)

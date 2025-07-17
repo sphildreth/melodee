@@ -163,7 +163,7 @@
                                       Size="ButtonSize.ExtraSmall"
                                       Click=@(_ => NavigationManager.NavigateTo($"/data/albumedit/{data.ApiKey}"))
                                       Icon="edit" ButtonStyle="ButtonStyle.Secondary"/>
-                        <RadzenImage Path=@($"/images/{data.ToApiKey()}/35") Style="margin-right: 5px;"
+                        <RadzenImage Path=@($"/images/{data.ToApiKey()}/{ ImageSize.Thumbnail }") Style="margin-right: 5px;"
                                      AlternateText="@data.Name"/>
                         <RadzenLink text="@data.Name" class="rz-text-wrap" Path="@data.DetailUrl()"/>
                     </Template>

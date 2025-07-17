@@ -1,4 +1,5 @@
 using System.Text;
+using Melodee.Common.Enums;
 using Melodee.Common.Extensions;
 
 namespace Melodee.Common.Models.OpenSubsonic;

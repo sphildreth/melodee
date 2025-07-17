@@ -10,7 +10,7 @@
     <div class="music-player">
         <div class="song-info">
             <div class="album-art @(IsPlaying ? "playing" : "")">
-                <img src="@CurrentSong.ImageUrl(600)" alt="Album Art">
+                <img src="@CurrentSong.ImageUrl(ImageSize.Medium)" alt="Album Art">
             </div>
             <h2 class="song-title">@CurrentSong.Title</h2>
             <p class="artist">@CurrentSong.ArtistName</p>

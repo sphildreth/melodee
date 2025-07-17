@@ -34,7 +34,6 @@ using Rebus.Bus;
 using Serilog;
 using Serilog.Events;
 using SerilogTimings;
-using SmartFormat;
 using dbModels = Melodee.Common.Data.Models;
 using Artist = Melodee.Common.Models.OpenSubsonic.Artist;
 using Directory = Melodee.Common.Models.OpenSubsonic.Directory;
@@ -1359,7 +1358,7 @@ public class OpenSubsonicApiService(
         };
     }
 
-    public static string GenerateImageCacheKeyForApiId(string apiId, string size)
+    public static string GenerateImageCacheKeyForApiId(string apiId, ImageSize size)
     {
         return $"urn:openSubsonic:imageForApikey:{apiId}:{size}";
     }
@@ -1381,7 +1380,7 @@ public class OpenSubsonicApiService(
         var isForPlaylist = IsApiIdForDynamicPlaylist(apiId) || IsApiIdForPlaylist(apiId);
 
         var badEtag = Instant.MinValue.ToEtag();
-        var sizeValue = size ?? ImageSizeRegistry.Large;
+        var sizeValue = size.Nullify() == null ? ImageSize.Large : SafeParser.ToEnum<ImageSize>(size);
         
         var imageBytesAndEtag = await CacheManager.GetAsync(GenerateImageCacheKeyForApiId(apiId, sizeValue), async () =>
         {
@@ -1482,7 +1481,7 @@ public class OpenSubsonicApiService(
 
                     if (result != null && !isForPlaylist && doCheckResize)
                     {
-                        if (!string.Equals(sizeValue, ImageSizeRegistry.Large, StringComparison.OrdinalIgnoreCase))
+                        if (sizeValue == ImageSize.Large)
                         {
                             var sizeValueParsed = SafeParser.ToNumber<int>(sizeValue);
                             if (sizeValueParsed > 0)
@@ -1494,22 +1493,19 @@ public class OpenSubsonicApiService(
                             }
                             else
                             {
-                                switch (sizeValue.ToLowerInvariant())
+                                switch (sizeValue)
                                 {
-                                    case ImageSizeRegistry.Small:
-                                        var smallSize =
-                                            (await Configuration.Value).GetValue<int?>(SettingRegistry
-                                                .ImagingSmallSize) ??
-                                            throw new Exception(
-                                                $"Invalid configuration [{SettingRegistry.ImagingSmallSize}] not found.");
+                                    case ImageSize.Thumbnail:
+                                        var smallSize = (await Configuration.Value).GetValue<int?>(SettingRegistry.ImagingSmallSize) ??
+                                                        throw new Exception($"Invalid configuration [{SettingRegistry.ImagingSmallSize}] not found.");
                                         result = ImageConvertor.ResizeImageIfNeeded(result,
                                             smallSize,
                                             smallSize,
                                             isUserImageRequest);
-                                        eTag = HashHelper.CreateMd5(eTag + ImageSizeRegistry.Small);
+                                        eTag = HashHelper.CreateMd5(eTag + nameof(ImageSize.Thumbnail));
                                         break;
 
-                                    case ImageSizeRegistry.Medium:
+                                    case ImageSize.Medium:
                                         var mediumSize =
                                             (await Configuration.Value).GetValue<int?>(
                                                 SettingRegistry.ImagingMediumSize) ??
@@ -1519,7 +1515,7 @@ public class OpenSubsonicApiService(
                                             mediumSize,
                                             mediumSize,
                                             isUserImageRequest);
-                                        eTag = HashHelper.CreateMd5(eTag + ImageSizeRegistry.Medium);
+                                        eTag = HashHelper.CreateMd5(eTag + nameof(ImageSize.Medium));
                                         break;
                                 }
                             }
