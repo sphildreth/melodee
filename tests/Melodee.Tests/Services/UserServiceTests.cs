@@ -2,6 +2,7 @@ using Melodee.Common.Data.Models;
 using Melodee.Common.Enums;
 using Melodee.Common.MessageBus.Events;
 using Melodee.Common.Models;
+using Melodee.Common.Models.Collection;
 using Melodee.Common.Models.Importing;
 using Microsoft.EntityFrameworkCore;
 using NodaTime;
@@ -33,6 +34,14 @@ public class UserServiceTests : ServiceTestBase
         Assert.NotNull(result);
         Assert.True(result.TotalCount >= 2);
         Assert.NotEmpty(result.Data);
+        Assert.IsType<UserDataInfo[]>(result.Data);
+        
+        // Verify UserDataInfo properties are correctly mapped
+        var firstUser = result.Data.First();
+        Assert.True(firstUser.Id > 0);
+        Assert.NotEqual(Guid.Empty, firstUser.ApiKey);
+        Assert.NotNull(firstUser.UserName);
+        Assert.NotNull(firstUser.Email);
     }
 
     [Fact]

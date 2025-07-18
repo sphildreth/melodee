@@ -400,7 +400,7 @@ public sealed class AlbumDiscoveryService(
             Data = d
         };
     }
-    
+
     public async Task<int> NumberOfOkAlbumsAsync(FileSystemDirectoryInfo fileSystemDirectoryInfo, CancellationToken cancellationToken = default)
     {
         CheckInitialized();

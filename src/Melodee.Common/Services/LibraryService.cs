@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Linq.Dynamic.Core;
+using System.Linq.Expressions;
 using Ardalis.GuardClauses;
 using IdSharp.Common.Utils;
 using Melodee.Common.Configuration;
@@ -33,15 +34,23 @@ namespace Melodee.Common.Services;
 // ReSharper disable once ClassWithVirtualMembersNeverInherited.Global
 public class LibraryService : ServiceBase
 {
+    private const string CacheKeyDetailByApiKeyTemplate = "urn:library:apikey:{0}";
+    private const string CacheKeyDetailLibraryByType = "urn:library_by_type:{0}";
+    private const string CacheKeyDetailTemplate = "urn:library:{0}";
+    private const string CacheKeyMediaLibraries = "urn:libraries:media-libraries";
+
+    private const int DisplayNumberPadLength = 8;
     private readonly IMelodeeConfigurationFactory _configurationFactory;
-    private readonly ISerializer _serializer;
     private readonly MelodeeMetadataMaker _melodeeMetadataMaker;
+    private readonly ISerializer _serializer;
 
     // This is used by Moq to create a mock instance of this class.
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
-    public LibraryService() {}
+    public LibraryService()
+    {
+    }
 #pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
-    
+
     public LibraryService(ILogger logger,
         ICacheManager cacheManager,
         IDbContextFactory<MelodeeDbContext> contextFactory,
@@ -53,13 +62,6 @@ public class LibraryService : ServiceBase
         _serializer = serializer;
         _melodeeMetadataMaker = melodeeMetadataMaker;
     }
-
-    private const string CacheKeyDetailByApiKeyTemplate = "urn:library:apikey:{0}";
-    private const string CacheKeyDetailLibraryByType = "urn:library_by_type:{0}";
-    private const string CacheKeyDetailTemplate = "urn:library:{0}";
-    private const string CacheKeyMediaLibraries = "urn:libraries:media-libraries";
-
-    private const int DisplayNumberPadLength = 8;
 
     public async Task<MelodeeModels.OperationResult<Library>> GetInboundLibraryAsync(CancellationToken cancellationToken = default)
     {
@@ -163,7 +165,7 @@ public class LibraryService : ServiceBase
                 .FirstOrDefaultAsync(cancellationToken)
                 .ConfigureAwait(false);
         }, cancellationToken);
-        
+
         if (id == null)
         {
             return new MelodeeModels.OperationResult<Library?>("Unknown library.")
@@ -272,30 +274,30 @@ public class LibraryService : ServiceBase
     public async Task<MelodeeModels.PagedResult<LibraryScanHistoryDataInfo>> ListLibraryHistoriesAsync(int libraryId, MelodeeModels.PagedRequest pagedRequest, CancellationToken cancellationToken = default)
     {
         await using var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
-        
+
         try
         {
             // Build base query with proper joins using EF Core includes
             var baseQuery = from h in scopedContext.LibraryScanHistories.AsNoTracking()
-                           join ar in scopedContext.Artists on h.ForArtistId equals ar.Id into artistJoin
-                           from artist in artistJoin.DefaultIfEmpty()
-                           join al in scopedContext.Albums on h.ForAlbumId equals al.Id into albumJoin
-                           from album in albumJoin.DefaultIfEmpty()
-                           where h.LibraryId == libraryId
-                           select new { h, artist, album };
-            
+                join ar in scopedContext.Artists on h.ForArtistId equals ar.Id into artistJoin
+                from artist in artistJoin.DefaultIfEmpty()
+                join al in scopedContext.Albums on h.ForAlbumId equals al.Id into albumJoin
+                from album in albumJoin.DefaultIfEmpty()
+                where h.LibraryId == libraryId
+                select new { h, artist, album };
+
             // Apply filters on the entity properties before projection
             var filteredQuery = ApplyHistoryFiltersBeforeProjection(baseQuery, pagedRequest);
-            
+
             // Get count efficiently
             var historiesCount = await filteredQuery.CountAsync(cancellationToken).ConfigureAwait(false);
-            
+
             LibraryScanHistoryDataInfo[] histories = [];
             if (!pagedRequest.IsTotalCountOnlyRequest)
             {
                 // Apply ordering on entity properties before projection
                 var orderedQuery = ApplyHistoryOrderingBeforeProjection(filteredQuery, pagedRequest);
-                
+
                 // Apply projection to LibraryScanHistoryDataInfo after ordering
                 var projectedQuery = orderedQuery.Select(x => new LibraryScanHistoryDataInfo(
                     x.h.Id,
@@ -309,14 +311,14 @@ public class LibraryService : ServiceBase
                     x.h.FoundSongsCount,
                     x.h.DurationInMs
                 ));
-                
+
                 histories = await projectedQuery
                     .Skip(pagedRequest.SkipValue)
                     .Take(pagedRequest.TakeValue)
                     .ToArrayAsync(cancellationToken)
                     .ConfigureAwait(false);
             }
-            
+
             return new MelodeeModels.PagedResult<LibraryScanHistoryDataInfo>
             {
                 TotalCount = historiesCount,
@@ -335,9 +337,9 @@ public class LibraryService : ServiceBase
             };
         }
     }
-    
+
     private static IQueryable<T> ApplyHistoryFiltersBeforeProjection<T>(
-        IQueryable<T> query, 
+        IQueryable<T> query,
         MelodeeModels.PagedRequest pagedRequest) where T : class
     {
         if (pagedRequest.FilterBy == null || pagedRequest.FilterBy.Length == 0)
@@ -350,22 +352,22 @@ public class LibraryService : ServiceBase
         foreach (var filter in pagedRequest.FilterBy)
         {
             var filterValue = filter.Value.ToString().ToNormalizedString() ?? string.Empty;
-            
+
             filteredQuery = filter.PropertyName.ToLowerInvariant() switch
             {
-                "forartistname" when filter.Operator == FilterOperator.Contains => 
+                "forartistname" when filter.Operator == FilterOperator.Contains =>
                     filteredQuery.Where("artist != null && artist.Name.Contains(@0)", filterValue),
-                "forartistname" when filter.Operator == FilterOperator.Equals => 
+                "forartistname" when filter.Operator == FilterOperator.Equals =>
                     filteredQuery.Where("artist != null && artist.Name == @0", filterValue),
-                "foralbumname" when filter.Operator == FilterOperator.Contains => 
+                "foralbumname" when filter.Operator == FilterOperator.Contains =>
                     filteredQuery.Where("album != null && album.Name.Contains(@0)", filterValue),
-                "foralbumname" when filter.Operator == FilterOperator.Equals => 
+                "foralbumname" when filter.Operator == FilterOperator.Equals =>
                     filteredQuery.Where("album != null && album.Name == @0", filterValue),
-                "foundartiststcount" when filter.Operator == FilterOperator.Equals && int.TryParse(filterValue, out var artistsCount) => 
+                "foundartiststcount" when filter.Operator == FilterOperator.Equals && int.TryParse(filterValue, out var artistsCount) =>
                     filteredQuery.Where("h.FoundArtistsCount == @0", artistsCount),
-                "foundalbumstcount" when filter.Operator == FilterOperator.Equals && int.TryParse(filterValue, out var albumsCount) => 
+                "foundalbumstcount" when filter.Operator == FilterOperator.Equals && int.TryParse(filterValue, out var albumsCount) =>
                     filteredQuery.Where("h.FoundAlbumsCount == @0", albumsCount),
-                "foundsongstcount" when filter.Operator == FilterOperator.Equals && int.TryParse(filterValue, out var songsCount) => 
+                "foundsongstcount" when filter.Operator == FilterOperator.Equals && int.TryParse(filterValue, out var songsCount) =>
                     filteredQuery.Where("h.FoundSongsCount == @0", songsCount),
                 _ => filteredQuery
             };
@@ -375,7 +377,7 @@ public class LibraryService : ServiceBase
     }
 
     private static IOrderedQueryable<T> ApplyHistoryOrderingBeforeProjection<T>(
-        IQueryable<T> query, 
+        IQueryable<T> query,
         MelodeeModels.PagedRequest pagedRequest) where T : class
     {
         // Use the OrderBy collection directly and order on entity properties before projection
@@ -411,7 +413,7 @@ public class LibraryService : ServiceBase
         var orderByClause = string.Join(", ", orderByParts);
         return query.OrderBy(orderByClause);
     }
-    
+
     private async Task<MelodeeModels.OperationResult<bool>> MoveAlbumsToLibrary(Library library, MelodeeModels.Album[] albums, CancellationToken cancellationToken = default)
     {
         var configuration = await _configurationFactory.GetConfigurationAsync(cancellationToken);
@@ -647,13 +649,13 @@ public class LibraryService : ServiceBase
                          await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
             {
                 var now = Instant.FromDateTimeUtc(DateTime.UtcNow);
-                
+
                 // Update artist aggregates
                 var artistsToUpdate = await scopedContext.Artists
                     .Where(a => a.LibraryId == libraryId)
                     .ToListAsync(cancellationToken)
                     .ConfigureAwait(false);
-                
+
                 foreach (var artist in artistsToUpdate)
                 {
                     artist.AlbumCount = await scopedContext.Albums.CountAsync(a => a.ArtistId == artist.Id, cancellationToken);
@@ -797,7 +799,7 @@ public class LibraryService : ServiceBase
     }
 
     /// <summary>
-    /// Moves albums from one library to another based on a specified condition.
+    ///     Moves albums from one library to another based on a specified condition.
     /// </summary>
     /// <param name="fromLibraryName">The name of the source library.</param>
     /// <param name="toLibraryName">The name of the destination library.</param>
@@ -805,12 +807,12 @@ public class LibraryService : ServiceBase
     /// <param name="verboseSet">If true, enables verbose logging.</param>
     /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
     /// <returns>
-    /// An <see cref="Common.Models.OperationResult{T}"/> indicating whether any albums were moved.
+    ///     An <see cref="Common.Models.OperationResult{T}" /> indicating whether any albums were moved.
     /// </returns>
     public async Task<MelodeeModels.OperationResult<bool>> MoveAlbumsFromLibraryToLibrary(
         string fromLibraryName,
-        string toLibraryName, 
-        Func<MelodeeModels.Album, bool> condition, 
+        string toLibraryName,
+        Func<MelodeeModels.Album, bool> condition,
         bool verboseSet,
         CancellationToken cancellationToken = default)
     {
@@ -828,7 +830,7 @@ public class LibraryService : ServiceBase
         // Get libraries in one call instead of multiple calls
         var libraries = await ListAsync(new MelodeeModels.PagedRequest { PageSize = short.MaxValue }, cancellationToken)
             .ConfigureAwait(false);
-            
+
         var fromLibrary = libraries.Data.FirstOrDefault(x => x.Name.ToNormalizedString() == fromLibraryName.ToNormalizedString());
         if (fromLibrary == null)
         {
@@ -875,39 +877,39 @@ public class LibraryService : ServiceBase
         var configuration = await _configurationFactory.GetConfigurationAsync(cancellationToken);
         var duplicateDirPrefix = configuration.GetValue<string>(SettingRegistry.ProcessingDuplicateAlbumPrefix);
         var maxAlbumProcessingCount = configuration.GetValue<int>(SettingRegistry.ProcessingMaximumProcessingCount, value => value < 1 ? int.MaxValue : value);
-        
+
         // Use faster method to get all album files
         using (Operation.At(LogEventLevel.Debug).Begin("[{Name}] Finding albums to move", nameof(MoveAlbumsFromLibraryToLibrary)))
         {
             var albumsForFromLibrary = Directory.GetFiles(fromLibrary.Path, MelodeeModels.Album.JsonFileName, SearchOption.AllDirectories);
-            
+
             // Preallocate collection with capacity for better performance
             var albumsToMove = new List<MelodeeModels.Album>(Math.Min(albumsForFromLibrary.Length, maxAlbumProcessingCount));
             var albumDeserializationTasks = new List<Task<(string filePath, MelodeeModels.Album? album)>>(Math.Min(50, albumsForFromLibrary.Length));
             var batchSize = 50; // Process albums in batches to control memory usage
-            
-            for (int i = 0; i < albumsForFromLibrary.Length; i += batchSize)
+
+            for (var i = 0; i < albumsForFromLibrary.Length; i += batchSize)
             {
                 if (cancellationToken.IsCancellationRequested)
                 {
                     break;
                 }
-                
+
                 albumDeserializationTasks.Clear();
                 var currentBatchSize = Math.Min(batchSize, albumsForFromLibrary.Length - i);
-                
+
                 // Create tasks for batch deserializing albums
-                for (int j = 0; j < currentBatchSize; j++)
+                for (var j = 0; j < currentBatchSize; j++)
                 {
                     var albumFile = albumsForFromLibrary[i + j];
                     var dirInfo = new DirectoryInfo(Path.GetDirectoryName(albumFile) ?? string.Empty);
-                    
+
                     if (!dirInfo.Exists || (duplicateDirPrefix != null && dirInfo.Name.StartsWith(duplicateDirPrefix)))
                     {
                         continue;
                     }
-                    
-                    albumDeserializationTasks.Add(Task.Run(async () => 
+
+                    albumDeserializationTasks.Add(Task.Run(async () =>
                     {
                         try
                         {
@@ -924,18 +926,18 @@ public class LibraryService : ServiceBase
                         }
                     }, cancellationToken));
                 }
-                
+
                 // Wait for the batch to complete and process results
                 if (albumDeserializationTasks.Count > 0)
                 {
                     var results = await Task.WhenAll(albumDeserializationTasks).ConfigureAwait(false);
-                    
+
                     foreach (var rr in results)
                     {
                         if (rr.album != null && condition(rr.album))
                         {
                             albumsToMove.Add(rr.album);
-                            
+
                             if (albumsToMove.Count >= maxAlbumProcessingCount)
                             {
                                 break;
@@ -943,13 +945,13 @@ public class LibraryService : ServiceBase
                         }
                     }
                 }
-                
+
                 if (albumsToMove.Count >= maxAlbumProcessingCount)
                 {
                     break;
                 }
             }
-            
+
             var numberOfAlbumsToMove = albumsToMove.Count;
 
             OnProcessingProgressEvent?.Invoke(this,
@@ -1560,31 +1562,31 @@ public class LibraryService : ServiceBase
     public virtual async Task<MelodeeModels.PagedResult<Library>> ListAsync(MelodeeModels.PagedRequest pagedRequest, CancellationToken cancellationToken = default)
     {
         await using var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
-        
+
         try
         {
             // Build the base query with performance optimizations
             var baseQuery = scopedContext.Libraries.AsNoTracking();
-            
+
             // Apply filters using EF Core
             var filteredQuery = ApplyFilters(baseQuery, pagedRequest);
-            
+
             // Get count efficiently
             var librariesCount = await filteredQuery.CountAsync(cancellationToken).ConfigureAwait(false);
-            
+
             Library[] libraries = [];
             if (!pagedRequest.IsTotalCountOnlyRequest)
             {
                 // Apply ordering, skip, and take
                 var orderedQuery = ApplyOrdering(filteredQuery, pagedRequest);
-                
+
                 libraries = await orderedQuery
                     .Skip(pagedRequest.SkipValue)
                     .Take(pagedRequest.TakeValue)
                     .ToArrayAsync(cancellationToken)
                     .ConfigureAwait(false);
             }
-            
+
             return new MelodeeModels.PagedResult<Library>
             {
                 TotalCount = librariesCount,
@@ -1603,7 +1605,7 @@ public class LibraryService : ServiceBase
             };
         }
     }
-    
+
     private static IQueryable<Library> ApplyFilters(IQueryable<Library> query, MelodeeModels.PagedRequest pagedRequest)
     {
         if (pagedRequest.FilterBy == null || pagedRequest.FilterBy.Length == 0)
@@ -1619,17 +1621,17 @@ public class LibraryService : ServiceBase
             var normalizedValue = filterValue.ToNormalizedString();
             return filter.PropertyName.ToLowerInvariant() switch
             {
-                "name" or "namenormalized" => query.Where(a => EF.Functions.ILike(a.Name, $"%{normalizedValue}%")),              
-                "description" => query.Where(a => a.Description != null && EF.Functions.ILike(a.Description, $"%{normalizedValue}%")),                
+                "name" or "namenormalized" => query.Where(a => EF.Functions.ILike(a.Name, $"%{normalizedValue}%")),
+                "description" => query.Where(a => a.Description != null && EF.Functions.ILike(a.Description, $"%{normalizedValue}%")),
                 "type" => filter.Operator switch
                 {
-                    FilterOperator.Equals when int.TryParse(filterValue, out var typeValue) => 
+                    FilterOperator.Equals when int.TryParse(filterValue, out var typeValue) =>
                         query.Where(l => l.Type == typeValue),
                     _ => query
                 },
                 "islocked" => filter.Operator switch
                 {
-                    FilterOperator.Equals when bool.TryParse(filterValue, out var boolValue) => 
+                    FilterOperator.Equals when bool.TryParse(filterValue, out var boolValue) =>
                         query.Where(l => l.IsLocked == boolValue),
                     _ => query
                 },
@@ -1639,7 +1641,7 @@ public class LibraryService : ServiceBase
         }
 
         // For multiple filters, combine them with OR logic
-        var filterPredicates = new List<System.Linq.Expressions.Expression<Func<Library, bool>>>();
+        var filterPredicates = new List<Expression<Func<Library, bool>>>();
 
         foreach (var filter in pagedRequest.FilterBy)
         {
@@ -1647,21 +1649,21 @@ public class LibraryService : ServiceBase
             var normalizedValue = filterValue.ToNormalizedString();
             var predicate = filter.PropertyName.ToLowerInvariant() switch
             {
-                "name" or "namenormalized" => (System.Linq.Expressions.Expression<Func<Library, bool>>)(a => EF.Functions.ILike(a.Name, $"%{normalizedValue}%")),
-                "description" => (System.Linq.Expressions.Expression<Func<Library, bool>>)(a => a.Description != null && EF.Functions.ILike(a.Description, $"%{normalizedValue}%")),                
+                "name" or "namenormalized" => (Expression<Func<Library, bool>>)(a => EF.Functions.ILike(a.Name, $"%{normalizedValue}%")),
+                "description" => (Expression<Func<Library, bool>>)(a => a.Description != null && EF.Functions.ILike(a.Description, $"%{normalizedValue}%")),
                 "type" => filter.Operator switch
                 {
-                    FilterOperator.Equals when int.TryParse(filterValue, out var typeValue) => 
-                        (System.Linq.Expressions.Expression<Func<Library, bool>>)(l => l.Type == typeValue),
+                    FilterOperator.Equals when int.TryParse(filterValue, out var typeValue) =>
+                        (Expression<Func<Library, bool>>)(l => l.Type == typeValue),
                     _ => null
                 },
                 "islocked" => filter.Operator switch
                 {
-                    FilterOperator.Equals when bool.TryParse(filterValue, out var boolValue) => 
-                        (System.Linq.Expressions.Expression<Func<Library, bool>>)(l => l.IsLocked == boolValue),
+                    FilterOperator.Equals when bool.TryParse(filterValue, out var boolValue) =>
+                        (Expression<Func<Library, bool>>)(l => l.IsLocked == boolValue),
                     _ => null
                 },
-                "tags" => (System.Linq.Expressions.Expression<Func<Library, bool>>)(a => a.Tags != null && EF.Functions.ILike(a.Tags, $"%{normalizedValue}%")),                
+                "tags" => (Expression<Func<Library, bool>>)(a => a.Tags != null && EF.Functions.ILike(a.Tags, $"%{normalizedValue}%")),
                 _ => null
             };
 
@@ -1676,11 +1678,11 @@ public class LibraryService : ServiceBase
         {
             var combinedPredicate = filterPredicates.Aggregate((prev, next) =>
             {
-                var parameter = System.Linq.Expressions.Expression.Parameter(typeof(Library), "l");
-                var left = System.Linq.Expressions.Expression.Invoke(prev, parameter);
-                var right = System.Linq.Expressions.Expression.Invoke(next, parameter);
-                var or = System.Linq.Expressions.Expression.OrElse(left, right);
-                return System.Linq.Expressions.Expression.Lambda<Func<Library, bool>>(or, parameter);
+                var parameter = Expression.Parameter(typeof(Library), "l");
+                var left = Expression.Invoke(prev, parameter);
+                var right = Expression.Invoke(next, parameter);
+                var or = Expression.OrElse(left, right);
+                return Expression.Lambda<Func<Library, bool>>(or, parameter);
             });
 
             query = query.Where(combinedPredicate);
@@ -1699,7 +1701,7 @@ public class LibraryService : ServiceBase
         }
 
         IOrderedQueryable<Library>? orderedQuery = null;
-        bool isFirst = true;
+        var isFirst = true;
 
         foreach (var orderItem in pagedRequest.OrderBy)
         {

@@ -1,15 +1,15 @@
-using Melodee.Common.Serialization;
-using Microsoft.Extensions.Caching.Memory;
-using Serilog;
+using System.Collections;
 using System.Collections.Concurrent;
-using Melodee.Common.Enums;
-using Melodee.Common.Extensions;
-using Melodee.Common.Models;
-using Melodee.Common.Utility;
-using System.Reflection;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Melodee.Common.Enums;
+using Melodee.Common.Extensions;
+using Melodee.Common.Models;
+using Melodee.Common.Serialization;
+using Melodee.Common.Utility;
+using Microsoft.Extensions.Caching.Memory;
+using Serilog;
 
 namespace Melodee.Common.Services.Caching;
 
@@ -22,10 +22,10 @@ namespace Melodee.Common.Services.Caching;
 public sealed class MemoryCacheManager(ILogger logger, TimeSpan defaultTimeSpan, ISerializer serializer)
     : CacheManagerBase(logger, defaultTimeSpan, serializer)
 {
-    private readonly ConcurrentDictionary<string, MemoryCache> _regionCaches = new();
+    private const string DefaultRegion = "__default__";
     private readonly ConcurrentDictionary<string, ConcurrentDictionary<string, Task<object>>> _pendingTasksByRegion = new();
     private readonly ConcurrentDictionary<string, ConcurrentDictionary<string, object>> _regionCacheData = new();
-    private const string DefaultRegion = "__default__";
+    private readonly ConcurrentDictionary<string, MemoryCache> _regionCaches = new();
 
     public override void Clear()
     {
@@ -34,6 +34,7 @@ public sealed class MemoryCacheManager(ILogger logger, TimeSpan defaultTimeSpan,
         {
             cache.Dispose();
         }
+
         _regionCaches.Clear();
         _pendingTasksByRegion.Clear();
         _regionCacheData.Clear();
@@ -52,7 +53,7 @@ public sealed class MemoryCacheManager(ILogger logger, TimeSpan defaultTimeSpan,
 
         // Remove pending tasks for this region
         _pendingTasksByRegion.TryRemove(regionKey, out _);
-        
+
         // Remove tracking data for this region
         _regionCacheData.TryRemove(regionKey, out _);
     }
@@ -86,7 +87,7 @@ public sealed class MemoryCacheManager(ILogger logger, TimeSpan defaultTimeSpan,
     {
         if (key.Nullify() == null)
         {
-            throw new ArgumentException("Invalid Key", nameof(key));    
+            throw new ArgumentException("Invalid Key", nameof(key));
         }
 
         // Validate duration is not negative
@@ -120,9 +121,9 @@ public sealed class MemoryCacheManager(ILogger logger, TimeSpan defaultTimeSpan,
         // For short custom durations in tests, we want to generate a unique task key
         // This ensures that tests checking multiple factory calls will pass
         string taskKey;
-        var isCustomShortDuration = duration.HasValue && 
-                                 duration.Value > TimeSpan.Zero && 
-                                 duration.Value <= TimeSpan.FromSeconds(1);
+        var isCustomShortDuration = duration.HasValue &&
+                                    duration.Value > TimeSpan.Zero &&
+                                    duration.Value <= TimeSpan.FromSeconds(1);
 
         if (isCustomShortDuration)
         {
@@ -200,7 +201,8 @@ public sealed class MemoryCacheManager(ILogger logger, TimeSpan defaultTimeSpan,
                         // Setup auto-removal of the cached item and the task after duration
                         var durationTaskKey = taskKey;
                         var regionTaskKey = regionKey;
-                        _ = Task.Delay(effectiveDuration).ContinueWith(t => {
+                        _ = Task.Delay(effectiveDuration).ContinueWith(t =>
+                        {
                             // Remove from the cache explicitly
                             if (_regionCaches.TryGetValue(regionTaskKey, out var regionCache))
                             {
@@ -240,10 +242,10 @@ public sealed class MemoryCacheManager(ILogger logger, TimeSpan defaultTimeSpan,
     {
         if (key.Nullify() == null)
         {
-            throw new ArgumentException("Invalid Key", nameof(key));    
+            throw new ArgumentException("Invalid Key", nameof(key));
         }
 
-        bool removed = false;
+        var removed = false;
         if (_regionCaches.TryGetValue(DefaultRegion, out var cache))
         {
             cache.Remove(key);
@@ -274,7 +276,7 @@ public sealed class MemoryCacheManager(ILogger logger, TimeSpan defaultTimeSpan,
     {
         if (key.Nullify() == null)
         {
-            throw new ArgumentException("Invalid Key", nameof(key));    
+            throw new ArgumentException("Invalid Key", nameof(key));
         }
 
         if (string.IsNullOrEmpty(region))
@@ -282,7 +284,7 @@ public sealed class MemoryCacheManager(ILogger logger, TimeSpan defaultTimeSpan,
             return Remove(key);
         }
 
-        bool removed = false;
+        var removed = false;
         if (_regionCaches.TryGetValue(region, out var cache))
         {
             cache.Remove(key);
@@ -308,57 +310,57 @@ public sealed class MemoryCacheManager(ILogger logger, TimeSpan defaultTimeSpan,
 
         return removed;
     }
-    
+
     public override IEnumerable<Statistic> CacheStatistics()
     {
         var stats = new List<Statistic>();
-        int totalItems = 0;
+        var totalItems = 0;
         long totalBytes = 0;
-        
+
         foreach (var region in _regionCaches)
         {
             var count = region.Value.Count;
             var sizeInBytes = GetCacheRegionSizeInBytes(region.Key);
-            
+
             totalItems += count;
             totalBytes += sizeInBytes;
-            
+
             stats.Add(new Statistic(
                 StatisticType.Count,
                 $"Cache Items in Region '{region.Key}'",
                 count,
                 "#2196f3"
             ));
-            
+
             stats.Add(new Statistic(
                 StatisticType.Information,
                 $"Cache Size in Region '{region.Key}'",
-                $"{sizeInBytes.FormatFileSize()} [{ sizeInBytes}]",
+                $"{sizeInBytes.FormatFileSize()} [{sizeInBytes}]",
                 "#ff9800"
             ));
         }
-        
+
         stats.Add(new Statistic(
             StatisticType.Count,
             "Total Cache Items",
             totalItems,
             "#4caf50"
         ));
-        
+
         stats.Add(new Statistic(
             StatisticType.Information,
             "Total Cache Size",
-            $"{totalBytes.FormatFileSize()} [{ totalBytes}]",
+            $"{totalBytes.FormatFileSize()} [{totalBytes}]",
             "#e91e63"
         ));
-        
+
         stats.Add(new Statistic(
             StatisticType.Information,
             "Cache Regions",
             _regionCaches.Count,
             "#607d8b"
         ));
-        
+
         return stats;
     }
 
@@ -384,6 +386,7 @@ public sealed class MemoryCacheManager(ILogger logger, TimeSpan defaultTimeSpan,
         {
             return 0; // Null objects have no size
         }
+
         try
         {
             // For strings, calculate UTF-8 byte length
@@ -423,7 +426,7 @@ public sealed class MemoryCacheManager(ILogger logger, TimeSpan defaultTimeSpan,
                     MaxDepth = 32, // Reduced depth to avoid deep recursion
                     DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
                 };
-                
+
                 var serialized = JsonSerializer.Serialize(obj, options);
                 return string.IsNullOrEmpty(serialized) ? EstimateObjectSize(obj) : Encoding.UTF8.GetByteCount(serialized);
             }
@@ -455,12 +458,13 @@ public sealed class MemoryCacheManager(ILogger logger, TimeSpan defaultTimeSpan,
         {
             return 0; // Null objects have no size
         }
+
         // Basic estimation for common types
         return obj switch
         {
             string s => Encoding.UTF8.GetByteCount(s),
             Array array => array.Length * 8, // Rough estimate
-            System.Collections.ICollection collection => collection.Count * 16, // Rough estimate
+            ICollection collection => collection.Count * 16, // Rough estimate
             _ => 64 // Default estimate for complex objects
         };
     }

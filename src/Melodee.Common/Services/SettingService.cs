@@ -76,7 +76,8 @@ public class SettingService : ServiceBase
                     {
                         listSql =
                             $"{listSqlParts.Item1} ORDER BY {orderBy} LIMIT {pagedRequest.TakeValue} OFFSET {pagedRequest.SkipValue};";
-                    }                    
+                    }
+
                     settings = (await dbConn
                         .QueryAsync<Setting>(listSql, listSqlParts.Item2)
                         .ConfigureAwait(false)).ToArray();

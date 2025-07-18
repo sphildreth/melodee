@@ -13,7 +13,7 @@ public interface IFileSystemService
     string GetDirectoryName(string path);
     string GetFileName(string path);
     string CombinePath(params string[] paths);
-    
+
     // Additional methods needed by ArtistService
     Task<byte[]> ReadAllBytesAsync(string filePath, CancellationToken cancellationToken = default);
     Task WriteAllBytesAsync(string filePath, byte[] bytes, CancellationToken cancellationToken = default);

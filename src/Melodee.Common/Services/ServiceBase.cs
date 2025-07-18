@@ -56,8 +56,8 @@ public abstract class ServiceBase
 
     protected async Task ProcessExistingDirectoryMoveMergeAsync(
         IMelodeeConfiguration configuration,
-        ISerializer serializer, 
-        Album albumToMove, 
+        ISerializer serializer,
+        Album albumToMove,
         string existingAlbumPath,
         CancellationToken cancellationToken = default)
     {
@@ -213,7 +213,6 @@ public abstract class ServiceBase
         // Delete directory to merge as what is wanted has been moved 
         Directory.Delete(albumToMove.Directory.FullName(), true);
         Logger.Debug("[{ServiceName}] :\u2558: deleting directory [{FileName}]", nameof(LibraryService), albumToMove.Directory);
-
     }
 
 
@@ -222,7 +221,7 @@ public abstract class ServiceBase
         CancellationToken cancellationToken = default)
     {
         await using var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
-        
+
         var artist = await scopedContext.Artists
             .Where(a => a.Id == artistId)
             .FirstOrDefaultAsync(cancellationToken)
@@ -272,7 +271,7 @@ public abstract class ServiceBase
         CancellationToken cancellationToken = default)
     {
         await using var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
-        
+
         var library = await scopedContext.Libraries
             .Where(l => l.Id == libraryId)
             .FirstOrDefaultAsync(cancellationToken)
@@ -310,24 +309,24 @@ public abstract class ServiceBase
 
 
     protected async Task<AlbumList2[]> AlbumListForArtistApiKey(
-        Guid artistApiKey, 
+        Guid artistApiKey,
         int userId,
         CancellationToken cancellationToken)
     {
         await using var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
-        
+
         // Apply Include before any Select/projection operations
         var albums = await scopedContext.Albums
             .Where(a => a.Artist.ApiKey == artistApiKey)
             .Include(a => a.Artist)
-                .ThenInclude(aa => aa.Library)
+            .ThenInclude(aa => aa.Library)
             .Include(a => a.UserAlbums.Where(ua => ua.UserId == userId))
             .AsNoTracking()
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
 
         var albumList = new List<AlbumList2>();
-        
+
         foreach (var album in albums)
         {
             var userAlbum = album.UserAlbums.FirstOrDefault();
@@ -356,12 +355,12 @@ public abstract class ServiceBase
     }
 
     protected async Task<DatabaseDirectoryInfo?> DatabaseArtistInfoForArtistApiKey(
-        Guid apiKeyId, 
+        Guid apiKeyId,
         int userId,
         CancellationToken cancellationToken = default)
     {
         await using var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
-        
+
         // Apply Include before any Select/projection operations
         var artist = await scopedContext.Artists
             .Where(a => a.ApiKey == apiKeyId)
@@ -377,7 +376,7 @@ public abstract class ServiceBase
         }
 
         var userArtist = artist.UserArtists.FirstOrDefault();
-        
+
         return new DatabaseDirectoryInfo(
             artist.Id,
             artist.ApiKey,
@@ -397,17 +396,17 @@ public abstract class ServiceBase
     }
 
     protected async Task<DatabaseDirectoryInfo?> DatabaseAlbumInfoForAlbumApiKey(
-        Guid apiKeyId, 
+        Guid apiKeyId,
         int userId,
         CancellationToken cancellationToken = default)
     {
         await using var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
-        
+
         // Apply Include before any Select/projection operations
         var album = await scopedContext.Albums
             .Where(a => a.ApiKey == apiKeyId)
             .Include(a => a.Artist)
-                .ThenInclude(aa => aa.Library)
+            .ThenInclude(aa => aa.Library)
             .Include(a => a.UserAlbums.Where(ua => ua.UserId == userId))
             .AsNoTracking()
             .FirstOrDefaultAsync(cancellationToken)
@@ -419,7 +418,7 @@ public abstract class ServiceBase
         }
 
         var userAlbum = album.UserAlbums.FirstOrDefault();
-        
+
         return new DatabaseDirectoryInfo(
             album.Id,
             album.ApiKey,
@@ -442,24 +441,24 @@ public abstract class ServiceBase
         CancellationToken cancellationToken = default)
     {
         await using var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
-        
+
         // Apply Include before any Select/projection operations
         var songs = await scopedContext.Songs
             .Where(s => s.Album.ApiKey == apiKeyId)
             .Include(s => s.Album)
-                .ThenInclude(a => a.Artist)
-                    .ThenInclude(aa => aa.Library)
+            .ThenInclude(a => a.Artist)
+            .ThenInclude(aa => aa.Library)
             .Include(s => s.UserSongs.Where(us => us.UserId == userId))
             .AsNoTracking()
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
 
         var songInfos = new List<DatabaseDirectoryInfo>();
-        
+
         foreach (var song in songs)
         {
             var userSong = song.UserSongs.FirstOrDefault();
-            
+
             songInfos.Add(new DatabaseDirectoryInfo(
                 song.Id,
                 song.ApiKey,
@@ -485,7 +484,7 @@ public abstract class ServiceBase
         CancellationToken cancellationToken = default)
     {
         await using var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
-        
+
         var result = await scopedContext.Songs
             .Include(s => s.Album)
             .ThenInclude(a => a.Artist)
@@ -508,7 +507,7 @@ public abstract class ServiceBase
         CancellationToken cancellationToken = default)
     {
         await using var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
-        
+
         var result = await scopedContext.Songs
             .Include(s => s.Album)
             .ThenInclude(a => a.Artist)

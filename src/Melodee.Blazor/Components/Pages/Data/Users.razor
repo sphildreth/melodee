@@ -3,18 +3,18 @@
 @inherits MelodeeComponentBase
 @using Melodee.Common.Data.Models.Extensions
 @using Melodee.Common.Filtering
+@using Melodee.Common.Models.Collection
+@using Melodee.Common.Models.Collection.Extensions
 @using FilterOperator = Melodee.Common.Filtering.FilterOperator
 @using User = Melodee.Common.Data.Models.User
 
 @inject MainLayoutProxyService MainLayoutProxyService
 @inject ILogger Logger
-@inject IMelodeeConfigurationFactory ConfigurationFactory
 @inject UserService UserService
 @inject NotificationService NotificationService
 @inject DialogService DialogService
 @inject TooltipService TooltipService
 @inject NavigationManager NavigationManager
-@inject DefaultImages DefaultImages
 
 <PageTitle>Users</PageTitle>
 
@@ -98,7 +98,7 @@
                             TValue="bool"/>
                     </Template>
                 </RadzenDataGridColumn>
-                <RadzenDataGridColumn Property="@nameof(User.UserName)" Title="UserName">
+                <RadzenDataGridColumn Property="@nameof(UserDataInfo.UserName)" Title="UserName">
                     <Template Context="data">
                         <RadzenButton Style="float:right;margin-top: 7px;"
                                       Size="ButtonSize.ExtraSmall"
@@ -112,24 +112,24 @@
                         <RadzenText Text="@data.UserName"/>
                     </Template>
                 </RadzenDataGridColumn>
-                <RadzenDataGridColumn Property="@nameof(User.Email)" Title="Email"/>
-                <RadzenDataGridColumn Property="@nameof(User.LastLoginAt)" Title="Last Login" Width="120px">
+                <RadzenDataGridColumn Property="@nameof(UserDataInfo.Email)" Title="Email"/>
+                <RadzenDataGridColumn Property="@nameof(UserDataInfo.LastLoginAt)" Title="Last Login" Width="120px">
                     <Template Context="data">
                         <RadzenText Text="@CurrentUser?.FormatInstant(data.LastLoginAt)"/>
                     </Template>
                 </RadzenDataGridColumn>
-                <RadzenDataGridColumn Property="@nameof(User.LastActivityAt)" Title="Last Activity" Width="120px">
+                <RadzenDataGridColumn Property="@nameof(UserDataInfo.LastActivityAt)" Title="Last Activity" Width="120px">
                     <Template Context="data">
                         <RadzenText Text="@CurrentUser?.FormatInstant(data.LastActivityAt)"/>
                     </Template>
                 </RadzenDataGridColumn>
-                <RadzenDataGridColumn Property="@nameof(User.CreatedAt)" Title="Created" Filterable="false"
+                <RadzenDataGridColumn Property="@nameof(UserDataInfo.CreatedAt)" Title="Created" Filterable="false"
                                       Width="120px">
                     <Template Context="data">
                         <RadzenText Text="@CurrentUser?.FormatInstant(data.CreatedAt)"/>
                     </Template>
                 </RadzenDataGridColumn>
-                <RadzenDataGridColumn Property="@nameof(User.Tags)" Title="Tags" Width="100px">
+                <RadzenDataGridColumn Property="@nameof(UserDataInfo.Tags)" Title="Tags" Width="100px">
                     <Template Context="data">
                         <RadzenStack Orientation="Orientation.Horizontal" Wrap="FlexWrap.Wrap" Gap="5px">
                             @foreach (var name in data.Tags?.ToTags() ?? [])
@@ -146,13 +146,12 @@
 
 @code {
 
-    RadzenDataGrid<User> _grid = null!;
+    RadzenDataGrid<UserDataInfo> _grid = null!;
     int _count;
-    IEnumerable<User> _users = null!;
+    IEnumerable<UserDataInfo> _users = null!;
     bool _isLoading;
     int _currentPage = 1;
-    IMelodeeConfiguration _configuration = new MelodeeConfiguration([]);
-    IList<User> _selectedUsers = [];
+    IList<UserDataInfo> _selectedUsers = [];
 
     string _debounceInputValue = "";
 
@@ -178,8 +177,8 @@
             {
                 filters =
                 [
-                    new FilterOperatorInfo(nameof(User.UserNameNormalized), FilterOperator.Contains, _debounceInputValue.ToNormalizedString() ?? _debounceInputValue),
-                    new FilterOperatorInfo(nameof(User.EmailNormalized), FilterOperator.Contains, _debounceInputValue.ToNormalizedString() ?? _debounceInputValue, FilterOperatorInfo.OrJoinOperator)
+                    new FilterOperatorInfo(nameof(UserDataInfo.UserName), FilterOperator.Contains, _debounceInputValue.ToNormalizedString() ?? _debounceInputValue),
+                    new FilterOperatorInfo(nameof(UserDataInfo.Email), FilterOperator.Contains, _debounceInputValue.ToNormalizedString() ?? _debounceInputValue, FilterOperatorInfo.OrJoinOperator)
                 ];
             }
             else if (args.Filters.Any())
@@ -199,49 +198,57 @@
         }
         catch (Exception e)
         {
-            Logger.Error(e, "Loading Users");
+            Logger.Error(e, "Error loading user data");
+            NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = "Error", Detail = e.Message });
         }
         finally
         {
+            _isLoading = false;
             MainLayoutProxyService.ToggleSpinnerVisible();
         }
-
-        _isLoading = false;
     }
 
     private void AddButtonClick()
     {
-        NavigationManager.NavigateTo($"/data/useredit/{Guid.Empty}");
+        NavigationManager.NavigateTo("/data/useredit/new");
     }
-
 
     private async Task DeleteSelectedButtonClick()
     {
-        var confirm = await DialogService.Confirm("Are you sure?", "Delete confirmation", new ConfirmOptions { OkButtonText = "Yes", CancelButtonText = "No" });
-        if (confirm ?? false)
-        {
-            var deleteResult = await UserService.DeleteAsync(_selectedUsers.Select(x => x.Id).ToArray());
-            if (deleteResult.IsSuccess)
-            {
-                NotificationService.Notify(NotificationMessageForResult(deleteResult, "Deleting Users", ToastTime));
-                await _grid.RefreshDataAsync();
-                return;
-            }
+        if (!_selectedUsers.Any()) return;
 
-            NotificationService.Notify(NotificationMessageForResult(deleteResult, "Deleting Users", ToastTime));
+        var result = await DialogService.Confirm("Are you sure you want to delete the selected users?", "Delete Users", new ConfirmOptions { OkButtonText = "Yes", CancelButtonText = "No" });
+        if (result.HasValue && result.Value)
+        {
+            try
+            {
+                var userIds = _selectedUsers.Select(x => x.Id).ToArray();
+                var deleteResult = await UserService.DeleteAsync(userIds);
+                if (deleteResult.IsSuccess)
+                {
+                    NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Success, Summary = "Success", Detail = "Users deleted successfully" });
+                    await _grid.Reload();
+                    _selectedUsers.Clear();
+                }
+                else
+                {
+                    NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = "Error", Detail = "Failed to delete users" });
+                }
+            }
+            catch (Exception e)
+            {
+                Logger.Error(e, "Error deleting users");
+                NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = "Error", Detail = e.Message });
+            }
         }
     }
 
-    private void ShowTooltip(ElementReference elementReference, string message)
+    private async Task DoSearchAsync(string searchValue)
     {
-        TooltipService.Open(elementReference, message);
+        _debounceInputValue = searchValue;
+        await _grid.Reload();
     }
 
-    private async Task DoSearchAsync(string s)
-    {
-        await LoadData(new LoadDataArgs { Sorts = [], Filters = [] });
-    }
+    void ShowTooltip(ElementReference elementReference, string text, TooltipOptions? options = null) => TooltipService.Open(elementReference, text, options);
 
 }
-
-

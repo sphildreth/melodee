@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Linq.Expressions;
 using Ardalis.GuardClauses;
 using Melodee.Common.Data;
 using Melodee.Common.Data.Models;
@@ -46,7 +47,7 @@ public class SongService(
                     var baseQuery = scopedContext.Songs
                         .Where(s => nowPlayingSongIds.Contains(s.Id))
                         .Include(s => s.Album)
-                            .ThenInclude(a => a.Artist)
+                        .ThenInclude(a => a.Artist)
                         .AsNoTracking();
 
                     // Apply ordering
@@ -93,17 +94,17 @@ public class SongService(
     public async Task<MelodeeModels.PagedResult<SongDataInfo>> ListForContributorsAsync(MelodeeModels.PagedRequest pagedRequest, string contributorName, CancellationToken cancellationToken = default)
     {
         await using var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
-        
+
         // Create base query using EF Core with proper joins and filtering
         // Use normalized string comparison for better performance
         var normalizedContributorName = contributorName.ToNormalizedString() ?? contributorName;
-        
+
         var contributorsQuery = scopedContext.Contributors
             .Where(c => c.ContributorName != null && c.ContributorName.Contains(normalizedContributorName))
             .Where(c => c.Song != null)
             .Include(c => c.Song!)
-                .ThenInclude(s => s.Album)
-                    .ThenInclude(a => a.Artist)
+            .ThenInclude(s => s.Album)
+            .ThenInclude(a => a.Artist)
             .AsNoTracking();
 
         // Get the songs from contributors and project to distinct song IDs first
@@ -115,19 +116,19 @@ public class SongService(
 
         var songCount = songIds.Length;
         SongDataInfo[] songs = [];
-        
+
         if (!pagedRequest.IsTotalCountOnlyRequest && songIds.Length > 0)
         {
             // Now query songs directly with proper includes
             var baseQuery = scopedContext.Songs
                 .Where(s => songIds.Contains(s.Id))
                 .Include(s => s.Album)
-                    .ThenInclude(a => a.Artist)
+                .ThenInclude(a => a.Artist)
                 .AsNoTracking();
 
             // Apply ordering and paging
             var orderedQuery = ApplyOrdering(baseQuery, pagedRequest);
-            
+
             var rawSongs = await orderedQuery
                 .Skip(pagedRequest.SkipValue)
                 .Take(pagedRequest.TakeValue)
@@ -166,11 +167,11 @@ public class SongService(
     public async Task<MelodeeModels.PagedResult<SongDataInfo>> ListAsync(MelodeeModels.PagedRequest pagedRequest, int userId, CancellationToken cancellationToken = default)
     {
         await using var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
-        
+
         // Create base query with user-specific data
         var baseQuery = scopedContext.Songs
             .Include(s => s.Album)
-                .ThenInclude(a => a.Artist)
+            .ThenInclude(a => a.Artist)
             .Include(s => s.UserSongs.Where(us => us.UserId == userId))
             .AsNoTracking();
 
@@ -181,12 +182,12 @@ public class SongService(
         var songCount = await filteredQuery.CountAsync(cancellationToken).ConfigureAwait(false);
 
         SongDataInfo[] songs = [];
-        
+
         if (!pagedRequest.IsTotalCountOnlyRequest)
         {
             // Apply ordering and paging
             var orderedQuery = ApplyOrdering(filteredQuery, pagedRequest);
-            
+
             var rawSongs = await orderedQuery
                 .Skip(pagedRequest.SkipValue)
                 .Take(pagedRequest.TakeValue)
@@ -243,23 +244,24 @@ public class SongService(
                     "albumname" => query.Where(s => s.Album.NameNormalized.Contains(normalizedValue)),
                     "artistname" => query.Where(s => s.Album.Artist.NameNormalized.Contains(normalizedValue)),
                     "tags" => query.Where(s => s.Tags != null && s.Tags.Contains(normalizedValue)),
-                    "islocked" => bool.TryParse(value, out var lockedValue) 
-                        ? query.Where(s => s.IsLocked == lockedValue) 
+                    "islocked" => bool.TryParse(value, out var lockedValue)
+                        ? query.Where(s => s.IsLocked == lockedValue)
                         : query,
-                    "userstarred" when userId.HasValue => bool.TryParse(value, out var starredValue) 
+                    "userstarred" when userId.HasValue => bool.TryParse(value, out var starredValue)
                         ? query.Where(s => s.UserSongs.Any(us => us.UserId == userId.Value && us.IsStarred == starredValue))
                         : query,
-                    "userrating" when userId.HasValue => int.TryParse(value, out var ratingValue) 
+                    "userrating" when userId.HasValue => int.TryParse(value, out var ratingValue)
                         ? query.Where(s => s.UserSongs.Any(us => us.UserId == userId.Value && us.Rating == ratingValue))
                         : query,
                     _ => query
                 };
             }
+
             return query;
         }
 
         // For multiple filters, combine them with OR logic
-        var filterPredicates = new List<System.Linq.Expressions.Expression<Func<Song, bool>>>();
+        var filterPredicates = new List<Expression<Func<Song, bool>>>();
 
         foreach (var filter in pagedRequest.FilterBy)
         {
@@ -267,21 +269,21 @@ public class SongService(
             if (!string.IsNullOrEmpty(value))
             {
                 var normalizedValue = value.ToNormalizedString() ?? value;
-                
+
                 var predicate = filter.PropertyName.ToLowerInvariant() switch
                 {
-                    "title" or "titlenormalized" => (System.Linq.Expressions.Expression<Func<Song, bool>>)(s => s.TitleNormalized.Contains(normalizedValue)),
-                    "albumname" => (System.Linq.Expressions.Expression<Func<Song, bool>>)(s => s.Album.NameNormalized.Contains(normalizedValue)),
-                    "artistname" => (System.Linq.Expressions.Expression<Func<Song, bool>>)(s => s.Album.Artist.NameNormalized.Contains(normalizedValue)),
-                    "tags" => (System.Linq.Expressions.Expression<Func<Song, bool>>)(s => s.Tags != null && s.Tags.Contains(normalizedValue)),
-                    "islocked" => bool.TryParse(value, out var lockedValue) 
-                        ? (System.Linq.Expressions.Expression<Func<Song, bool>>)(s => s.IsLocked == lockedValue)
+                    "title" or "titlenormalized" => (Expression<Func<Song, bool>>)(s => s.TitleNormalized.Contains(normalizedValue)),
+                    "albumname" => (Expression<Func<Song, bool>>)(s => s.Album.NameNormalized.Contains(normalizedValue)),
+                    "artistname" => (Expression<Func<Song, bool>>)(s => s.Album.Artist.NameNormalized.Contains(normalizedValue)),
+                    "tags" => (Expression<Func<Song, bool>>)(s => s.Tags != null && s.Tags.Contains(normalizedValue)),
+                    "islocked" => bool.TryParse(value, out var lockedValue)
+                        ? (Expression<Func<Song, bool>>)(s => s.IsLocked == lockedValue)
                         : null,
-                    "userstarred" when userId.HasValue => bool.TryParse(value, out var starredValue) 
-                        ? (System.Linq.Expressions.Expression<Func<Song, bool>>)(s => s.UserSongs.Any(us => us.UserId == userId.Value && us.IsStarred == starredValue))
+                    "userstarred" when userId.HasValue => bool.TryParse(value, out var starredValue)
+                        ? (Expression<Func<Song, bool>>)(s => s.UserSongs.Any(us => us.UserId == userId.Value && us.IsStarred == starredValue))
                         : null,
-                    "userrating" when userId.HasValue => int.TryParse(value, out var ratingValue) 
-                        ? (System.Linq.Expressions.Expression<Func<Song, bool>>)(s => s.UserSongs.Any(us => us.UserId == userId.Value && us.Rating == ratingValue))
+                    "userrating" when userId.HasValue => int.TryParse(value, out var ratingValue)
+                        ? (Expression<Func<Song, bool>>)(s => s.UserSongs.Any(us => us.UserId == userId.Value && us.Rating == ratingValue))
                         : null,
                     _ => null
                 };
@@ -298,11 +300,11 @@ public class SongService(
         {
             var combinedPredicate = filterPredicates.Aggregate((prev, next) =>
             {
-                var parameter = System.Linq.Expressions.Expression.Parameter(typeof(Song), "s");
-                var left = System.Linq.Expressions.Expression.Invoke(prev, parameter);
-                var right = System.Linq.Expressions.Expression.Invoke(next, parameter);
-                var or = System.Linq.Expressions.Expression.OrElse(left, right);
-                return System.Linq.Expressions.Expression.Lambda<Func<Song, bool>>(or, parameter);
+                var parameter = Expression.Parameter(typeof(Song), "s");
+                var left = Expression.Invoke(prev, parameter);
+                var right = Expression.Invoke(next, parameter);
+                var or = Expression.OrElse(left, right);
+                return Expression.Lambda<Func<Song, bool>>(or, parameter);
             });
 
             query = query.Where(combinedPredicate);
@@ -315,7 +317,7 @@ public class SongService(
     {
         // Use the existing OrderByValue method from PagedRequest
         var orderByClause = pagedRequest.OrderByValue("Title", MelodeeModels.PagedRequest.OrderAscDirection);
-        
+
         // Parse the order by clause to determine field and direction
         var isDescending = orderByClause.Contains("DESC", StringComparison.OrdinalIgnoreCase);
         var fieldName = orderByClause.Split(' ')[0].Trim('"').ToLowerInvariant();
@@ -367,7 +369,7 @@ public class SongService(
         var id = await CacheManager.GetAsync(CacheKeyDetailByApiKeyTemplate.FormatSmart(apiKey), async () =>
         {
             await using var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
-            
+
             return await scopedContext.Songs
                 .AsNoTracking()
                 .Where(s => s.ApiKey == apiKey)
@@ -375,7 +377,7 @@ public class SongService(
                 .FirstOrDefaultAsync(cancellationToken)
                 .ConfigureAwait(false);
         }, cancellationToken);
-        
+
         if (id == null)
         {
             return new MelodeeModels.OperationResult<Song?>("Unknown song")
@@ -421,13 +423,13 @@ public class SongService(
         }
 
         await using var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
-        
+
         // Use EF Core query instead of raw SQL
         var songStreamInfo = await scopedContext.Songs
             .Where(s => s.ApiKey == apiKey)
             .Include(s => s.Album)
-                .ThenInclude(a => a.Artist)
-                    .ThenInclude(ar => ar.Library)
+            .ThenInclude(a => a.Artist)
+            .ThenInclude(ar => ar.Library)
             .AsNoTracking()
             .Select(s => new SongStreamInfo(
                 s.Album.Artist.Library.Path + s.Album.Artist.Directory + s.Album.Directory + s.FileName,

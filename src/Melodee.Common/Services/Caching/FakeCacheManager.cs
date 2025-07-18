@@ -42,7 +42,7 @@ public sealed class FakeCacheManager(ILogger logger, TimeSpan defaultTimeSpan, I
         // Do nothing
         return true;
     }
-    
+
     public override IEnumerable<Statistic> CacheStatistics()
     {
         // Do nothing

@@ -1,3 +1,4 @@
+using System.Linq.Expressions;
 using Ardalis.GuardClauses;
 using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
@@ -65,18 +66,18 @@ public class AlbumService(
         {
             CacheManager.Remove(CacheKeyDetailByApiKeyTemplate.FormatSmart(album.Data.ApiKey), Album.CacheRegion);
             CacheManager.Remove(CacheKeyDetailByNameNormalizedTemplate.FormatSmart(album.Data.NameNormalized), Album.CacheRegion);
-            
+
             CacheManager.Remove(CacheKeyDetailTemplate.FormatSmart(albumId), Album.CacheRegion);
-            
+
             CacheManager.Remove(CacheKeyAlbumImageBytesAndEtagTemplate.FormatSmart(albumId, ImageSize.Thumbnail), Artist.CacheRegion);
             CacheManager.Remove(CacheKeyAlbumImageBytesAndEtagTemplate.FormatSmart(albumId, ImageSize.Small), Artist.CacheRegion);
             CacheManager.Remove(CacheKeyAlbumImageBytesAndEtagTemplate.FormatSmart(albumId, ImageSize.Medium), Artist.CacheRegion);
             CacheManager.Remove(CacheKeyAlbumImageBytesAndEtagTemplate.FormatSmart(albumId, ImageSize.Large), Artist.CacheRegion);
 
-            
+
             // This is needed because the OpenSubsonicApiService caches the image bytes after potentially resizing
             CacheManager.Remove(OpenSubsonicApiService.ImageCacheRegion);
-            
+
             if (album.Data.MusicBrainzId != null)
             {
                 CacheManager.Remove(CacheKeyDetailByMusicBrainzIdTemplate.FormatSmart(album.Data.MusicBrainzId.Value.ToString()), Album.CacheRegion);
@@ -101,7 +102,7 @@ public class AlbumService(
             var albumCount = await baseQuery.CountAsync(cancellationToken).ConfigureAwait(false);
 
             AlbumDataInfo[] albums = [];
-            
+
             if (!pagedRequest.IsTotalCountOnlyRequest)
             {
                 // First, get the album data with artist information
@@ -160,7 +161,7 @@ public class AlbumService(
     }
 
     public async Task<MelodeeModels.PagedResult<AlbumDataInfo>> ListForArtistApiKeyAsync(
-        MelodeeModels.PagedRequest pagedRequest, 
+        MelodeeModels.PagedRequest pagedRequest,
         Guid filterToArtistApiKey,
         CancellationToken cancellationToken = default)
     {
@@ -182,7 +183,7 @@ public class AlbumService(
             var albumCount = await baseQuery.CountAsync(cancellationToken).ConfigureAwait(false);
 
             AlbumDataInfo[] albums = [];
-            
+
             if (!pagedRequest.IsTotalCountOnlyRequest)
             {
                 // Apply ordering first on the base query, then project
@@ -210,7 +211,7 @@ public class AlbumService(
 
                 // Execute query and project to AlbumDataInfo
                 var rawAlbums = await pagedQuery.ToArrayAsync(cancellationToken).ConfigureAwait(false);
-                
+
                 albums = rawAlbums.Select(a => new AlbumDataInfo(
                     a.Id,
                     a.ApiKey,
@@ -239,7 +240,7 @@ public class AlbumService(
     }
 
     public async Task<MelodeeModels.PagedResult<AlbumDataInfo>> ListAsync(
-        MelodeeModels.PagedRequest pagedRequest, 
+        MelodeeModels.PagedRequest pagedRequest,
         string? filteringColumnNamePrefix = null,
         CancellationToken cancellationToken = default)
     {
@@ -255,7 +256,7 @@ public class AlbumService(
             var albumCount = await baseQuery.CountAsync(cancellationToken).ConfigureAwait(false);
 
             AlbumDataInfo[] albums = [];
-            
+
             if (!pagedRequest.IsTotalCountOnlyRequest)
             {
                 // Apply ordering first on the base query, then project
@@ -283,7 +284,7 @@ public class AlbumService(
 
                 // Execute query and project to AlbumDataInfo
                 var rawAlbums = await pagedQuery.ToArrayAsync(cancellationToken).ConfigureAwait(false);
-                
+
                 albums = rawAlbums.Select(a => new AlbumDataInfo(
                     a.Id,
                     a.ApiKey,
@@ -398,7 +399,7 @@ public class AlbumService(
                     .ConfigureAwait(false);
             }
         }, cancellationToken, region: Album.CacheRegion);
-        
+
         return new MelodeeModels.OperationResult<Album?>
         {
             Data = result
@@ -507,7 +508,7 @@ public class AlbumService(
                     Type = MelodeeModels.OperationResponseType.NotFound
                 };
             }
-            
+
             var didChangeName = dbDetail.Name != album.Name;
 
             var configuration = await configurationFactory.GetConfigurationAsync(cancellationToken);
@@ -524,10 +525,12 @@ public class AlbumService(
                 {
                     Directory.Move(existingAlbumDirectory, newAlbumDirectory);
                 }
+
                 album.Directory = albumDirectory;
             }
+
             dbDetail.Directory = album.Directory;
-            
+
             dbDetail.AlbumStatus = album.AlbumStatus;
             dbDetail.AlbumType = album.AlbumType;
             dbDetail.AlternateNames = album.AlternateNames;
@@ -569,7 +572,7 @@ public class AlbumService(
                     {
                         await mediaEditService.InitializeAsync(token: cancellationToken);
                         var newAlbumPath = Path.Combine(dbDetail.Artist.Library.Path, dbDetail.Artist.Directory, dbDetail.Directory);
-                        
+
                         // Check if the melodee.json file exists before trying to read it
                         var melodeeJsonPath = Path.Combine(newAlbumPath, "melodee.json");
                         if (File.Exists(melodeeJsonPath))
@@ -582,10 +585,11 @@ public class AlbumService(
                                 melodeeAlbum.MusicBrainzId = dbDetail.MusicBrainzId;
                                 melodeeAlbum.SpotifyId = dbDetail.SpotifyId;
                                 melodeeAlbum.SetTagValue(MetaTagIdentifier.Album, dbDetail.Name);
-                                foreach(var song in melodeeAlbum.Songs ?? [])
+                                foreach (var song in melodeeAlbum.Songs ?? [])
                                 {
                                     melodeeAlbum.SetSongTagValue(song.Id, MetaTagIdentifier.Album, dbDetail.Name);
                                 }
+
                                 await mediaEditService.SaveMelodeeAlbum(melodeeAlbum, true, cancellationToken).ConfigureAwait(false);
                             }
                         }
@@ -613,7 +617,7 @@ public class AlbumService(
 
     public async Task<MelodeeModels.OperationResult<Album?>> FindAlbumAsync(
         int artistId,
-        MelodeeModels.Album melodeeAlbum, 
+        MelodeeModels.Album melodeeAlbum,
         CancellationToken cancellationToken = default)
     {
         var albumTitle = melodeeAlbum.AlbumTitle()?.CleanStringAsIs() ??
@@ -634,6 +638,7 @@ public class AlbumService(
                         .FirstOrDefaultAsync(cancellationToken)
                         .ConfigureAwait(false);
                 }
+
                 if (id == null && melodeeAlbum.Id != Guid.Empty)
                 {
                     id = await scopedContext.Albums
@@ -642,11 +647,12 @@ public class AlbumService(
                         .FirstOrDefaultAsync(cancellationToken)
                         .ConfigureAwait(false);
                 }
+
                 id ??= await scopedContext.Albums
                     .Where(a => a.ArtistId == artistId)
                     .Where(a => a.NameNormalized == nameNormalized ||
-                            (a.MusicBrainzId == melodeeAlbum.MusicBrainzId && a.MusicBrainzId != null) ||
-                            (a.SpotifyId == melodeeAlbum.SpotifyId && a.SpotifyId != null))
+                                (a.MusicBrainzId == melodeeAlbum.MusicBrainzId && a.MusicBrainzId != null) ||
+                                (a.SpotifyId == melodeeAlbum.SpotifyId && a.SpotifyId != null))
                     .Select(a => (int?)a.Id)
                     .FirstOrDefaultAsync(cancellationToken)
                     .ConfigureAwait(false);
@@ -743,7 +749,7 @@ public class AlbumService(
         Guard.Against.NullOrEmpty(album.Name, nameof(album.Name));
         Guard.Against.Null(album.Artist, nameof(album), "Artist is required for album.");
         Guard.Against.Expression(x => x < 1, album.ArtistId, nameof(album.ArtistId), "ArtistId is required for album.");
-        
+
         var configuration = await configurationFactory.GetConfigurationAsync(cancellationToken);
 
         album.ApiKey = Guid.NewGuid();
@@ -766,7 +772,7 @@ public class AlbumService(
         await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             scopedContext.Albums.Add(album);
-            int result = 0;
+            var result = 0;
             try
             {
                 result = await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
@@ -775,6 +781,7 @@ public class AlbumService(
             {
                 Console.WriteLine(e);
             }
+
             if (result > 0)
             {
                 await UpdateLibraryAggregateStatsByIdAsync(album.Artist.LibraryId, cancellationToken)
@@ -787,7 +794,7 @@ public class AlbumService(
         {
             return await GetAsync(album.Id, cancellationToken);
         }
-        
+
         // If for some reason the ID wasn't set, return the album as-is
         return new MelodeeModels.OperationResult<Album?>
         {
@@ -839,8 +846,8 @@ public class AlbumService(
 
     public async Task<MelodeeModels.OperationResult<bool>> SaveImageAsAlbumImageAsync(
         int albumId,
-        bool deleteAllImages, 
-        byte[] imageBytes, 
+        bool deleteAllImages,
+        byte[] imageBytes,
         CancellationToken cancellationToken = default)
     {
         Guard.Against.Expression(x => x < 1, albumId, nameof(albumId));
@@ -858,33 +865,35 @@ public class AlbumService(
         return new MelodeeModels.OperationResult<bool>
         {
             Data = await SaveImageBytesAsAlbumImageAsync(
-                    album.Data, 
-                    deleteAllImages, 
-                    imageBytes, 
+                    album.Data,
+                    deleteAllImages,
+                    imageBytes,
                     cancellationToken)
                 .ConfigureAwait(false)
         };
-    }    
-    
+    }
+
     private async Task<bool> SaveImageBytesAsAlbumImageAsync(
         Album album,
         bool deleteAllImages,
         byte[] imageBytes,
         CancellationToken cancellationToken = default)
     {
-         var configuration = await configurationFactory.GetConfigurationAsync(cancellationToken);
-         var imageConvertor = new ImageConvertor(configuration);
+        var configuration = await configurationFactory.GetConfigurationAsync(cancellationToken);
+        var imageConvertor = new ImageConvertor(configuration);
 
         var albumPath = album.ToFileSystemDirectoryInfo();
         if (deleteAllImages)
         {
             albumPath.DeleteAllFilesForExtension("*.jpg");
         }
+
         var newAlbumCoverFilename = Path.Combine(albumPath.FullName(), $"i-01-{Album.FrontImageType}.jpg");
         if (File.Exists(newAlbumCoverFilename))
         {
             File.Delete(newAlbumCoverFilename);
-        }     
+        }
+
         await File.WriteAllBytesAsync(newAlbumCoverFilename, imageBytes, cancellationToken);
         await imageConvertor.ProcessFileAsync(
             albumPath,
@@ -904,9 +913,9 @@ public class AlbumService(
                     .SetProperty(x => x.ImageCount, albumPath.ImageFilesFound), cancellationToken)
                 .ConfigureAwait(false);
         }
+
         await ClearCacheAsync(album.Id, cancellationToken).ConfigureAwait(false);
-        return true;        
-        
+        return true;
     }
 
     public async Task<MelodeeModels.OperationResult<bool>> SaveImageUrlAsAlbumImageAsync(
@@ -932,14 +941,14 @@ public class AlbumService(
         try
         {
             var imageBytes = await httpClientFactory.BytesForImageUrlAsync(
-                configuration.GetValue<string?>(SettingRegistry.SearchEngineUserAgent) ?? string.Empty, 
+                configuration.GetValue<string?>(SettingRegistry.SearchEngineUserAgent) ?? string.Empty,
                 imageUrl,
                 cancellationToken);
             if (imageBytes != null)
             {
                 result = await SaveImageBytesAsAlbumImageAsync(
-                    album.Data, 
-                    deleteAllImages, 
+                    album.Data,
+                    deleteAllImages,
                     imageBytes,
                     cancellationToken).ConfigureAwait(false);
             }
@@ -977,23 +986,24 @@ public class AlbumService(
                     "alternatenames" => query.Where(a => a.AlternateNames != null && EF.Functions.ILike(a.AlternateNames, $"%{normalizedValue}%")),
                     "artistname" => query.Where(a => EF.Functions.ILike(a.Artist.NameNormalized, $"%{normalizedValue}%")),
                     "tags" => query.Where(a => a.Tags != null && EF.Functions.ILike(a.Tags, $"%{normalizedValue}%")),
-                    "albumstatus" => int.TryParse(value, out var statusValue) 
-                        ? query.Where(a => a.AlbumStatus == statusValue) 
+                    "albumstatus" => int.TryParse(value, out var statusValue)
+                        ? query.Where(a => a.AlbumStatus == statusValue)
                         : query,
-                    "islocked" => bool.TryParse(value, out var lockedValue) 
-                        ? query.Where(a => a.IsLocked == lockedValue) 
+                    "islocked" => bool.TryParse(value, out var lockedValue)
+                        ? query.Where(a => a.IsLocked == lockedValue)
                         : query,
-                    "releasedate" => DateTime.TryParse(value, out var dateValue) 
-                        ? query.Where(a => a.ReleaseDate.Year == dateValue.Year) 
+                    "releasedate" => DateTime.TryParse(value, out var dateValue)
+                        ? query.Where(a => a.ReleaseDate.Year == dateValue.Year)
                         : query,
                     _ => query
                 };
             }
+
             return query;
         }
 
         // For multiple filters, combine them with OR logic
-        var filterPredicates = new List<System.Linq.Expressions.Expression<Func<Album, bool>>>();
+        var filterPredicates = new List<Expression<Func<Album, bool>>>();
 
         foreach (var filter in pagedRequest.FilterBy)
         {
@@ -1001,20 +1011,20 @@ public class AlbumService(
             if (!string.IsNullOrEmpty(value))
             {
                 var normalizedValue = value.ToNormalizedString();
-                
+
                 var predicate = filter.PropertyName switch
                 {
-                    "Name" or "NameNormalized" => (System.Linq.Expressions.Expression<Func<Album, bool>>)(a => EF.Functions.ILike(a.NameNormalized, $"%{normalizedValue}%")),
-                    "ArtistName" => (System.Linq.Expressions.Expression<Func<Album, bool>>)(a => EF.Functions.ILike(a.Artist.NameNormalized, $"%{normalizedValue}%")),
-                    "Tags" => (System.Linq.Expressions.Expression<Func<Album, bool>>)(a => a.Tags != null && EF.Functions.ILike(a.Tags, $"%{normalizedValue}%")),
-                    "AlbumStatus" => int.TryParse(value, out var statusValue) 
-                        ? (System.Linq.Expressions.Expression<Func<Album, bool>>)(a => a.AlbumStatus == statusValue)
+                    "Name" or "NameNormalized" => (Expression<Func<Album, bool>>)(a => EF.Functions.ILike(a.NameNormalized, $"%{normalizedValue}%")),
+                    "ArtistName" => (Expression<Func<Album, bool>>)(a => EF.Functions.ILike(a.Artist.NameNormalized, $"%{normalizedValue}%")),
+                    "Tags" => (Expression<Func<Album, bool>>)(a => a.Tags != null && EF.Functions.ILike(a.Tags, $"%{normalizedValue}%")),
+                    "AlbumStatus" => int.TryParse(value, out var statusValue)
+                        ? (Expression<Func<Album, bool>>)(a => a.AlbumStatus == statusValue)
                         : null,
-                    "IsLocked" => bool.TryParse(value, out var lockedValue) 
-                        ? (System.Linq.Expressions.Expression<Func<Album, bool>>)(a => a.IsLocked == lockedValue)
+                    "IsLocked" => bool.TryParse(value, out var lockedValue)
+                        ? (Expression<Func<Album, bool>>)(a => a.IsLocked == lockedValue)
                         : null,
-                    "ReleaseDate" => DateTime.TryParse(value, out var dateValue) 
-                        ? (System.Linq.Expressions.Expression<Func<Album, bool>>)(a => a.ReleaseDate.Year == dateValue.Year)
+                    "ReleaseDate" => DateTime.TryParse(value, out var dateValue)
+                        ? (Expression<Func<Album, bool>>)(a => a.ReleaseDate.Year == dateValue.Year)
                         : null,
                     _ => null
                 };
@@ -1031,11 +1041,11 @@ public class AlbumService(
         {
             var combinedPredicate = filterPredicates.Aggregate((prev, next) =>
             {
-                var parameter = System.Linq.Expressions.Expression.Parameter(typeof(Album), "a");
-                var left = System.Linq.Expressions.Expression.Invoke(prev, parameter);
-                var right = System.Linq.Expressions.Expression.Invoke(next, parameter);
-                var or = System.Linq.Expressions.Expression.OrElse(left, right);
-                return System.Linq.Expressions.Expression.Lambda<Func<Album, bool>>(or, parameter);
+                var parameter = Expression.Parameter(typeof(Album), "a");
+                var left = Expression.Invoke(prev, parameter);
+                var right = Expression.Invoke(next, parameter);
+                var or = Expression.OrElse(left, right);
+                return Expression.Lambda<Func<Album, bool>>(or, parameter);
             });
 
             query = query.Where(combinedPredicate);

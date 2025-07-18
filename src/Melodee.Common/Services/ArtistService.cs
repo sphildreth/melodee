@@ -1,3 +1,4 @@
+using System.Linq.Expressions;
 using Ardalis.GuardClauses;
 using Melodee.Common.Configuration;
 using Melodee.Common.Constants;
@@ -45,7 +46,7 @@ public class ArtistService(
         CancellationToken cancellationToken = default)
     {
         await using var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
-        
+
         // Build the base query with performance optimizations
         var baseQuery = scopedContext.Artists
             .AsNoTracking()
@@ -62,7 +63,7 @@ public class ArtistService(
         {
             // Apply ordering, skip, and take with projection to ArtistDataInfo
             var orderedQuery = ApplyOrdering(filteredQuery, pagedRequest);
-            
+
             artists = await orderedQuery
                 .Skip(pagedRequest.SkipValue)
                 .Take(pagedRequest.TakeValue)
@@ -105,7 +106,7 @@ public class ArtistService(
         {
             var filter = pagedRequest.FilterBy[0];
             var filterValue = filter.Value.ToString().ToNormalizedString() ?? string.Empty;
-            
+
             return filter.PropertyName.ToLowerInvariant() switch
             {
                 "name" or "namenormalized" => filter.Operator switch
@@ -122,7 +123,7 @@ public class ArtistService(
                 },
                 "islocked" => filter.Operator switch
                 {
-                    FilterOperator.Equals when bool.TryParse(filterValue, out var boolValue) => 
+                    FilterOperator.Equals when bool.TryParse(filterValue, out var boolValue) =>
                         query.Where(a => a.IsLocked == boolValue),
                     _ => query
                 },
@@ -131,30 +132,30 @@ public class ArtistService(
         }
 
         // For multiple filters, combine them with OR logic
-        var filterPredicates = new List<System.Linq.Expressions.Expression<Func<Artist, bool>>>();
+        var filterPredicates = new List<Expression<Func<Artist, bool>>>();
 
         foreach (var filter in pagedRequest.FilterBy)
         {
             var filterValue = filter.Value.ToString().ToNormalizedString() ?? string.Empty;
-            
+
             var predicate = filter.PropertyName.ToLowerInvariant() switch
             {
                 "name" or "namenormalized" => filter.Operator switch
                 {
-                    FilterOperator.Contains => (System.Linq.Expressions.Expression<Func<Artist, bool>>)(a => a.NameNormalized.Contains(filterValue)),
-                    FilterOperator.Equals => (System.Linq.Expressions.Expression<Func<Artist, bool>>)(a => a.NameNormalized == filterValue),
-                    FilterOperator.StartsWith => (System.Linq.Expressions.Expression<Func<Artist, bool>>)(a => a.NameNormalized.StartsWith(filterValue)),
+                    FilterOperator.Contains => (Expression<Func<Artist, bool>>)(a => a.NameNormalized.Contains(filterValue)),
+                    FilterOperator.Equals => (Expression<Func<Artist, bool>>)(a => a.NameNormalized == filterValue),
+                    FilterOperator.StartsWith => (Expression<Func<Artist, bool>>)(a => a.NameNormalized.StartsWith(filterValue)),
                     _ => null
                 },
                 "alternatenames" => filter.Operator switch
                 {
-                    FilterOperator.Contains => (System.Linq.Expressions.Expression<Func<Artist, bool>>)(a => a.AlternateNames != null && a.AlternateNames.Contains(filterValue)),
+                    FilterOperator.Contains => (Expression<Func<Artist, bool>>)(a => a.AlternateNames != null && a.AlternateNames.Contains(filterValue)),
                     _ => null
                 },
                 "islocked" => filter.Operator switch
                 {
-                    FilterOperator.Equals when bool.TryParse(filterValue, out var boolValue) => 
-                        (System.Linq.Expressions.Expression<Func<Artist, bool>>)(a => a.IsLocked == boolValue),
+                    FilterOperator.Equals when bool.TryParse(filterValue, out var boolValue) =>
+                        (Expression<Func<Artist, bool>>)(a => a.IsLocked == boolValue),
                     _ => null
                 },
                 _ => null
@@ -171,11 +172,11 @@ public class ArtistService(
         {
             var combinedPredicate = filterPredicates.Aggregate((prev, next) =>
             {
-                var parameter = System.Linq.Expressions.Expression.Parameter(typeof(Artist), "a");
-                var left = System.Linq.Expressions.Expression.Invoke(prev, parameter);
-                var right = System.Linq.Expressions.Expression.Invoke(next, parameter);
-                var or = System.Linq.Expressions.Expression.OrElse(left, right);
-                return System.Linq.Expressions.Expression.Lambda<Func<Artist, bool>>(or, parameter);
+                var parameter = Expression.Parameter(typeof(Artist), "a");
+                var left = Expression.Invoke(prev, parameter);
+                var right = Expression.Invoke(next, parameter);
+                var or = Expression.OrElse(left, right);
+                return Expression.Lambda<Func<Artist, bool>>(or, parameter);
             });
 
             query = query.Where(combinedPredicate);
@@ -188,7 +189,7 @@ public class ArtistService(
     {
         // Use the existing OrderByValue method from PagedRequest
         var orderByClause = pagedRequest.OrderByValue("Name", MelodeeModels.PagedRequest.OrderAscDirection);
-        
+
         // Parse the order by clause to determine field and direction
         var isDescending = orderByClause.Contains("DESC", StringComparison.OrdinalIgnoreCase);
         var fieldName = orderByClause.Split(' ')[0].Trim('"').ToLowerInvariant();
@@ -238,7 +239,7 @@ public class ArtistService(
             CacheKeyDetailByMusicBrainzIdTemplate.FormatSmart(musicBrainzId.ToString()), async () =>
             {
                 await using var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
-                
+
                 return await scopedContext.Artists
                     .AsNoTracking()
                     .Where(a => a.MusicBrainzId == musicBrainzId)
@@ -246,7 +247,7 @@ public class ArtistService(
                     .FirstOrDefaultAsync(cancellationToken)
                     .ConfigureAwait(false);
             }, cancellationToken, region: Artist.CacheRegion);
-            
+
         if (id == null)
         {
             return new MelodeeModels.OperationResult<Artist?>("Unknown artist.")
@@ -267,7 +268,7 @@ public class ArtistService(
             async () =>
             {
                 await using var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
-                
+
                 return await scopedContext.Artists
                     .AsNoTracking()
                     .Where(a => a.NameNormalized == nameNormalized)
@@ -275,7 +276,7 @@ public class ArtistService(
                     .FirstOrDefaultAsync(cancellationToken)
                     .ConfigureAwait(false);
             }, cancellationToken, region: Artist.CacheRegion);
-            
+
         if (id == null)
         {
             return new MelodeeModels.OperationResult<Artist?>("Unknown artist.")
@@ -297,7 +298,7 @@ public class ArtistService(
         int? id = null;
 
         await using var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
-        
+
         try
         {
             // Try to find by ID first (most efficient)
@@ -328,7 +329,7 @@ public class ArtistService(
                 id = await scopedContext.Artists
                     .AsNoTracking()
                     .Where(a => (byMusicBrainzId != null && a.MusicBrainzId == byMusicBrainzId) ||
-                               (bySpotifyId != null && a.SpotifyId == bySpotifyId))
+                                (bySpotifyId != null && a.SpotifyId == bySpotifyId))
                     .Select(a => (int?)a.Id)
                     .FirstOrDefaultAsync(cancellationToken)
                     .ConfigureAwait(false);
@@ -376,7 +377,7 @@ public class ArtistService(
         var id = await CacheManager.GetAsync(CacheKeyDetailByApiKeyTemplate.FormatSmart(apiKey), async () =>
         {
             await using var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
-            
+
             return await scopedContext.Artists
                 .AsNoTracking()
                 .Where(a => a.ApiKey == apiKey)
@@ -384,7 +385,7 @@ public class ArtistService(
                 .FirstOrDefaultAsync(cancellationToken)
                 .ConfigureAwait(false);
         }, cancellationToken, region: Artist.CacheRegion);
-        
+
         if (id == null)
         {
             return new MelodeeModels.OperationResult<Artist?>("Unknown artist.")
@@ -405,15 +406,15 @@ public class ArtistService(
         {
             CacheManager.Remove(CacheKeyDetailByMusicBrainzIdTemplate.FormatSmart(artist.MusicBrainzId.Value.ToString()), Artist.CacheRegion);
         }
-        
+
         CacheManager.Remove(CacheKeyArtistImageBytesAndEtagTemplate.FormatSmart(artist.Id, ImageSize.Thumbnail), Artist.CacheRegion);
         CacheManager.Remove(CacheKeyArtistImageBytesAndEtagTemplate.FormatSmart(artist.Id, ImageSize.Small), Artist.CacheRegion);
         CacheManager.Remove(CacheKeyArtistImageBytesAndEtagTemplate.FormatSmart(artist.Id, ImageSize.Medium), Artist.CacheRegion);
         CacheManager.Remove(CacheKeyArtistImageBytesAndEtagTemplate.FormatSmart(artist.Id, ImageSize.Large), Artist.CacheRegion);
-        
+
         // This is needed because the OpenSubsonicApiService caches the image bytes after potentially resizing
-        CacheManager.ClearRegion(OpenSubsonicApiService.ImageCacheRegion);        
-        
+        CacheManager.ClearRegion(OpenSubsonicApiService.ImageCacheRegion);
+
         await albumService.ClearCacheForArtist(artist.Id, cancellationToken);
     }
 
@@ -558,7 +559,7 @@ public class ArtistService(
             var newArtistDirectory = artist.ToMelodeeArtistModel().ToDirectoryName(configuration.GetValue<int>(SettingRegistry.ProcessingMaximumArtistDirectoryNameLength));
             var newDirectory = Path.Combine(dbDetail.Library.Path, newArtistDirectory);
             var originalDirectoryPath = Path.Combine(dbDetail.Library.Path, dbDetail.Directory);
-            
+
             // Check if we need to move the directory
             if (originalDirectoryPath != newDirectory)
             {
@@ -647,8 +648,8 @@ public class ArtistService(
 
     public async Task<MelodeeModels.OperationResult<bool>> SaveImageAsArtistImageAsync(
         int artistId,
-        bool deleteAllImages, 
-        byte[] imageBytes, 
+        bool deleteAllImages,
+        byte[] imageBytes,
         CancellationToken cancellationToken = default)
     {
         Guard.Against.Expression(x => x < 1, artistId, nameof(artistId));
@@ -666,17 +667,17 @@ public class ArtistService(
         return new MelodeeModels.OperationResult<bool>
         {
             Data = await SaveImageBytesAsArtistImageAsync(
-                    artist.Data, 
-                    deleteAllImages, 
-                    imageBytes, 
+                    artist.Data,
+                    deleteAllImages,
+                    imageBytes,
                     cancellationToken)
                 .ConfigureAwait(false)
         };
     }
 
     private async Task<bool> SaveImageBytesAsArtistImageAsync(
-        Artist artist, 
-        bool deleteAllImages, 
+        Artist artist,
+        bool deleteAllImages,
         byte[] imageBytes,
         CancellationToken cancellationToken = default)
     {
@@ -690,8 +691,10 @@ public class ArtistService(
             {
                 fileInAlbumDirectory.Delete();
             }
+
             artistImages = artistDirectory.FileInfosForExtension("jpg", false).ToArray();
         }
+
         var totalArtistImageCount = artistImages.Length == 1 ? 1 : artistImages.Length + 1;
         var artistImageFileName = Path.Combine(artistDirectory.Path, deleteAllImages ? "01-Band.image" : $"{totalArtistImageCount}-Band.image");
         var artistImageFileInfo = new FileInfo(artistImageFileName).ToFileSystemInfo();
@@ -719,9 +722,9 @@ public class ArtistService(
     }
 
     public async Task<MelodeeModels.OperationResult<bool>> SaveImageUrlAsArtistImageAsync(
-        int artistId, 
+        int artistId,
         string imageUrl,
-        bool deleteAllImages, 
+        bool deleteAllImages,
         CancellationToken cancellationToken = default)
     {
         Guard.Against.Expression(x => x < 1, artistId, nameof(artistId));
@@ -741,14 +744,14 @@ public class ArtistService(
         try
         {
             var imageBytes = await httpClientFactory.BytesForImageUrlAsync(
-                configuration.GetValue<string?>(SettingRegistry.SearchEngineUserAgent) ?? string.Empty, 
+                configuration.GetValue<string?>(SettingRegistry.SearchEngineUserAgent) ?? string.Empty,
                 imageUrl,
                 cancellationToken);
             if (imageBytes != null)
             {
                 result = await SaveImageBytesAsArtistImageAsync(
-                    artist.Data, 
-                    deleteAllImages, 
+                    artist.Data,
+                    deleteAllImages,
                     imageBytes,
                     cancellationToken).ConfigureAwait(false);
             }
@@ -857,7 +860,7 @@ public class ArtistService(
                             if (albumJsonFiles.Length > 0)
                             {
                                 var album = await fileSystemService.DeserializeAlbumAsync(albumJsonFiles[0],
-                                        cancellationToken).ConfigureAwait(false);
+                                    cancellationToken).ConfigureAwait(false);
                                 if (album != null)
                                 {
                                     await ProcessExistingDirectoryMoveMergeAsync(configuration, serializer, album,
@@ -941,7 +944,7 @@ public class ArtistService(
     }
 
     public async Task<MelodeeModels.OperationResult<bool>> LockUnlockArtistAsync(
-        int artistId, 
+        int artistId,
         bool doLock,
         CancellationToken cancellationToken = default)
     {
@@ -965,7 +968,7 @@ public class ArtistService(
     }
 
     public async Task<MelodeeModels.OperationResult<bool>> DeleteAlbumsForArtist(
-        int artistId, 
+        int artistId,
         int[] albumIdsToDelete,
         CancellationToken cancellationToken = default)
     {
@@ -992,7 +995,7 @@ public class ArtistService(
             Data = result
         };
     }
-    
+
     public async Task<MelodeeModels.ImageBytesAndEtag> GetArtistImageBytesAndEtagAsync(Guid? apiKey, string? size = null, CancellationToken cancellationToken = default)
     {
         Guard.Against.Null(apiKey, nameof(apiKey));
@@ -1006,9 +1009,9 @@ public class ArtistService(
         }
 
         var artistId = artist.Data.Id;
-        
+
         var cacheKey = CacheKeyArtistImageBytesAndEtagTemplate.FormatSmart(artistId, size ?? nameof(ImageSize.Large));
-        
+
         return await CacheManager.GetAsync(cacheKey, async () =>
         {
             var badEtag = Instant.MinValue.ToEtag();
