@@ -96,7 +96,7 @@ public class SongService(
         
         // Create base query using EF Core with proper joins and filtering
         // Use normalized string comparison for better performance
-        var normalizedContributorName = contributorName.ToNormalizedString();
+        var normalizedContributorName = contributorName.ToNormalizedString() ?? contributorName;
         
         var contributorsQuery = scopedContext.Contributors
             .Where(c => c.ContributorName != null && c.ContributorName.Contains(normalizedContributorName))
@@ -236,7 +236,7 @@ public class SongService(
             var value = filter.Value.ToString();
             if (!string.IsNullOrEmpty(value))
             {
-                var normalizedValue = value.ToNormalizedString();
+                var normalizedValue = value.ToNormalizedString() ?? value;
                 return filter.PropertyName.ToLowerInvariant() switch
                 {
                     "title" or "titlenormalized" => query.Where(s => s.TitleNormalized.Contains(normalizedValue)),
@@ -266,7 +266,7 @@ public class SongService(
             var value = filter.Value.ToString();
             if (!string.IsNullOrEmpty(value))
             {
-                var normalizedValue = value.ToNormalizedString();
+                var normalizedValue = value.ToNormalizedString() ?? value;
                 
                 var predicate = filter.PropertyName.ToLowerInvariant() switch
                 {

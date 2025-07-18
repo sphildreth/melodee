@@ -51,13 +51,13 @@ public sealed class UserService(
     private const string CacheKeyDetailByUsernameTemplate = "urn:user:username:{0}";
     private const string CacheKeyDetailTemplate = "urn:user:{0}";
 
-    public async Task<MelodeeModels.PagedResult<User>> ListAsync(MelodeeModels.PagedRequest pagedRequest,
+    public async Task<MelodeeModels.PagedResult<User>> ListAsync(
+        MelodeeModels.PagedRequest pagedRequest,
         CancellationToken cancellationToken = default)
     {
         int usersCount;
         User[] users = [];
-        await using (var scopedContext =
-                     await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             var orderBy = pagedRequest.OrderByValue();
             var dbConn = scopedContext.Database.GetDbConnection();
@@ -88,7 +88,8 @@ public sealed class UserService(
     }
 
 
-    public async Task<MelodeeModels.OperationResult<bool>> DeleteAsync(int[] userIds,
+    public async Task<MelodeeModels.OperationResult<bool>> DeleteAsync(
+        int[] userIds,
         CancellationToken cancellationToken = default)
     {
         Guard.Against.NullOrEmpty(userIds, nameof(userIds));
@@ -138,7 +139,8 @@ public sealed class UserService(
         };
     }
 
-    public async Task<MelodeeModels.OperationResult<User?>> GetByEmailAddressAsync(string emailAddress,
+    public async Task<MelodeeModels.OperationResult<User?>> GetByEmailAddressAsync(
+        string emailAddress,
         CancellationToken cancellationToken = default)
     {
         Guard.Against.NullOrWhiteSpace(emailAddress, nameof(emailAddress));
@@ -230,7 +232,8 @@ public sealed class UserService(
             : await GetAsync(id.Value, cancellationToken).ConfigureAwait(false);
     }
 
-    public async Task<MelodeeModels.OperationResult<User?>> GetAsync(int id,
+    public async Task<MelodeeModels.OperationResult<User?>> GetAsync(
+        int id,
         CancellationToken cancellationToken = default)
     {
         Guard.Against.Expression(x => x < 1, id, nameof(id));
