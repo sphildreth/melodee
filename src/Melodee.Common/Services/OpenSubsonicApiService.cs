@@ -2107,8 +2107,7 @@ public class OpenSubsonicApiService(
                   join "Libraries" l on (l."Id" = aa."LibraryId")
                   where s."ApiKey" = @apiKey;
                   """;
-        await using (var scopedContext =
-                     await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             var dbConn = scopedContext.Database.GetDbConnection();
             var songStreamInfo =

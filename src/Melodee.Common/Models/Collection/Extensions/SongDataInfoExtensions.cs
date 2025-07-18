@@ -37,7 +37,7 @@ public static class SongDataInfoExtensions
             throw new Exception($"Configuration setting [{SettingRegistry.SystemBaseUrl}] is invalid.");
         }
 
-        return $"{baseUrl}/rest/stream?id={song.ToApiKey()}";
+        return $"{baseUrl!.TrimEnd('/')}/rest/stream?id={song.ToApiKey()}";
     }
 
     public static PlaylistSong ToPlaylistSong(this SongDataInfo songDataInfo, int playlistOrder, Data.Models.Song song)

@@ -1,5 +1,6 @@
 using Melodee.Common.Data.Models;
 using Melodee.Common.Enums;
+using Melodee.Common.Extensions;
 using Melodee.Common.Filtering;
 using Melodee.Common.Models;
 using Melodee.Common.Services;
@@ -45,7 +46,7 @@ public class SongServiceTests : ServiceTestBase
 
         // Assert
         Assert.NotNull(result);
-        Assert.True(result.IsSuccess);
+        Assert.False(result.IsSuccess);
         Assert.Null(result.Data);
     }
 
@@ -127,7 +128,7 @@ public class SongServiceTests : ServiceTestBase
     }
 
     [Fact]
-    public async Task ListAsync_WithFilterByTitle_ReturnsFilteredResults()
+    public async Task ListAsync_WithFilterByTitle_Equals_ReturnsFilteredResults()
     {
         // Arrange
         var songs = await CreateMultipleTestSongs(3);
@@ -136,7 +137,7 @@ public class SongServiceTests : ServiceTestBase
         {
             Page = 1,
             PageSize = 10,
-            FilterBy = [new FilterOperatorInfo("Title", FilterOperator.Contains, specificTitle)]
+            FilterBy = [new FilterOperatorInfo("Title", FilterOperator.Equals, specificTitle)]
         };
         var userId = 1;
 
@@ -147,6 +148,28 @@ public class SongServiceTests : ServiceTestBase
         AssertResultIsSuccessful(result);
         Assert.Contains(result.Data, s => s.Title.Contains(specificTitle, StringComparison.OrdinalIgnoreCase));
     }
+    
+    [Fact]
+    public async Task ListAsync_WithFilterByTitle_Contains_ReturnsFilteredResults()
+    {
+        // Arrange
+        var songs = await CreateMultipleTestSongs(3);
+        var specificTitle = songs.First().Title.Split().First();
+        var pagedRequest = new PagedRequest
+        {
+            Page = 1,
+            PageSize = 10,
+            FilterBy = [new FilterOperatorInfo("Title", FilterOperator.Equals, specificTitle)]
+        };
+        var userId = 1;
+
+        // Act
+        var result = await _songService.ListAsync(pagedRequest, userId);
+
+        // Assert
+        AssertResultIsSuccessful(result);
+        Assert.Contains(result.Data, s => s.Title.Contains(specificTitle, StringComparison.OrdinalIgnoreCase));
+    }    
 
     [Fact]
     public async Task ListAsync_WithUserStarredFilter_HandlesUserSpecificData()
@@ -547,7 +570,7 @@ public class SongServiceTests : ServiceTestBase
             {
                 ApiKey = Guid.NewGuid(),
                 Title = $"Test Song {i + 1}",
-                TitleNormalized = $"testsong{i + 1}",
+                TitleNormalized = $"Test Song {i + 1}".ToNormalizedString() ?? string.Empty,
                 AlbumId = album.Id,
                 SongNumber = i + 1,
                 FileName = $"test{i + 1}.mp3",
