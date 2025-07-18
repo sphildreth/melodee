@@ -426,8 +426,7 @@ public class LibraryService : ServiceBase
             try
             {
                 currentAlbum = album;
-                var artistDirectory = album.Artist.ToDirectoryName(
-                    configuration.GetValue<short>(SettingRegistry.ProcessingMaximumArtistDirectoryNameLength));
+                var artistDirectory = album.Artist.ToDirectoryName(configuration.GetValue<short>(SettingRegistry.ProcessingMaximumArtistDirectoryNameLength));
                 var albumDirectory = album.AlbumDirectoryName(configuration.Configuration);
                 var libraryAlbumPath = Path.Combine(library.Path, artistDirectory, albumDirectory);
                 if (!Directory.Exists(libraryAlbumPath))
@@ -445,8 +444,7 @@ public class LibraryService : ServiceBase
                     continue;
                 }
 
-                var libraryArtistDirectoryInfo =
-                    new DirectoryInfo(Path.Combine(library.Path, artistDirectory)).ToDirectorySystemInfo();
+                var libraryArtistDirectoryInfo = new DirectoryInfo(Path.Combine(library.Path, artistDirectory)).ToDirectorySystemInfo();
                 var libraryAlbumDirectoryInfo = new DirectoryInfo(libraryAlbumPath).ToDirectorySystemInfo();
                 album.Directory.MoveToDirectory(libraryAlbumPath);
                 var melodeeFileName = Path.Combine(libraryAlbumPath, "melodee.json");

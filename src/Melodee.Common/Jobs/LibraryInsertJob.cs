@@ -200,8 +200,7 @@ public class LibraryInsertJob(
                         continue;
                     }
 
-                    var processedAlbumsResult =
-                        await ProcessAlbumsAsync(melodeeAlbumsForBatch, context.CancellationToken);
+                    var processedAlbumsResult = await ProcessAlbumsAsync(melodeeAlbumsForBatch, context.CancellationToken);
                     if (!processedAlbumsResult)
                     {
                         continue;
@@ -293,8 +292,7 @@ public class LibraryInsertJob(
         var currentSong = currentAlbum?.Songs?.FirstOrDefault();
         try
         {
-            await using (var scopedContext =
-                         await contextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+            await using (var scopedContext = await contextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
             {
                 var dbAlbumsToAdd = new List<dbModels.Album>();
                 foreach (var melodeeAlbum in melodeeAlbumsForDirectory)
@@ -758,10 +756,15 @@ public class LibraryInsertJob(
         Parallel.ForEach(allMelodeeFilesInLibrary, melodeeFile =>
         {
             var f = new FileInfo(melodeeFile);
-            if (f is { Directory: not null, Name.Length: > 3 } && (f.CreationTimeUtc >= lastScanAtUtc ||
-                                                                   f.LastWriteTimeUtc >= lastScanAtUtc))
+            if (f is { Directory: not null, Name.Length: > 3 })
             {
-                melodeeFilesToProcess.Add(f);
+                // Use the album directory (parent of the .json file) for recursive check
+                var albumDir = f.Directory.FullName;
+                var latestWrite = GetLatestWriteTimeRecursive(albumDir);
+                if (latestWrite >= lastScanAtUtc)
+                {
+                    melodeeFilesToProcess.Add(f);
+                }
             }
         });
 
@@ -854,5 +857,42 @@ public class LibraryInsertJob(
         }, cancellationToken))).ConfigureAwait(false);
 
         return melodeeAlbums.ToList();
+    }
+
+    /// <summary>
+    /// Recursively gets the latest LastWriteTimeUtc or CreationTimeUtc for all files and directories under a given directory.
+    /// </summary>
+    public static DateTime GetLatestWriteTimeRecursive(string directoryPath)
+    {
+        if (!Directory.Exists(directoryPath))
+            return DateTime.MinValue;
+
+        DateTime latest = Directory.GetLastWriteTimeUtc(directoryPath);
+
+        try
+        {
+            foreach (var file in Directory.EnumerateFiles(directoryPath, "*", SearchOption.AllDirectories))
+            {
+                var fileInfo = new FileInfo(file);
+                if (fileInfo.LastWriteTimeUtc > latest)
+                    latest = fileInfo.LastWriteTimeUtc;
+                if (fileInfo.CreationTimeUtc > latest)
+                    latest = fileInfo.CreationTimeUtc;
+            }
+            foreach (var dir in Directory.EnumerateDirectories(directoryPath, "*", SearchOption.AllDirectories))
+            {
+                var dirWrite = Directory.GetLastWriteTimeUtc(dir);
+                var dirCreate = Directory.GetCreationTimeUtc(dir);
+                if (dirWrite > latest)
+                    latest = dirWrite;
+                if (dirCreate > latest)
+                    latest = dirCreate;
+            }
+        }
+        catch (Exception)
+        {
+            // Optionally log or handle exceptions for access denied, etc.
+        }
+        return latest;
     }
 }
