@@ -3252,8 +3252,7 @@ public class OpenSubsonicApiService(
 
         ArtistInfo? data = null;
 
-        await using (var scopedContext =
-                     await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             var apiKey = ApiKeyFromId(id);
             var artist = await scopedContext.Artists.FirstOrDefaultAsync(x => x.ApiKey == apiKey, cancellationToken)
