@@ -126,7 +126,8 @@ public class OpenSubsonicApiService(
     /// <summary>
     ///     Get details about the software license.
     /// </summary>
-    public async Task<ResponseModel> GetLicenseAsync(ApiRequest apiApiRequest,
+    public async Task<ResponseModel> GetLicenseAsync(
+        ApiRequest apiApiRequest,
         CancellationToken cancellationToken = default)
     {
         return new ResponseModel
@@ -152,7 +153,8 @@ public class OpenSubsonicApiService(
     /// <param name="apiRequest">An API request containing the necessary details for authentication and filtering the request.</param>
     /// <param name="cancellationToken">A token to observe while waiting for the asynchronous operation to complete.</param>
     /// <returns>A ResponseModel containing user information and the corresponding list of shares.</returns>
-    public async Task<ResponseModel> GetSharesAsync(ApiRequest apiRequest,
+    public async Task<ResponseModel> GetSharesAsync(
+        ApiRequest apiRequest,
         CancellationToken cancellationToken = default)
     {
         var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
@@ -235,8 +237,12 @@ public class OpenSubsonicApiService(
     ///     A <see cref="ResponseModel" /> containing information about the created share, including success status and
     ///     data.
     /// </returns>
-    public async Task<ResponseModel> CreateShareAsync(ApiRequest apiRequest, string id, string? description,
-        long? expires, CancellationToken cancellationToken = default)
+    public async Task<ResponseModel> CreateShareAsync(
+        ApiRequest apiRequest,
+        string id,
+        string? description,
+        long? expires,
+        CancellationToken cancellationToken = default)
     {
         var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
         if (!authResponse.IsSuccess)
@@ -361,7 +367,7 @@ public class OpenSubsonicApiService(
     /// <summary>
     ///     Updates the description and/or expiration date for an existing share.
     /// </summary>
-    /// <param name="apiRequest">The API request containing authentication and context information.</param>
+    /// <param name="apiRequest">The API request with authentication and context information.</param>
     /// <param name="id">The unique identifier of the share to be updated.</param>
     /// <param name="description">An optional description to attach to the share.</param>
     /// <param name="expires">An optional expiration time for the share in Unix timestamp format.</param>
@@ -370,8 +376,12 @@ public class OpenSubsonicApiService(
     ///     A task representing the asynchronous operation, containing a response model with the result of the share
     ///     update.
     /// </returns>
-    public async Task<ResponseModel> UpdateShareAsync(ApiRequest apiRequest, string id, string? description,
-        long? expires, CancellationToken cancellationToken = default)
+    public async Task<ResponseModel> UpdateShareAsync(
+        ApiRequest apiRequest,
+        string id,
+        string? description,
+        long? expires,
+        CancellationToken cancellationToken = default)
     {
         var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
         if (!authResponse.IsSuccess)
@@ -424,7 +434,9 @@ public class OpenSubsonicApiService(
     ///     A task that represents the asynchronous operation. The task result contains a <see cref="ResponseModel" />
     ///     indicating the success or failure of the operation.
     /// </returns>
-    public async Task<ResponseModel> DeleteShareAsync(string id, ApiRequest apiRequest,
+    public async Task<ResponseModel> DeleteShareAsync(
+        string id, 
+        ApiRequest apiRequest,
         CancellationToken cancellationToken = default)
     {
         var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
@@ -521,7 +533,9 @@ public class OpenSubsonicApiService(
         };
     }
 
-    public async Task<ResponseModel> UpdatePlaylistAsync(UpdatePlayListRequest updateRequest, ApiRequest apiRequest,
+    public async Task<ResponseModel> UpdatePlaylistAsync(
+        UpdatePlayListRequest updateRequest, 
+        ApiRequest apiRequest,
         CancellationToken cancellationToken)
     {
         var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
@@ -656,8 +670,12 @@ public class OpenSubsonicApiService(
         };
     }
 
-    public async Task<ResponseModel> CreatePlaylistAsync(string? id, string? name, string[]? songId,
-        ApiRequest apiRequest, CancellationToken cancellationToken)
+    public async Task<ResponseModel> CreatePlaylistAsync(
+        string? id,
+        string? name,
+        string[]? songId,
+        ApiRequest apiRequest,
+        CancellationToken cancellationToken)
     {
         var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
         if (!authResponse.IsSuccess)
@@ -666,8 +684,7 @@ public class OpenSubsonicApiService(
         }
 
         var playListId = string.Empty;
-        await using (var scopedContext =
-                     await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             var now = Instant.FromDateTimeUtc(DateTime.UtcNow);
             var isCreatingPlaylist = id.Nullify() == null && name.Nullify() != null;
@@ -707,7 +724,9 @@ public class OpenSubsonicApiService(
     /// <summary>
     ///     Returns a listing of files in a saved playlist.
     /// </summary>
-    public async Task<ResponseModel> GetPlaylistAsync(string id, ApiRequest apiRequest,
+    public async Task<ResponseModel> GetPlaylistAsync(
+        string id,
+        ApiRequest apiRequest,
         CancellationToken cancellationToken)
     {
         var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
@@ -829,7 +848,9 @@ public class OpenSubsonicApiService(
         };
     }
 
-    public async Task<ResponseModel> GetAlbumListAsync(GetAlbumListRequest albumListRequest, ApiRequest apiRequest,
+    public async Task<ResponseModel> GetAlbumListAsync(
+        GetAlbumListRequest albumListRequest,
+        ApiRequest apiRequest,
         CancellationToken cancellationToken)
     {
         var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
@@ -957,7 +978,9 @@ public class OpenSubsonicApiService(
     /// <summary>
     ///     Returns a list of random, newest, highest rated etc. albums.
     /// </summary>
-    public async Task<ResponseModel> GetAlbumList2Async(GetAlbumListRequest albumListRequest, ApiRequest apiRequest,
+    public async Task<ResponseModel> GetAlbumList2Async(
+        GetAlbumListRequest albumListRequest,
+        ApiRequest apiRequest,
         CancellationToken cancellationToken = default)
     {
         var authResponse = await AuthenticateSubsonicApiAsync(apiRequest, cancellationToken);
@@ -1360,7 +1383,7 @@ public class OpenSubsonicApiService(
         };
     }
 
-    public static string GenerateImageCacheKeyForApiId(string apiId, ImageSize size)
+    private static string GenerateImageCacheKeyForApiId(string apiId, ImageSize size)
     {
         return $"urn:openSubsonic:imageForApikey:{apiId}:{size}";
     }
@@ -1368,7 +1391,10 @@ public class OpenSubsonicApiService(
     /// <summary>
     ///     Returns an artist, album, or song art image.
     /// </summary>
-    public async Task<ResponseModel> GetImageForApiKeyId(string apiId, string? size, ApiRequest apiRequest,
+    public async Task<ResponseModel> GetImageForApiKeyId(
+        string apiId,
+        string? size,
+        ApiRequest apiRequest,
         CancellationToken cancellationToken = default)
     {
         var isUserImageRequest = IsApiIdForUser(apiId);
@@ -1410,7 +1436,7 @@ public class OpenSubsonicApiService(
                     {
                         // Dynamic playlists don't exist in the database they are created on demand from configured json files.
                         var dynamicPlaylist = await libraryService
-                            .GetDynamicPlaylistAsync(apiKey ?? Guid.Empty, cancellationToken).ConfigureAwait(false);
+                            .GetDynamicPlaylistAsync(apiKey.Value, cancellationToken).ConfigureAwait(false);
                         var playlistImageFileInfo = new FileInfo(dynamicPlaylist.Data?.ImageFileName ?? string.Empty);
                         if (playlistImageFileInfo.Exists)
                         {
@@ -1638,7 +1664,7 @@ public class OpenSubsonicApiService(
                 if (dataMap.ContainsKey(JobMapNameRegistry.ScanStatus) && dataMap.ContainsKey(JobMapNameRegistry.Count))
                 {
                     data = new ScanStatus(
-                        dataMap.GetString(JobMapNameRegistry.ScanStatus) == Enums.ScanStatus.InProcess.ToString(),
+                        dataMap.GetString(JobMapNameRegistry.ScanStatus) == nameof(Enums.ScanStatus.InProcess),
                         dataMap.GetIntValue(JobMapNameRegistry.Count));
                 }
             }
