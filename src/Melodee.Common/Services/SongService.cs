@@ -21,7 +21,7 @@ public class SongService(
     ILogger logger,
     ICacheManager cacheManager,
     IDbContextFactory<MelodeeDbContext> contextFactory,
-    INowPlayingRepository NowPlayingRepository)
+    INowPlayingRepository nowPlayingRepository)
     : ServiceBase(logger, cacheManager, contextFactory)
 {
     private const string CacheKeyDetailByApiKeyTemplate = "urn:song:apikey:{0}";
@@ -35,7 +35,7 @@ public class SongService(
         await using (var scopedContext =
                      await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
-            var nowPlaying = await NowPlayingRepository.GetNowPlayingAsync(cancellationToken).ConfigureAwait(false);
+            var nowPlaying = await nowPlayingRepository.GetNowPlayingAsync(cancellationToken).ConfigureAwait(false);
             if (nowPlaying.Data.Length > 0)
             {
                 var nowPlayingSongIds = nowPlaying.Data.Select(x => x.Scrobble.SongId).ToArray();
@@ -216,7 +216,7 @@ public class SongService(
     public async Task<MelodeeModels.OperationResult<Song?>> GetByApiKeyAsync(Guid apiKey,
         CancellationToken cancellationToken = default)
     {
-        Guard.Against.Expression(x => apiKey == Guid.Empty, apiKey, nameof(apiKey));
+        Guard.Against.Expression(_ => apiKey == Guid.Empty, apiKey, nameof(apiKey));
 
         var id = await CacheManager.GetAsync(CacheKeyDetailByApiKeyTemplate.FormatSmart(apiKey), async () =>
         {
@@ -244,7 +244,7 @@ public class SongService(
     public async Task ClearCacheAsync(int songId, CancellationToken cancellationToken)
     {
         var song = await GetAsync(songId, cancellationToken).ConfigureAwait(false);
-        if (song?.Data != null)
+        if (song.Data != null)
         {
             CacheManager.Remove(CacheKeyDetailByApiKeyTemplate.FormatSmart(song.Data.ApiKey));
             CacheManager.Remove(CacheKeyDetailByTitleNormalizedTemplate.FormatSmart(song.Data.TitleNormalized));
@@ -317,8 +317,6 @@ public class SongService(
                     Logger.Error(ex, "Reading song [{SongInfo}]", songStreamInfo);
                 }
             }
-
-            var contentLength = numberOfBytesRead > 0 ? numberOfBytesRead : songStreamInfo.FileSize;
 
             return new MelodeeModels.OperationResult<StreamResponse>
             {
