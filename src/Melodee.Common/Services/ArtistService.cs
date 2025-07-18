@@ -414,7 +414,7 @@ public class ArtistService(
 
         // This is needed because the OpenSubsonicApiService caches the image bytes after potentially resizing
         CacheManager.ClearRegion(OpenSubsonicApiService.ImageCacheRegion);
-
+    
         await albumService.ClearCacheForArtist(artist.Id, cancellationToken);
     }
 
@@ -643,7 +643,7 @@ public class ArtistService(
             }
         }
 
-        return await GetAsync(artist.Id, cancellationToken);
+        return await GetAsync(artist.Id, cancellationToken).ConfigureAwait(false);
     }
 
     public async Task<MelodeeModels.OperationResult<bool>> SaveImageAsArtistImageAsync(
@@ -699,11 +699,11 @@ public class ArtistService(
         var artistImageFileName = Path.Combine(artistDirectory.Path, deleteAllImages ? "01-Band.image" : $"{totalArtistImageCount}-Band.image");
         var artistImageFileInfo = new FileInfo(artistImageFileName).ToFileSystemInfo();
 
-        await fileSystemService.WriteAllBytesAsync(artistImageFileInfo.FullName(artistDirectory), imageBytes, cancellationToken);
+        await fileSystemService.WriteAllBytesAsync(artistImageFileInfo.FullName(artistDirectory), imageBytes, cancellationToken).ConfigureAwait(false);
         await imageConvertor.ProcessFileAsync(
             artistDirectory,
             artistImageFileInfo,
-            cancellationToken);
+            cancellationToken).ConfigureAwait(false);
         await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             var now = Instant.FromDateTimeUtc(DateTime.UtcNow);
@@ -746,7 +746,7 @@ public class ArtistService(
             var imageBytes = await httpClientFactory.BytesForImageUrlAsync(
                 configuration.GetValue<string?>(SettingRegistry.SearchEngineUserAgent) ?? string.Empty,
                 imageUrl,
-                cancellationToken);
+                cancellationToken).ConfigureAwait(false);
             if (imageBytes != null)
             {
                 result = await SaveImageBytesAsArtistImageAsync(

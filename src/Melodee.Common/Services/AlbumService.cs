@@ -58,30 +58,32 @@ public class AlbumService(
             }
         }
     }
-
+    
     public async Task ClearCacheAsync(int albumId, CancellationToken cancellationToken = default)
     {
         var album = await GetAsync(albumId, cancellationToken).ConfigureAwait(false);
-        if (album.Data != null)
+        ClearCache(album.Data!, cancellationToken);
+    }    
+
+    public void ClearCache(Album album, CancellationToken cancellationToken = default)
+    {
+        CacheManager.Remove(CacheKeyDetailByApiKeyTemplate.FormatSmart(album.ApiKey), Album.CacheRegion);
+        CacheManager.Remove(CacheKeyDetailByNameNormalizedTemplate.FormatSmart(album.NameNormalized), Album.CacheRegion);
+
+        CacheManager.Remove(CacheKeyDetailTemplate.FormatSmart(album.Id), Album.CacheRegion);
+
+        CacheManager.Remove(CacheKeyAlbumImageBytesAndEtagTemplate.FormatSmart(album.Id, ImageSize.Thumbnail), Album.CacheRegion);
+        CacheManager.Remove(CacheKeyAlbumImageBytesAndEtagTemplate.FormatSmart(album.Id, ImageSize.Small), Album.CacheRegion);
+        CacheManager.Remove(CacheKeyAlbumImageBytesAndEtagTemplate.FormatSmart(album.Id, ImageSize.Medium), Album.CacheRegion);
+        CacheManager.Remove(CacheKeyAlbumImageBytesAndEtagTemplate.FormatSmart(album.Id, ImageSize.Large), Album.CacheRegion);
+
+
+        // This is needed because the OpenSubsonicApiService caches the image bytes after potentially resizing
+        CacheManager.Remove(OpenSubsonicApiService.ImageCacheRegion);
+
+        if (album.MusicBrainzId != null)
         {
-            CacheManager.Remove(CacheKeyDetailByApiKeyTemplate.FormatSmart(album.Data.ApiKey), Album.CacheRegion);
-            CacheManager.Remove(CacheKeyDetailByNameNormalizedTemplate.FormatSmart(album.Data.NameNormalized), Album.CacheRegion);
-
-            CacheManager.Remove(CacheKeyDetailTemplate.FormatSmart(albumId), Album.CacheRegion);
-
-            CacheManager.Remove(CacheKeyAlbumImageBytesAndEtagTemplate.FormatSmart(albumId, ImageSize.Thumbnail), Artist.CacheRegion);
-            CacheManager.Remove(CacheKeyAlbumImageBytesAndEtagTemplate.FormatSmart(albumId, ImageSize.Small), Artist.CacheRegion);
-            CacheManager.Remove(CacheKeyAlbumImageBytesAndEtagTemplate.FormatSmart(albumId, ImageSize.Medium), Artist.CacheRegion);
-            CacheManager.Remove(CacheKeyAlbumImageBytesAndEtagTemplate.FormatSmart(albumId, ImageSize.Large), Artist.CacheRegion);
-
-
-            // This is needed because the OpenSubsonicApiService caches the image bytes after potentially resizing
-            CacheManager.Remove(OpenSubsonicApiService.ImageCacheRegion);
-
-            if (album.Data.MusicBrainzId != null)
-            {
-                CacheManager.Remove(CacheKeyDetailByMusicBrainzIdTemplate.FormatSmart(album.Data.MusicBrainzId.Value.ToString()), Album.CacheRegion);
-            }
+            CacheManager.Remove(CacheKeyDetailByMusicBrainzIdTemplate.FormatSmart(album.MusicBrainzId.Value.ToString()), Album.CacheRegion);
         }
     }
 
@@ -463,17 +465,6 @@ public class AlbumService(
         return await GetAsync(id.Value, cancellationToken).ConfigureAwait(false);
     }
 
-    public void ClearCache(Album album)
-    {
-        CacheManager.Remove(CacheKeyDetailByApiKeyTemplate.FormatSmart(album.ApiKey));
-        CacheManager.Remove(CacheKeyDetailByNameNormalizedTemplate.FormatSmart(album.NameNormalized));
-        CacheManager.Remove(CacheKeyDetailTemplate.FormatSmart(album.Id));
-        if (album.MusicBrainzId != null)
-        {
-            CacheManager.Remove(CacheKeyDetailByMusicBrainzIdTemplate.FormatSmart(album.MusicBrainzId.Value.ToString()));
-        }
-    }
-
     public async Task<MelodeeModels.OperationResult<bool>> UpdateAsync(
         Album album,
         CancellationToken cancellationToken = default)
@@ -828,6 +819,7 @@ public class AlbumService(
                 return new MelodeeModels.ImageBytesAndEtag(null, badEtag);
             }
 
+            // The size parameter allows for the admin to pre-create sized images so on the fly resize doesn't happen
             var albumImages = albumDirectory.AllFileImageTypeFileInfos().ToArray();
             var imageFile = albumImages
                 .FirstOrDefault(x => x.Name.Contains($"-{sizeValue}", StringComparison.OrdinalIgnoreCase) ||
@@ -840,6 +832,7 @@ public class AlbumService(
             }
 
             var imageBytes = await File.ReadAllBytesAsync(imageFile.FullName, cancellationToken).ConfigureAwait(false);
+            Logger.Information("Image found for album [{AlbumId}] with size [{Size}] CacheKey [{CacheKey}].", album, sizeValue, cacheKey);
             return new MelodeeModels.ImageBytesAndEtag(imageBytes, (album.Data.LastUpdatedAt ?? album.Data.CreatedAt).ToEtag());
         }, cancellationToken, configuration.CacheDuration(), Album.CacheRegion);
     }
@@ -883,18 +876,19 @@ public class AlbumService(
         var imageConvertor = new ImageConvertor(configuration);
 
         var albumPath = album.ToFileSystemDirectoryInfo();
+        var albumImages = albumPath.FileInfosForExtension("jpg", false).ToArray();        
         if (deleteAllImages)
         {
             albumPath.DeleteAllFilesForExtension("*.jpg");
         }
-
+        var totalAlbumImageCount = albumImages.Length == 1 ? 1 : albumImages.Length + 1;
         var newAlbumCoverFilename = Path.Combine(albumPath.FullName(), $"i-01-{Album.FrontImageType}.jpg");
         if (File.Exists(newAlbumCoverFilename))
         {
             File.Delete(newAlbumCoverFilename);
         }
 
-        await File.WriteAllBytesAsync(newAlbumCoverFilename, imageBytes, cancellationToken);
+        await File.WriteAllBytesAsync(newAlbumCoverFilename, imageBytes, cancellationToken).ConfigureAwait(false);
         await imageConvertor.ProcessFileAsync(
             albumPath,
             new MelodeeModels.FileSystemFileInfo
@@ -902,7 +896,7 @@ public class AlbumService(
                 Name = newAlbumCoverFilename,
                 Size = imageBytes.Length
             },
-            cancellationToken);
+            cancellationToken).ConfigureAwait(false);
         await using (var scopedContext = await ContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             var now = Instant.FromDateTimeUtc(DateTime.UtcNow);
@@ -915,6 +909,8 @@ public class AlbumService(
         }
 
         await ClearCacheAsync(album.Id, cancellationToken).ConfigureAwait(false);
+        Logger.Information("Saved image for album [{ArtistId}] with {ImageCount} images.",
+            album.Id, totalAlbumImageCount);        
         return true;
     }
 

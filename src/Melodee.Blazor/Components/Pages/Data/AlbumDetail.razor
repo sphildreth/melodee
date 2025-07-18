@@ -16,6 +16,7 @@
 @inject NotificationService NotificationService
 @inject DialogService DialogService
 @inject NavigationManager NavigationManager
+@inject DefaultImages DefaultImages
 @inject IHttpClientFactory HttpClientFactory
 @inject IJSRuntime JsRuntime
 
@@ -330,18 +331,25 @@
                         <ArtistDataInfoCardComponent
                             Style="width: 600px;margin-bottom: 10px;"
                             Artist="@_album.Artist.ToArtistDataInfo()"/>
-                        @if (_albumsImagesInByteBase64.Length < 2)
+                        @if (_isLoading)
+                        {
+                            <RadzenImage
+                                Path=@(DefaultImages.AlbumCoverBase64)
+                                Style="margin:auto;display: block;width: 600px;height: 600px;"
+                                AlternateText="@_album.Name"/>
+                        }
+                        else if (_albumsImagesInByteBase64.Length < 2)
                         {
                             <RadzenImage
                                 Path=@($"/images/{_album.ToApiKey()}/{ ImageSize.Medium}")
-                                Style="margin:auto;display: block;"
+                                Style="margin:auto;display: block;width: 600px;height: 600px;"
                                 AlternateText="@_album.Name"/>
                         }
-                        @if (_albumsImagesInByteBase64.Length > 1)
+                        else if (_albumsImagesInByteBase64.Length > 1)
                         {
                             <RadzenCarousel
                                 Auto="false"
-                                Style="height: 400px; width: 400px;"
+                                Style="height: 600px; width: 600px;"
                                 class="rz-mx-auto"
                                 ButtonStyle="ButtonStyle.Base"
                                 ButtonSize="ButtonSize.Small"
@@ -379,6 +387,7 @@
 
     ShowItem _showItem = ShowItem.Overview;
 
+    bool _isLoading = true;
     bool _isPinned;
 
     private enum ShowItem
@@ -430,6 +439,8 @@
 
     protected override async Task OnParametersSetAsync()
     {
+        _isLoading = true;
+
         _alertMessages.Clear();
         if (ApiKey != Guid.Empty)
         {
@@ -485,6 +496,8 @@
                 }
 
                 _isPinned = await UserService.IsPinned(CurrentUsersId, UserPinType.Album, _album.Id);
+
+                _isLoading = false;
             }
         }
     }
