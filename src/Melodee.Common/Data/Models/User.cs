@@ -10,6 +10,8 @@ namespace Melodee.Common.Data.Models;
 [Index(nameof(Email), IsUnique = true)]
 public class User : DataModelBase
 {
+    public const string CacheRegion = "urn:region:user";
+    
     [MaxLength(MaxLengthDefinitions.MaxGeneralInputLength)]
     [Required]
     public required string UserName { get; set; }
