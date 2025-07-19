@@ -1,10 +1,11 @@
-using Dapper;
 using Melodee.Common.Data;
+using Melodee.Common.Data.Models;
 using Melodee.Common.Models;
 using Melodee.Common.Models.Scrobbling;
 using Melodee.Common.Services;
 using Melodee.Common.Utility;
 using Microsoft.EntityFrameworkCore;
+using NodaTime;
 
 namespace Melodee.Common.Plugins.Scrobbling;
 
@@ -38,28 +39,62 @@ public class MelodeeScrobbler(
     {
         await using (var scopedContext = await contextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
-            var dbConn = scopedContext.Database.GetDbConnection();
+            var now = SystemClock.Instance.GetCurrentInstant();
 
-            var sql = """
-                      update "Artists" set "PlayedCount" = "PlayedCount" + 1, "LastPlayedAt" = Now()
-                      where "Id" = @artistId;
-                      update "Albums" set "PlayedCount" = "PlayedCount" + 1, "LastPlayedAt" = Now()
-                      where "Id" = @albumId;
-                      update "Songs" set "PlayedCount" = "PlayedCount" + 1, "LastPlayedAt" = Now()
-                      where "Id" = @songId;
-                      """;
-            await dbConn.ExecuteAsync(sql,
-                    new { artistId = scrobble.ArtistId, albumId = scrobble.AlbumId, songId = scrobble.SongId })
+            // Update Artist played count and last played time using ExecuteUpdateAsync for performance
+            await scopedContext.Artists
+                .Where(a => a.Id == scrobble.ArtistId)
+                .ExecuteUpdateAsync(a => a
+                    .SetProperty(p => p.PlayedCount, p => p.PlayedCount + 1)
+                    .SetProperty(p => p.LastPlayedAt, now), cancellationToken)
                 .ConfigureAwait(false);
 
-            sql = """
-                  insert INTO "UserSongs" ("UserId", "SongId", "PlayedCount", "LastPlayedAt", "IsStarred", "IsHated", "Rating", "IsLocked", "SortOrder", "ApiKey", "CreatedAt") 
-                  values (@userId, @songId, 1, now(), false, false, 0, false, 0, gen_random_uuid(), now())
-                  on CONFLICT("UserId", "SongId") do update
-                    set "PlayedCount" = (select "PlayedCount" + 1 from "UserSongs" where "UserId" = @userId and "SongId" = @songId),
-                        "LastPlayedAt" = now();
-                  """;
-            await dbConn.ExecuteAsync(sql, new { userId = user.Id, songId = scrobble.SongId }).ConfigureAwait(false);
+            // Update Album played count and last played time using ExecuteUpdateAsync for performance
+            await scopedContext.Albums
+                .Where(a => a.Id == scrobble.AlbumId)
+                .ExecuteUpdateAsync(a => a
+                    .SetProperty(p => p.PlayedCount, p => p.PlayedCount + 1)
+                    .SetProperty(p => p.LastPlayedAt, now), cancellationToken)
+                .ConfigureAwait(false);
+
+            // Update Song played count and last played time using ExecuteUpdateAsync for performance
+            await scopedContext.Songs
+                .Where(s => s.Id == scrobble.SongId)
+                .ExecuteUpdateAsync(s => s
+                    .SetProperty(p => p.PlayedCount, p => p.PlayedCount + 1)
+                    .SetProperty(p => p.LastPlayedAt, now), cancellationToken)
+                .ConfigureAwait(false);
+
+            // Handle UserSong upsert logic - first try to update, if no rows affected then insert
+            var updatedRows = await scopedContext.UserSongs
+                .Where(us => us.UserId == user.Id && us.SongId == scrobble.SongId)
+                .ExecuteUpdateAsync(us => us
+                    .SetProperty(p => p.PlayedCount, p => p.PlayedCount + 1)
+                    .SetProperty(p => p.LastPlayedAt, now), cancellationToken)
+                .ConfigureAwait(false);
+
+            if (updatedRows == 0)
+            {
+                // No existing UserSong found, create new one
+                var newUserSong = new UserSong
+                {
+                    UserId = user.Id,
+                    SongId = scrobble.SongId,
+                    PlayedCount = 1,
+                    LastPlayedAt = now,
+                    IsStarred = false,
+                    IsHated = false,
+                    Rating = 0,
+                    IsLocked = false,
+                    SortOrder = 0,
+                    ApiKey = Guid.NewGuid(),
+                    CreatedAt = now
+                };
+                
+                scopedContext.UserSongs.Add(newUserSong);
+                await scopedContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+            }
+
             await nowPlayingRepository
                 .RemoveNowPlayingAsync(SafeParser.Hash(user.ApiKey.ToString(), scrobble.SongApiKey.ToString()),
                     cancellationToken)
